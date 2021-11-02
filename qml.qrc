@@ -1,0 +1,11 @@
+<RCC>
+    <qresource prefix="/">
+        <file>main.qml</file>
+        <file>images/droidstar.png</file>
+        <file>AboutTab.qml</file>
+        <file>HostsTab.qml</file>
+        <file>LogTab.qml</file>
+        <file>SettingsTab.qml</file>
+        <file>MainTab.qml</file>
+    </qresource>
+</RCC>

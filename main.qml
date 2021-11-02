@@ -1,0 +1,481 @@
+/*
+	Copyright (C) 2019-2021 Doug McLain
+
+	This program is free software: you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
+
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
+
+	You should have received a copy of the GNU General Public License
+	along with this program.  If not, see <https://www.gnu.org/licenses/>.
+*/
+
+import QtQuick 2.10
+import QtQuick.Window 2.10
+import QtQuick.Controls 2.3
+import QtQuick.Dialogs 1.3
+import org.dudetronics.droidstar 1.0
+
+ApplicationWindow {
+	// @disable-check M16
+	visible: true
+	 // @disable-check M16
+	width: 320
+	 // @disable-check M16
+	height: 480
+	 // @disable-check M16
+	 // @disable-check M16
+	title: qsTr("DroidStar")
+
+	palette.window: "#252424"
+	palette.button: "#252424"
+	palette.buttonText: "white"
+	palette.base: "black"
+	palette.text: "white"
+	palette.windowText: "white"
+	palette.highlight: "steelblue"
+
+	MessageDialog {
+		id: idcheckDialog
+		title: "Invalid credentials"
+		text: "A valid callsign and DMR ID are required to use Dudestar on any mode, and they must match. If you have entered a valid DMR ID that matches the entered callsign, and you are still seeing this message, then you either have to click update ID files button or wait until your DMR ID is added to the ID file and try again."
+	}
+	MessageDialog {
+		id: errorDialog
+		title: "Error"
+	}
+	MessageDialog {
+		id: updateDialog
+		title: "Updating..."
+		text: "Check log tab for details"
+	}
+	MessageDialog {
+		id: disclaimerDialog
+		title: "D-Star WARNING"
+		text: "DroidStar should only be used to monitor D-Star reflectors.\nDO NOT USE DROIDSTAR FOR GENERAL DSTAR TX.\nListening to D-Star reflectors is fine.\nD-Star vocoder quality is not very good, so transmitting should\nonly be done for experimentation and development purposes.\n\nYOU HAVE BEEN WARNED!"
+	}
+
+	TabBar {
+		id: bar
+		width: parent.width
+		currentIndex: swiper.currentIndex
+		background: Rectangle {
+			color: "steelblue"
+		}
+		TabButton {
+			id: mainButton
+			padding: 10
+			background: Rectangle {
+				color: bar.currentIndex === 0 ? "steelblue" : "#353535"
+			}
+			text: qsTr("Main")
+		}
+		TabButton {
+			id: settingsButton
+			padding: 10
+			background: Rectangle {
+				color: bar.currentIndex === 1 ? "steelblue" : "#353535"
+			}
+			text: qsTr("Settings")
+		}
+		TabButton {
+			id: logButton
+			padding: 10
+			background: Rectangle {
+				color: bar.currentIndex === 2 ? "steelblue" : "#353535"
+			}
+			text: qsTr("Log")
+		}
+		TabButton {
+			id: hostsButton
+			padding: 10
+			background: Rectangle {
+				color: bar.currentIndex === 3 ? "steelblue" : "#353535"
+			}
+			text: qsTr("Hosts")
+		}
+		TabButton {
+			id: aboutButton
+			padding: 10
+			background: Rectangle {
+				color: bar.currentIndex === 4 ? "steelblue" : "#353535"
+			}
+			text: qsTr("About")
+		}
+	}
+	SwipeView {
+		id: swiper
+		width: parent.width
+		height: parent.height - 50
+		x: 0
+		y: 50
+		currentIndex: bar.currentIndex
+		interactive: false
+
+		MainTab{
+			id: mainTab
+		}
+		SettingsTab{
+			id: settingsTab
+		}
+		LogTab{
+			id: logTab
+		}
+		HostsTab{
+			id: hostsTab
+		}
+		AboutTab{}
+	}
+    DroidStar {
+        id: droidstar
+    }
+	Connections {
+		target: Qt.application
+		function onStateChanged() {
+			//console.debug("applicationStateChanged: " + Qt.application.state)
+		}
+	}
+    Connections {
+        target: droidstar
+		Component.onCompleted: {
+			mainTab.comboMode.loaded = true;
+			droidstar.process_settings();
+			settingsTab.comboVocoder.model = droidstar.get_vocoders();
+			settingsTab.comboModem.model = droidstar.get_modems();
+			settingsTab.comboPlayback.model = droidstar.get_playbacks();
+			settingsTab.comboCapture.model = droidstar.get_captures();
+		}
+		function onSwtx_state(s){
+			mainTab.swtxBox.checked = s;
+			mainTab.swtxBox.enabled = !s;
+		}
+		function onSwrx_state(s){
+			mainTab.swrxBox.checked = s;
+			mainTab.swrxBox.enabled = !s;
+		}
+		function onMycall_changed(s){
+			settingsTab.mycallEdit.text = s;
+		}
+		function onUrcall_changed(s){
+			settingsTab.urcallEdit.text = s;
+		}
+		function onRptr1_changed(s){
+			settingsTab.rptr1Edit.text = s;
+		}
+		function onRptr2_changed(s){
+			settingsTab.rptr2Edit.text = s;
+		}
+
+		function onMode_changed() {
+			//console.log("onMode_changed ", mainTab.comboMode.find(droidstar.get_mode()), ":", droidstar.get_mode(), ":", droidstar.get_ref_host(), ":", droidstar.get_module());
+			mainTab.label1.text = droidstar.get_label1();
+			mainTab.label2.text = droidstar.get_label2();
+			mainTab.label3.text = droidstar.get_label3();
+			mainTab.label4.text = droidstar.get_label4();
+			mainTab.label5.text = droidstar.get_label5();
+			mainTab.label6.text = droidstar.get_label6();
+            droidstar.set_modelchange(true);
+			mainTab.comboHost.model = droidstar.get_hosts();
+            droidstar.set_modelchange(false);
+			mainTab.comboMode.currentIndex = mainTab.comboMode.find(droidstar.get_mode());
+            if(droidstar.get_mode() === "REF"){
+				mainTab.comboHost.visible = true;
+				mainTab.element1.text = "Host";
+				mainTab.editIAXDTMF.visible = false;
+				mainTab.dtmfsendbutton.visible = false;
+				mainTab.comboHost.currentIndex = mainTab.comboHost.find(droidstar.get_ref_host());
+				mainTab.comboModule.visible = true;
+				mainTab.element3.visible = false;
+				mainTab.dmrtgidEdit.visible = false;
+				mainTab.privateBox.visible = false;
+				mainTab.element4.visible = true;
+				settingsTab.sliderMicGain.value = 0.0;
+            }
+            if(droidstar.get_mode() === "DCS"){
+				mainTab.comboHost.visible = true;
+				mainTab.element1.text = "Host";
+				mainTab.editIAXDTMF.visible = false;
+				mainTab.dtmfsendbutton.visible = false;
+				mainTab.comboHost.currentIndex = mainTab.comboHost.find(droidstar.get_dcs_host());
+				mainTab.comboModule.visible = true;
+				mainTab.element3.visible = false;
+				mainTab.dmrtgidEdit.visible = false;
+				mainTab.privateBox.visible = false;
+				mainTab.element4.visible = true;
+				settingsTab.sliderMicGain.value = 0.0;
+            }
+            if(droidstar.get_mode() === "XRF"){
+				mainTab.comboHost.visible = true;
+				mainTab.element1.text = "Host";
+				mainTab.editIAXDTMF.visible = false;
+				mainTab.dtmfsendbutton.visible = false;
+				mainTab.comboHost.currentIndex = mainTab.comboHost.find(droidstar.get_xrf_host());
+				mainTab.comboModule.visible = true;
+				mainTab.element3.visible = false;
+				mainTab.dmrtgidEdit.visible = false;
+				mainTab.privateBox.visible = false;
+				mainTab.element4.visible = true;
+				settingsTab.sliderMicGain.value = 0.0;
+            }
+            if(droidstar.get_mode() === "YSF"){
+				mainTab.comboHost.visible = true;
+				mainTab.element1.text = "Host";
+				mainTab.editIAXDTMF.visible = false;
+				mainTab.dtmfsendbutton.visible = false;
+				mainTab.comboHost.currentIndex = mainTab.comboHost.find(droidstar.get_ysf_host());
+				mainTab.comboModule.visible = false;
+				mainTab.element3.visible = false;
+				mainTab.dmrtgidEdit.visible = false;
+				mainTab.privateBox.visible = false;
+				mainTab.element4.visible = false;
+				settingsTab.sliderMicGain.value = 0.2;
+            }
+			if(droidstar.get_mode() === "FCS"){
+				mainTab.comboHost.visible = true;
+				mainTab.element1.text = "Host";
+				mainTab.editIAXDTMF.visible = false;
+				mainTab.dtmfsendbutton.visible = false;
+				mainTab.comboHost.currentIndex = mainTab.comboHost.find(droidstar.get_fcs_host());
+				mainTab.comboModule.visible = false;
+				mainTab.element3.visible = false;
+				mainTab.dmrtgidEdit.visible = false;
+				mainTab.privateBox.visible = false;
+				mainTab.element4.visible = false;
+				settingsTab.sliderMicGain.value = 0.2;
+			}
+            if(droidstar.get_mode() === "DMR"){
+				mainTab.comboHost.visible = true;
+				mainTab.element1.text = "Host";
+				mainTab.editIAXDTMF.visible = false;
+				mainTab.dtmfsendbutton.visible = false;
+				mainTab.comboHost.currentIndex = mainTab.comboHost.find(droidstar.get_dmr_host());
+				mainTab.comboModule.visible = false;
+				mainTab.element3.visible = true;
+				mainTab.dmrtgidEdit.visible = true;
+				mainTab.privateBox.visible = true;
+				mainTab.element4.visible = false;
+				settingsTab.sliderMicGain.value = 0.3;
+            }
+            if(droidstar.get_mode() === "P25"){
+				mainTab.comboHost.visible = true;
+				mainTab.element1.text = "Host";
+				mainTab.editIAXDTMF.visible = false;
+				mainTab.dtmfsendbutton.visible = false;
+				mainTab.comboHost.currentIndex = mainTab.comboHost.find(droidstar.get_p25_host());
+				mainTab.comboModule.visible = false;
+				mainTab.element3.visible = true;
+				mainTab.dmrtgidEdit.visible = true;
+				mainTab.privateBox.visible = false;
+				mainTab.element4.visible = false;
+				settingsTab.sliderMicGain.value = 0.3;
+            }
+            if(droidstar.get_mode() === "NXDN"){
+				mainTab.comboHost.visible = true;
+				mainTab.element1.text = "Host";
+				mainTab.editIAXDTMF.visible = false;
+				mainTab.dtmfsendbutton.visible = false;
+				mainTab.comboHost.currentIndex = mainTab.comboHost.find(droidstar.get_nxdn_host());
+				mainTab.comboModule.visible = false;
+				mainTab.element3.visible = false;
+				mainTab.dmrtgidEdit.visible = false;
+				mainTab.privateBox.visible = false;
+				mainTab.element4.visible = false;
+				settingsTab.sliderMicGain.value = 0.3;
+            }
+			if(droidstar.get_mode() === "M17"){
+				mainTab.comboHost.visible = true;
+				mainTab.element1.text = "Host";
+				mainTab.editIAXDTMF.visible = false;
+				mainTab.dtmfsendbutton.visible = false;
+				mainTab.comboHost.currentIndex = mainTab.comboHost.find(droidstar.get_m17_host());
+				mainTab.comboModule.currentIndex = mainTab.comboModule.find(droidstar.get_module());
+				mainTab.comboModule.visible = true;
+				mainTab.element3.visible = false;
+				mainTab.dmrtgidEdit.visible = false;
+				mainTab.privateBox.visible = false;
+				mainTab.element4.visible = true;
+				settingsTab.sliderMicGain.value = 0.5;
+			}
+			if(droidstar.get_mode() === "IAX"){
+				mainTab.comboHost.visible = false;
+				mainTab.element1.text = "DTMF *";
+				mainTab.editIAXDTMF.visible = true;
+				mainTab.dtmfsendbutton.visible = true;
+				mainTab.comboModule.visible = false;
+				mainTab.element3.visible = false;
+				mainTab.dmrtgidEdit.visible = false;
+				mainTab.privateBox.visible = false;
+				mainTab.element4.visible = false;
+				settingsTab.sliderMicGain.value = 0.5;
+			}
+        }
+		function onUpdate_data() {
+			mainTab.data1.text = droidstar.get_data1();
+			mainTab.data2.text = droidstar.get_data2();
+			mainTab.data3.text = droidstar.get_data3();
+			mainTab.data4.text = droidstar.get_data4();
+			mainTab.data5.text = droidstar.get_data5();
+			mainTab.data6.text = droidstar.get_data6();
+			mainTab.status.text = droidstar.get_statustxt();
+			++mainTab.uitimer.rxcnt;
+        }
+		function onUpdate_settings() {
+			//console.log("update_settings comboHost == ", mainTab.comboHost.find(droidstar.get_host()));
+			//console.log("update_settings comboModule == ", mainTab.comboModule.find(droidstar.get_module()));
+			settingsTab.ipv6.checked = droidstar.get_ipv6();
+			settingsTab.xrf2ref.checked = droidstar.get_xrf2ref();
+			settingsTab.toggleTX.checked = droidstar.get_toggletx();
+            if(droidstar.get_mode() === "REF"){
+				mainTab.comboHost.currentIndex = mainTab.comboHost.find(droidstar.get_ref_host());
+            }
+            if(droidstar.get_mode() === "DCS"){
+				mainTab.comboHost.currentIndex = mainTab.comboHost.find(droidstar.get_dcs_host());
+            }
+            if(droidstar.get_mode() === "XRF"){
+				mainTab.comboHost.currentIndex = mainTab.comboHost.find(droidstar.get_xrf_host());
+            }
+            if(droidstar.get_mode() === "YSF"){
+				mainTab.comboHost.currentIndex = mainTab.comboHost.find(droidstar.get_ysf_host());
+            }
+			if(droidstar.get_mode() === "FCS"){
+				mainTab.comboHost.currentIndex = mainTab.comboHost.find(droidstar.get_fcs_host());
+			}
+            if(droidstar.get_mode() === "DMR"){
+				mainTab.comboHost.currentIndex = mainTab.comboHost.find(droidstar.get_dmr_host());
+            }
+            if(droidstar.get_mode() === "P25"){
+				mainTab.comboHost.currentIndex = mainTab.comboHost.find(droidstar.get_p25_host());
+            }
+            if(droidstar.get_mode() === "NXDN"){
+				mainTab.comboHost.currentIndex = mainTab.comboHost.find(droidstar.get_nxdn_host());
+            }
+			if(droidstar.get_mode() === "M17"){
+				mainTab.comboHost.currentIndex = mainTab.comboHost.find(droidstar.get_m17_host());
+			}
+			mainTab.comboModule.currentIndex = mainTab.comboModule.find(droidstar.get_module());
+			settingsTab.callsignEdit.text = droidstar.get_callsign();
+			settingsTab.dmridEdit.text = droidstar.get_dmrid();
+			settingsTab.comboEssid.currentIndex = settingsTab.comboEssid.find(droidstar.get_essid());
+			settingsTab.bmpwEdit.text = droidstar.get_bm_password();
+			settingsTab.tgifpwEdit.text = droidstar.get_tgif_password();
+			settingsTab.latEdit.text = droidstar.get_latitude();
+			settingsTab.lonEdit.text = droidstar.get_longitude();
+			settingsTab.locEdit.text = droidstar.get_location();
+			settingsTab.descEdit.text = droidstar.get_description();
+			settingsTab.urlEdit.text = droidstar.get_url();
+			settingsTab.swidEdit.text = droidstar.get_swid();
+			settingsTab.pkgidEdit.text = droidstar.get_pkgid();
+			settingsTab.dmroptsEdit.text = droidstar.get_dmr_options();
+			mainTab.dmrtgidEdit.text = droidstar.get_dmrtgid();
+			settingsTab.iaxuserEdit.text = droidstar.get_iax_user();
+			settingsTab.iaxpassEdit.text = droidstar.get_iax_pass();
+			settingsTab.iaxnodeEdit.text = droidstar.get_iax_node();
+			settingsTab.iaxhostEdit.text = droidstar.get_iax_host();
+			settingsTab.iaxportEdit.text = droidstar.get_iax_port();
+			settingsTab.mycallEdit.text = droidstar.get_mycall();
+			settingsTab.urcallEdit.text = droidstar.get_urcall();
+			settingsTab.rptr1Edit.text = droidstar.get_rptr1();
+			settingsTab.rptr2Edit.text = droidstar.get_rptr2();
+			settingsTab.txtimerEdit.text = droidstar.get_txtimeout();
+
+			settingsTab.modemRXFreqEdit.text = droidstar.get_modemRxFreq();
+			settingsTab.modemTXFreqEdit.text = droidstar.get_modemTxFreq();
+			settingsTab.modemRXOffsetEdit.text = droidstar.get_modemRxOffset();
+			settingsTab.modemTXOffsetEdit.text = droidstar.get_modemTxOffset();
+			settingsTab.modemRXDCOffsetEdit.text = droidstar.get_modemRxDCOffset();
+			settingsTab.modemTXDCOffsetEdit.text = droidstar.get_modemTxDCOffset();
+			settingsTab.modemRXLevelEdit.text = droidstar.get_modemRxLevel();
+			settingsTab.modemTXLevelEdit.text = droidstar.get_modemTxLevel();
+			settingsTab.modemRFLevelEdit.text = droidstar.get_modemRFLevel();
+			settingsTab.modemTXDelayEdit.text = droidstar.get_modemTxDelay();
+			settingsTab.modemCWIdTXLevelEdit.text = droidstar.get_modemCWIdTxLevel();
+			settingsTab.modemDStarTXLevelEdit.text = droidstar.get_modemDstarTxLevel();
+			settingsTab.modemDMRTXLevelEdit.text = droidstar.get_modemDMRTxLevel();
+			settingsTab.modemYSFTXLevelEdit.text = droidstar.get_modemYSFTxLevel();
+			settingsTab.modemP25TXLevelEdit.text = droidstar.get_modemP25TxLevel()
+			settingsTab.modemNXDNTXLevelEdit.text = droidstar.get_modemNXDNTxLevel();
+
+			hostsTab.hostsTextEdit.text = droidstar.get_local_hosts();
+        }
+		function onUpdate_log(s) {
+			logTab.logText.append(s);
+		}
+		function onConnect_status_changed(c) {
+			if(c === 0){
+				if(mainTab.buttonTX.tx){
+					mainTab.buttonTX.tx = false;
+					droidstar.tx_clicked(false);
+					mainTab.txtimer.running = false;
+					mainTab.btntxt.color = "black";
+					mainTab.btntxt.text = "TX";
+				}
+				mainTab.connectbutton.text = "Connect";
+				mainTab.comboMode.enabled = true;
+				mainTab.comboHost.enabled = true;
+				mainTab.comboModule.enabled = true;
+				mainTab.buttonTX.enabled = false;
+				mainTab.btntxt.color = "steelblue";
+				mainTab.data1.text = "";
+				mainTab.data2.text = "";
+				mainTab.data3.text = "";
+				mainTab.data4.text = "";
+				mainTab.data5.text = "";
+				mainTab.data6.text = "";
+				mainTab.status.text = "Not connected";
+            }
+			if(c === 1){
+				mainTab.connectbutton.text = "Connecting";
+				mainTab.comboMode.enabled = false;
+				mainTab.comboHost.enabled = false;
+				if(mainTab.comboMode.currentText != "REF"){
+					mainTab.comboModule.enabled = false;
+				}
+            }
+			if(c === 2){
+				mainTab.connectbutton.text = "Disconnect";
+				mainTab.comboMode.enabled = false;
+				mainTab.comboHost.enabled = false;
+
+				if(mainTab.comboMode.currentText != "REF"){
+					mainTab.comboModule.enabled = false;
+				}
+				if( (mainTab.comboMode.currentText == "REF") ||
+					(mainTab.comboMode.currentText == "DCS") ||
+					(mainTab.comboMode.currentText == "XRF"))
+				{
+					disclaimerDialog.open();
+				}
+				if(mainTab.comboMode.currentText === "YSF"){
+					settingsTab.m171600.checked = true;
+				}
+				if(mainTab.comboMode.currentText === "FCS"){
+					settingsTab.m171600.checked = true;
+				}
+				if(mainTab.comboMode.currentText === "M17"){
+					settingsTab.m173200.checked = true;
+				}
+
+				mainTab.buttonTX.enabled = true;
+				mainTab.btntxt.color = "black";
+				mainTab.agcBox.checked = true;
+			}
+			if(c === 3){
+				connectDialog.open();
+			}
+			if(c === 4){
+				idcheckDialog.open();
+				onConnect_status_changed(0);
+			}
+			if(c === 5){
+				errorDialog.text = droidstar.get_error_text();
+				errorDialog.open();
+				droidstar.onConnect_status_changed(0);
+			}
+		}
+	}
+}
