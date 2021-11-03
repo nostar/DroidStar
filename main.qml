@@ -55,9 +55,9 @@ ApplicationWindow {
 		text: "Check log tab for details"
 	}
 	MessageDialog {
-		id: disclaimerDialog
-		title: "D-Star WARNING"
-		text: "DroidStar should only be used to monitor D-Star reflectors.\nDO NOT USE DROIDSTAR FOR GENERAL DSTAR TX.\nListening to D-Star reflectors is fine.\nD-Star vocoder quality is not very good, so transmitting should\nonly be done for experimentation and development purposes.\n\nYOU HAVE BEEN WARNED!"
+		id: vocoderDialog
+		title: "No vocoder found"
+		text: "No hardware or software vocoder found for this mode. You can still connect, but you will not RX or TX any audio. See the project website (url on the About tab) for info on loading a sw vocoder, or use a USB AMBE dongle (and an OTG adapter on Android devices)"
 	}
 
 	TabBar {
@@ -405,6 +405,10 @@ ApplicationWindow {
 		function onUpdate_log(s) {
 			logTab.logText.append(s);
 		}
+		function onOpen_vocoder_dialog() {
+			vocoderDialog.open();
+		}
+
 		function onConnect_status_changed(c) {
 			if(c === 0){
 				if(mainTab.buttonTX.tx){

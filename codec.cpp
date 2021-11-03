@@ -59,7 +59,8 @@ Codec::Codec(QString callsign, char module, QString hostname, QString host, int 
 	m_modeinfo.frame_total = 0;
 	m_modeinfo.streamid = 0;
 	m_modeinfo.stream_state = STREAM_IDLE;
-	m_modeinfo.vocoder_loaded = false;
+	m_modeinfo.sw_vocoder_loaded = false;
+	m_modeinfo.hw_vocoder_loaded = false;
 #ifdef USE_FLITE
 	flite_init();
 	voice_slt = register_cmu_us_slt(nullptr);

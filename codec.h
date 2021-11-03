@@ -80,7 +80,8 @@ public:
 		int count;
 		uint32_t streamid;
 		bool mode;
-		bool vocoder_loaded;
+		bool sw_vocoder_loaded;
+		bool hw_vocoder_loaded;
 	} m_modeinfo;
 	enum{
 		DISCONNECTED,

@@ -124,15 +124,27 @@ void DroidStar::discover_devices()
 	}
 }
 
-void DroidStar::download_file(QString f)
+void DroidStar::download_file(QString f, bool u)
 {
-	HttpManager *http = new HttpManager(f);
+	qDebug() << "download_file() " << f << ":" << u;
+	HttpManager *http = new HttpManager(f, u);
 	QThread *httpThread = new QThread;
 	http->moveToThread(httpThread);
 	connect(httpThread, SIGNAL(started()), http, SLOT(process()));
-	connect(http, SIGNAL(file_downloaded(QString)), this, SLOT(file_downloaded(QString)));
+	if(u){
+		connect(http, SIGNAL(file_downloaded(QString)), this, SLOT(url_downloaded(QString)));
+	}
+	else{
+		connect(http, SIGNAL(file_downloaded(QString)), this, SLOT(file_downloaded(QString)));
+	}
 	connect(httpThread, SIGNAL(finished()), http, SLOT(deleteLater()));
 	httpThread->start();
+}
+
+void DroidStar::url_downloaded(QString url)
+{
+	qDebug() << "DudeStar::url_downloaded() " << url;
+	emit update_log("Downloaded " + url);
 }
 
 void DroidStar::file_downloaded(QString filename)
@@ -1349,7 +1361,7 @@ void DroidStar::update_ref_data(Codec::MODEINFO info)
 		if(m_rptr1.isEmpty()) set_rptr1(m_callsign + " " + m_module);
 		emit update_log("Connected to DStar " + m_host + " " + m_hostname + ":" + QString::number(m_port));
 
-		if(info.vocoder_loaded){
+		if(info.sw_vocoder_loaded){
 			emit update_log("Vocoder plugin loaded");
 		}
 		else{
@@ -1404,7 +1416,7 @@ void DroidStar::update_dcs_data(Codec::MODEINFO info)
 		if(m_rptr1.isEmpty()) set_rptr1(m_callsign + " " + m_module);
 		emit update_log("Connected to DStar " + m_host + " " + m_hostname + ":" + QString::number(m_port));
 
-		if(info.vocoder_loaded){
+		if(info.sw_vocoder_loaded){
 			emit update_log("Vocoder plugin loaded");
 		}
 		else{
@@ -1460,7 +1472,7 @@ void DroidStar::update_xrf_data(Codec::MODEINFO info)
 		if(m_rptr1.isEmpty()) set_rptr1(m_callsign + " " + m_module);
 		emit update_log("Connected to DStar " + m_host + " " + m_hostname + ":" + QString::number(m_port));
 
-		if(info.vocoder_loaded){
+		if(info.sw_vocoder_loaded){
 			emit update_log("Vocoder plugin loaded");
 		}
 		else{
@@ -1507,7 +1519,7 @@ void DroidStar::update_nxdn_data(Codec::MODEINFO info)
 		emit swrx_state(!m_nxdn->get_hwrx());
 		emit update_log("Connected to " + m_protocol + " " + m_host + " " + m_hostname + ":" + QString::number(m_port));
 
-		if(info.vocoder_loaded){
+		if(info.sw_vocoder_loaded){
 			emit update_log("Vocoder plugin loaded");
 		}
 		else{
@@ -1570,7 +1582,7 @@ void DroidStar::update_dmr_data(Codec::MODEINFO info)
 		emit swrx_state(!m_dmr->get_hwrx());
 		emit update_log("Connected to " + m_protocol + " " + m_host + " " + m_hostname + ":" + QString::number(m_port));
 
-		if(info.vocoder_loaded){
+		if(info.sw_vocoder_loaded){
 			emit update_log("Vocoder plugin loaded");
 		}
 		else{
@@ -1620,11 +1632,14 @@ void DroidStar::update_ysf_data(Codec::MODEINFO info)
 		emit swrx_state(!m_ysf->get_hwrx());
 		emit update_log("Connected to " + m_protocol + " " + m_host + " " + m_hostname + ":" + QString::number(m_port));
 
-		if(info.vocoder_loaded){
+		if(info.sw_vocoder_loaded){
 			emit update_log("Vocoder plugin loaded");
 		}
 		else{
 			emit update_log("No vocoder plugin found");
+			if(!info.hw_vocoder_loaded) {
+				emit open_vocoder_dialog();
+			}
 		}
 	}
 	m_statustxt = "Host: " + m_hostname + ":" + QString::number(m_port) + " Cnt: " + QString::number(info.count);

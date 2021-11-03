@@ -41,6 +41,7 @@ Item {
 						   "\nPlatform:\t" + droidstar.get_platform() +
 						   "\nArchitecture:\t" + droidstar.get_arch() +
 						   "\nBuild ABI:\t" + droidstar.get_build_abi() +
+						   "\n\nProject page: https://github.com/nostar/DroidStar" +
 						   "\n\nCopyright (C) 2019-2021 Doug McLain AD8DP\n" +
 							"This program is free software; " +
 							"you can redistribute it and/or modify it under the terms of the GNU General " +

@@ -43,6 +43,7 @@ signals:
 	void module_changed(char);
 	void update_data();
 	void update_log(QString);
+	void open_vocoder_dialog();
 	void update_settings();
 	void connect_status_changed(int c);
 	void in_audio_vol_changed(qreal);
@@ -233,8 +234,9 @@ public slots:
 	QString get_build_abi() { return QSysInfo::buildAbi(); }
 	QString get_software_build() { return VERSION_NUMBER; }
 
-	void download_file(QString);
+	void download_file(QString, bool u = false);
 	void file_downloaded(QString);
+	void url_downloaded(QString);
 	unsigned short get_output_level(){ return m_outlevel; }
 	void set_output_level(unsigned short l){ m_outlevel = l; }
 private:

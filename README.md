@@ -17,16 +17,18 @@ There is a vocoder plugin API available for loading of vocoder software.  Any vo
 
 # Loading a vocoder plugin
 A vocoder plugin is placed in the standard Download location for the given platform:
-Linux: ~/Downloads
-MacOS: ~/Downloads
-Windows: C:/Users/<USER>/Documents
-Android: /storage/emulated/0/Download (typically referred to as Internal storage -> Download
+- Linux: ~/Downloads
+- MacOS: ~/Downloads
+- Windows: C:/Users/User/Documents
+- Android: /storage/emulated/0/Download (typically referred to as Internal storage -> Download
 
-The vocoder plugin filename must be named vocoder_plugin.<platform>.<arch> where platform and arch can be any of the following:
+A vocoder can also be downloaded from a URL.  Add a full http url, including the filename, to the Vocoder URL option on the settings tab, and click the Download vocoder button.
+
+The vocoder plugin filename must be named vocoder_plugin.platform.arch where platform and arch can be any of the following:
 platform: linux, darwin, winnt, android, ios
 arch: x86_64, arm, arm64
 
-There are no software vocoder plugins available in this repository.
+There are no software vocoder plugins available in this repository, and I have no information on obtaining one.  DONT ASK!
 
 # Optional FLite Text-to-speech build
 I added Flite TTS TX capability so I didn't have to talk to myself all of the time during development and testing.  To build DroidStar with Flite TTS support, uncomment the line 'DEFINES += USE_FLITE' from the top of DroidStar.pro (and run/re-run qmake). You will need the Flite library and development header files installed on your system.  When built with Flite support, 3 TTS options and a Mic in option will be available at the bottom of the window.  TTS1-TTS3 are 3 voice choices, and Mic in turns off TTS and uses the microphone for input.  The text to be converted to speech and transmitted goes in the text box under the TTS options.

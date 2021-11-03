@@ -17,11 +17,12 @@
 
 #include "httpmanager.h"
 
-HttpManager::HttpManager(QString f) : QObject(nullptr)
+HttpManager::HttpManager(QString f, bool u) : QObject(nullptr)
 {
 	m_qnam = new QNetworkAccessManager(this);
 	QObject::connect(m_qnam, SIGNAL(finished(QNetworkReply*)), this, SLOT(http_finished(QNetworkReply*)));
 	m_config_path = QStandardPaths::writableLocation(QStandardPaths::ConfigLocation);
+	m_url = u;
 #if !defined(Q_OS_ANDROID) && !defined(Q_OS_WIN)
 	m_config_path += "/dudetronics";
 #endif
@@ -31,13 +32,16 @@ HttpManager::HttpManager(QString f) : QObject(nullptr)
 void HttpManager::process()
 {
 	QMetaObject::invokeMethod(this,"doRequest");
-	//qDebug() << "process() called";
-	//send to the event loop
 }
 
 void HttpManager::doRequest()
 {
-	m_qnam->get(QNetworkRequest(QUrl("http://www.dudetronics.com/ar-dns" + m_filename)));
+	if(m_url){
+		m_qnam->get(QNetworkRequest(QUrl(m_filename)));
+	}
+	else{
+		m_qnam->get(QNetworkRequest(QUrl("http://www.dudetronics.com/ar-dns" + m_filename)));
+	}
 	//qDebug() << "doRequest() called m_filename == " << m_filename;
 }
 
@@ -51,7 +55,13 @@ void HttpManager::http_finished(QNetworkReply *reply)
 		return;
 	}
 	else{
+		if(m_url){
+			QStringList l = m_filename.split('/');
+			m_filename = "/" + l.at(l.size() - 1);
+		}
+		qDebug() << "m_filename = " << m_filename;
 		QFile *hosts_file = new QFile(m_config_path + m_filename);
+		qDebug() << "m_config_path + m_filename = " << m_config_path + m_filename;
 		hosts_file->open(QIODevice::WriteOnly);
 		QFileInfo fileInfo(hosts_file->fileName());
 		QString filename(fileInfo.fileName());

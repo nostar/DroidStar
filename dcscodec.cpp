@@ -67,10 +67,11 @@ void DCSCodec::process_udp()
 	if( (m_modeinfo.status == CONNECTING) && (size == 14) && (!memcmp(buf.data()+10, "ACK", 3)) ){
 		qDebug() << "Connected to DCS";
 		m_modeinfo.status = CONNECTED_RW;
-		m_modeinfo.vocoder_loaded = load_vocoder_plugin();
+		m_modeinfo.sw_vocoder_loaded = load_vocoder_plugin();
 		if(m_vocoder != ""){
 			m_hwrx = true;
 			m_hwtx = true;
+			m_modeinfo.hw_vocoder_loaded = true;
 			m_ambedev = new SerialAMBE("DCS");
 			m_ambedev->connect_to_serial(m_vocoder);
 			connect(m_ambedev, SIGNAL(data_ready()), this, SLOT(get_ambe()));
@@ -412,7 +413,7 @@ void DCSCodec::transmit()
 		}
 	}
 	else{
-		if(m_modeinfo.vocoder_loaded){
+		if(m_modeinfo.sw_vocoder_loaded){
 			m_mbevocoder->encode_2400x1200(pcm, ambe);
 		}
 		send_frame(ambe);
@@ -588,7 +589,7 @@ void DCSCodec::process_rx_data()
 			}
 		}
 		else{
-			if(m_modeinfo.vocoder_loaded){
+			if(m_modeinfo.sw_vocoder_loaded){
 				m_mbevocoder->decode_2400x1200(pcm, ambe);
 			}
 			else{

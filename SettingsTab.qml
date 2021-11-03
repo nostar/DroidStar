@@ -73,8 +73,8 @@ Item {
 	Flickable {
 		anchors.fill: parent
 		contentWidth: parent.width
-		contentHeight: _modemNXDNTXLevelLabel.y +
-					   _modemNXDNTXLevelLabel.height + 10
+		contentHeight: vocoderButton.y +
+					   vocoderButton.height + 10
 		flickableDirection: Flickable.VerticalFlick
 		clip: true
 
@@ -505,17 +505,6 @@ Item {
 			onClicked: {
 				droidstar.update_dmr_ids()
 				updateDialog.open()
-			}
-		}
-		Button {
-			id: vocoderButton
-			x: 10
-			y: 670
-			width: 150
-			height: 30
-			text: qsTr("Vocoder Plugin")
-			onClicked: {
-				//vocoderDialog.open()
 			}
 		}
 		Text {
@@ -1025,6 +1014,36 @@ Item {
 			height: 25
 			selectByMouse: true
 			inputMethodHints: "ImhPreferNumbers"
+		}
+		Text {
+			id: _vocoderURLlabel
+			x: 10
+			y: 1550
+			width: 80
+			height: 25
+			text: qsTr("Vocoder URL")
+			color: "white"
+			verticalAlignment: Text.AlignVCenter
+		}
+		TextField {
+			id: _vocoderURLEdit
+			x: 100
+			y: 1550
+			width: parent.width - 110
+			height: 25
+			selectByMouse: true
+		}
+		Button {
+			id: vocoderButton
+			x: 10
+			y: 1580
+			width: 150
+			height: 30
+			text: qsTr("Download vocoder")
+			onClicked: {
+				droidstar.download_file(_vocoderURLEdit.text, true);
+				updateDialog.open();
+			}
 		}
 	}
 }

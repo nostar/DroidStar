@@ -25,7 +25,7 @@ class HttpManager : public QObject
 {
 	Q_OBJECT
 public:
-	explicit HttpManager(QString);
+	explicit HttpManager(QString, bool u = false);
 	//void start_request(QString file);
 
 signals:
@@ -35,6 +35,7 @@ private:
 	QString m_filename;
 	QString m_config_path;
 	QNetworkAccessManager *m_qnam;
+	bool m_url;
 
 private slots:
 	void process();

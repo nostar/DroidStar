@@ -308,7 +308,7 @@ void DMRCodec::setup_connection()
 {
 	m_modeinfo.status = CONNECTED_RW;
 	//m_mbeenc->set_gain_adjust(2.5);
-	m_modeinfo.vocoder_loaded = load_vocoder_plugin();
+	m_modeinfo.sw_vocoder_loaded = load_vocoder_plugin();
 	m_txtimer = new QTimer();
 	connect(m_txtimer, SIGNAL(timeout()), this, SLOT(transmit()));
 	m_rxtimer = new QTimer();
@@ -319,6 +319,7 @@ void DMRCodec::setup_connection()
 	if(m_vocoder != ""){
 		m_hwrx = true;
 		m_hwtx = true;
+		m_modeinfo.hw_vocoder_loaded = true;
 		m_ambedev = new SerialAMBE("DMR");
 		m_ambedev->connect_to_serial(m_vocoder);
 		connect(m_ambedev, SIGNAL(data_ready()), this, SLOT(get_ambe()));
@@ -483,7 +484,7 @@ void DMRCodec::transmit()
 		m_ambedev->encode(pcm);
 	}
 	else{
-		if(m_modeinfo.vocoder_loaded){
+		if(m_modeinfo.sw_vocoder_loaded){
 			m_mbevocoder->encode_2450x1150(pcm, ambe);
 		}
 		for(int i = 0; i < 9; ++i){
@@ -958,7 +959,7 @@ void DMRCodec::process_rx_data()
 			}
 		}
 		else{
-			if(m_modeinfo.vocoder_loaded){
+			if(m_modeinfo.sw_vocoder_loaded){
 				m_mbevocoder->decode_2450x1150(pcm, ambe);
 			}
 			else{
