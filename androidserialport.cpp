@@ -64,6 +64,7 @@ int AndroidSerialPort::write(char *data, int s)
 	jbyteArray buffer = env->NewByteArray(s);
 	env->SetByteArrayRegion(buffer, 0, s, (jbyte *)data);
 	serialJavaObject.callMethod<void>("write", "([B)V", buffer);
+	env->DeleteLocalRef(buffer);
 	return 0;
 }
 
@@ -73,6 +74,7 @@ int AndroidSerialPort::write(QByteArray data)
 	jbyteArray buffer = env->NewByteArray(data.size());
 	env->SetByteArrayRegion(buffer, 0, data.size(), (jbyte *)data.data());
 	serialJavaObject.callMethod<void>("write", "([B)V", buffer);
+	env->DeleteLocalRef(buffer);
 	return 0;
 }
 

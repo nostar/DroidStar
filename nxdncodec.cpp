@@ -282,7 +282,6 @@ void NXDNCodec::send_disconnect()
 
 void NXDNCodec::transmit()
 {
-	uint8_t ambe_frame[49];
 	uint8_t ambe[7];
 	int16_t pcm[160];
 
@@ -314,13 +313,11 @@ void NXDNCodec::transmit()
 	}
 	else{
 		if(m_modeinfo.sw_vocoder_loaded){
-			m_mbevocoder->encode_2450(pcm, ambe_frame);
+			m_mbevocoder->encode_2450(pcm, ambe);
 		}
+		ambe[6] &= 0x80;
+
 		for(int i = 0; i < 7; ++i){
-			for(int j = 0; j < 8; ++j){
-				ambe[i] |= (ambe_frame[(i*8)+j] << (7-j));
-			}
-			ambe[6] &= 0x80;
 			m_txcodecq.append(ambe[i]);
 		}
 	}
