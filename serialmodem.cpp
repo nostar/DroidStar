@@ -20,7 +20,7 @@
 #include <QDebug>
 #include "serialmodem.h"
 
-//#define DEBUGHW
+#define DEBUGHW
 #define ENDLINE "\n"
 
 const unsigned char MODE_IDLE    = 0U;
@@ -278,18 +278,35 @@ void SerialModem::process_modem()
 		const uint8_t r = (uint8_t)m_serialdata[2];
 		const uint8_t s = (uint8_t)m_serialdata[1];
 
-		if(m_serialdata.size() >= m_serialdata[1]){
+		if(r == MMDVM_NAK){
+			qDebug() << "Received MMDVM_NAK";
 			for(int i = 0; i < s; ++i){
-				out.append(m_serialdata.dequeue());
+				m_serialdata.dequeue();
 			}
-			emit modem_data_ready(out);
 		}
 
-		if(r == MMDVM_GET_VERSION){
+		else if(r == MMDVM_ACK){
+			qDebug() << "Received MMDVM_ACK";
+			for(int i = 0; i < s; ++i){
+				m_serialdata.dequeue();
+			}
+		}
+
+		else if(r == MMDVM_GET_VERSION){
 			QThread::msleep(100);
 			set_freq();
 			QThread::msleep(100);
 			set_config();
+			for(int i = 0; i < s; ++i){
+				m_serialdata.dequeue();
+			}
+		}
+
+		else if(m_serialdata.size() >= m_serialdata[1]){
+			for(int i = 0; i < s; ++i){
+				out.append(m_serialdata.dequeue());
+			}
+			emit modem_data_ready(out);
 		}
 	}
 }

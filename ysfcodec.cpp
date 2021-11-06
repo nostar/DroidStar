@@ -1276,6 +1276,7 @@ void YSFCodec::process_rx_data()
 	int16_t pcm[160];
 	uint8_t ambe[7];
 	uint8_t imbe[11];
+	static uint8_t cnt = 0;
 
 	if(m_rxwatchdog++ > 20){
 		qDebug() << "YSF RX stream timeout ";
@@ -1284,7 +1285,7 @@ void YSFCodec::process_rx_data()
 		emit update(m_modeinfo);
 	}
 
-	if(m_rxmodemq.size() > 2){
+	if((m_rxmodemq.size() > 2) && (++cnt >= 5)){
 		QByteArray out;
 		int s = m_rxmodemq[1];
 		if((m_rxmodemq[0] == 0xe0) && (m_rxmodemq.size() >= s)){
@@ -1293,6 +1294,7 @@ void YSFCodec::process_rx_data()
 			}
 			m_modem->write(out);
 		}
+		cnt = 0;
 	}
 
 	if(m_modeinfo.type == 3){

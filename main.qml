@@ -448,12 +448,6 @@ ApplicationWindow {
 				if(mainTab.comboMode.currentText != "REF"){
 					mainTab.comboModule.enabled = false;
 				}
-				if( (mainTab.comboMode.currentText == "REF") ||
-					(mainTab.comboMode.currentText == "DCS") ||
-					(mainTab.comboMode.currentText == "XRF"))
-				{
-					disclaimerDialog.open();
-				}
 				if(mainTab.comboMode.currentText === "YSF"){
 					settingsTab.m171600.checked = true;
 				}

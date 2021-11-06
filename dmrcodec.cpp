@@ -925,6 +925,7 @@ void DMRCodec::process_rx_data()
 {
 	int16_t pcm[160];
 	uint8_t ambe[9];
+	static uint8_t cnt = 0;
 
 	if(m_rxwatchdog++ > 100){
 		qDebug() << "DMR RX stream timeout ";
@@ -935,7 +936,7 @@ void DMRCodec::process_rx_data()
 		m_modeinfo.streamid = 0;
 	}
 
-	if(m_rxmodemq.size() > 2){
+	if((m_rxmodemq.size() > 2) && (++cnt >= 3)){
 		QByteArray out;
 		int s = m_rxmodemq[1];
 		if((m_rxmodemq[0] == 0xe0) && (m_rxmodemq.size() >= s)){
@@ -944,6 +945,7 @@ void DMRCodec::process_rx_data()
 			}
 			m_modem->write(out);
 		}
+		cnt = 0;
 	}
 
 	if((!m_tx) && (m_rxcodecq.size() > 8) ){
