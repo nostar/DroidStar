@@ -37,14 +37,25 @@ public:
 	CCodec2 *m_c2;
 private slots:
 	void process_udp();
+	void process_modem_data(QByteArray);
+	void send_modem_data(QByteArray);
 	void send_ping();
 	void send_disconnect();
 	void toggle_tx(bool);
 	void start_tx();
 	void transmit();
 	void hostname_lookup(QHostInfo i);
+	void mmdvm_direct_connect();
 	void rate_changed(int r) { m_txrate = r; }
 	void process_rx_data();
+	void splitFragmentLICH(const uint8_t*, uint32_t&, uint32_t&, uint32_t&, uint32_t&);
+	void combineFragmentLICH(uint32_t, uint32_t, uint32_t, uint32_t, uint8_t*);
+	void combineFragmentLICHFEC(uint32_t, uint32_t, uint32_t, uint32_t, uint8_t*);
+	void interleave(uint8_t *, uint8_t *);
+	void decorrelate(uint8_t *, uint8_t *);
+	bool checkCRC16(const uint8_t* in, uint32_t nBytes);
+	void encodeCRC16(uint8_t* in, uint32_t nBytes);
+	uint16_t createCRC16(const uint8_t* in, uint32_t nBytes);
 private:
 	int m_txrate;
 };

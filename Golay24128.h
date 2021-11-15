@@ -27,6 +27,9 @@ public:
 	static unsigned int decode23127(unsigned int code);
 	static unsigned int decode24128(unsigned int code);
 	static unsigned int decode24128(unsigned char* bytes);
+	static bool decode24128(unsigned int in, unsigned int& out);
+	static bool decode24128(unsigned char* in, unsigned int& out);
+	static unsigned int countBits(unsigned int v);
 };
 
 #endif

@@ -72,7 +72,7 @@ QMap<QString, QString> SerialAMBE::discover_devices()
 				+ "Product Identifier: " + (serialPortInfo.hasProductIdentifier() ? QByteArray::number(serialPortInfo.productIdentifier(), 16) : blankString) + ENDLINE
 				+ "Busy: " + (serialPortInfo.isBusy() ? "Yes" : "No") + ENDLINE;
 			fprintf(stderr, "%s", out.toStdString().c_str());fflush(stderr);
-			if((!serialPortInfo.description().isEmpty()) && (!serialPortInfo.isBusy())){
+			if(!serialPortInfo.isBusy()){
 				//devlist[serialPortInfo.systemLocation()] = serialPortInfo.portName() + " - " + serialPortInfo.manufacturer() + " " + serialPortInfo.description() + " - " + serialPortInfo.serialNumber();
 				devlist[serialPortInfo.systemLocation()] = serialPortInfo.systemLocation() + ":" + serialPortInfo.description();
 			}

@@ -1,5 +1,6 @@
 /*
 	Copyright (C) 2019-2021 Doug McLain
+	Copyright (C) 2020,2021 Jonathan Naylor, G4KLX
 
 	This program is free software: you can redistribute it and/or modify
 	it under the terms of the GNU General Public License as published by
@@ -18,9 +19,68 @@
 #include <cstring>
 #include <iostream>
 #include "m17codec.h"
+#include "M17Defines.h"
+#include "M17Convolution.h"
+#include "Golay24128.h"
+
 #define M17CHARACTERS " ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-/."
 
-#define DEBUG
+//#define DEBUG
+
+const uint8_t SCRAMBLER[] = {
+	0x00U, 0x00U, 0xD6U, 0xB5U, 0xE2U, 0x30U, 0x82U, 0xFFU, 0x84U, 0x62U, 0xBAU, 0x4EU, 0x96U, 0x90U, 0xD8U, 0x98U, 0xDDU,
+	0x5DU, 0x0CU, 0xC8U, 0x52U, 0x43U, 0x91U, 0x1DU, 0xF8U, 0x6EU, 0x68U, 0x2FU, 0x35U, 0xDAU, 0x14U, 0xEAU, 0xCDU, 0x76U,
+	0x19U, 0x8DU, 0xD5U, 0x80U, 0xD1U, 0x33U, 0x87U, 0x13U, 0x57U, 0x18U, 0x2DU, 0x29U, 0x78U, 0xC3U};
+
+const uint32_t INTERLEAVER[] = {
+	0U, 137U, 90U, 227U, 180U, 317U, 270U, 39U, 360U, 129U, 82U, 219U, 172U, 309U, 262U, 31U, 352U, 121U, 74U, 211U, 164U,
+	301U, 254U, 23U, 344U, 113U, 66U, 203U, 156U, 293U, 246U, 15U, 336U, 105U, 58U, 195U, 148U, 285U, 238U, 7U, 328U, 97U,
+	50U, 187U, 140U, 277U, 230U, 367U, 320U, 89U, 42U, 179U, 132U, 269U, 222U, 359U, 312U, 81U, 34U, 171U, 124U, 261U, 214U,
+	351U, 304U, 73U, 26U, 163U, 116U, 253U, 206U, 343U, 296U, 65U, 18U, 155U, 108U, 245U, 198U, 335U, 288U, 57U, 10U, 147U,
+	100U, 237U, 190U, 327U, 280U, 49U, 2U, 139U, 92U, 229U, 182U, 319U, 272U, 41U, 362U, 131U, 84U, 221U, 174U, 311U, 264U,
+	33U, 354U, 123U, 76U, 213U, 166U, 303U, 256U, 25U, 346U, 115U, 68U, 205U, 158U, 295U, 248U, 17U, 338U, 107U, 60U, 197U,
+	150U, 287U, 240U, 9U, 330U, 99U, 52U, 189U, 142U, 279U, 232U, 1U, 322U, 91U, 44U, 181U, 134U, 271U, 224U, 361U, 314U, 83U,
+	36U, 173U, 126U, 263U, 216U, 353U, 306U, 75U, 28U, 165U, 118U, 255U, 208U, 345U, 298U, 67U, 20U, 157U, 110U, 247U, 200U,
+	337U, 290U, 59U, 12U, 149U, 102U, 239U, 192U, 329U, 282U, 51U, 4U, 141U, 94U, 231U, 184U, 321U, 274U, 43U, 364U, 133U, 86U,
+	223U, 176U, 313U, 266U, 35U, 356U, 125U, 78U, 215U, 168U, 305U, 258U, 27U, 348U, 117U, 70U, 207U, 160U, 297U, 250U, 19U,
+	340U, 109U, 62U, 199U, 152U, 289U, 242U, 11U, 332U, 101U, 54U, 191U, 144U, 281U, 234U, 3U, 324U, 93U, 46U, 183U, 136U, 273U,
+	226U, 363U, 316U, 85U, 38U, 175U, 128U, 265U, 218U, 355U, 308U, 77U, 30U, 167U, 120U, 257U, 210U, 347U, 300U, 69U, 22U,
+	159U, 112U, 249U, 202U, 339U, 292U, 61U, 14U, 151U, 104U, 241U, 194U, 331U, 284U, 53U, 6U, 143U, 96U, 233U, 186U, 323U,
+	276U, 45U, 366U, 135U, 88U, 225U, 178U, 315U, 268U, 37U, 358U, 127U, 80U, 217U, 170U, 307U, 260U, 29U, 350U, 119U, 72U,
+	209U, 162U, 299U, 252U, 21U, 342U, 111U, 64U, 201U, 154U, 291U, 244U, 13U, 334U, 103U, 56U, 193U, 146U, 283U, 236U, 5U,
+	326U, 95U, 48U, 185U, 138U, 275U, 228U, 365U, 318U, 87U, 40U, 177U, 130U, 267U, 220U, 357U, 310U, 79U, 32U, 169U, 122U,
+	259U, 212U, 349U, 302U, 71U, 24U, 161U, 114U, 251U, 204U, 341U, 294U, 63U, 16U, 153U, 106U, 243U, 196U, 333U, 286U, 55U,
+	8U, 145U, 98U, 235U, 188U, 325U, 278U, 47U};
+
+const uint16_t CRC16_TABLE[] = {0x0000U, 0x5935U, 0xB26AU, 0xEB5FU, 0x3DE1U, 0x64D4U, 0x8F8BU, 0xD6BEU, 0x7BC2U, 0x22F7U, 0xC9A8U,
+				   0x909DU, 0x4623U, 0x1F16U, 0xF449U, 0xAD7CU, 0xF784U, 0xAEB1U, 0x45EEU, 0x1CDBU, 0xCA65U, 0x9350U,
+				   0x780FU, 0x213AU, 0x8C46U, 0xD573U, 0x3E2CU, 0x6719U, 0xB1A7U, 0xE892U, 0x03CDU, 0x5AF8U, 0xB63DU,
+				   0xEF08U, 0x0457U, 0x5D62U, 0x8BDCU, 0xD2E9U, 0x39B6U, 0x6083U, 0xCDFFU, 0x94CAU, 0x7F95U, 0x26A0U,
+				   0xF01EU, 0xA92BU, 0x4274U, 0x1B41U, 0x41B9U, 0x188CU, 0xF3D3U, 0xAAE6U, 0x7C58U, 0x256DU, 0xCE32U,
+				   0x9707U, 0x3A7BU, 0x634EU, 0x8811U, 0xD124U, 0x079AU, 0x5EAFU, 0xB5F0U, 0xECC5U, 0x354FU, 0x6C7AU,
+				   0x8725U, 0xDE10U, 0x08AEU, 0x519BU, 0xBAC4U, 0xE3F1U, 0x4E8DU, 0x17B8U, 0xFCE7U, 0xA5D2U, 0x736CU,
+				   0x2A59U, 0xC106U, 0x9833U, 0xC2CBU, 0x9BFEU, 0x70A1U, 0x2994U, 0xFF2AU, 0xA61FU, 0x4D40U, 0x1475U,
+				   0xB909U, 0xE03CU, 0x0B63U, 0x5256U, 0x84E8U, 0xDDDDU, 0x3682U, 0x6FB7U, 0x8372U, 0xDA47U, 0x3118U,
+				   0x682DU, 0xBE93U, 0xE7A6U, 0x0CF9U, 0x55CCU, 0xF8B0U, 0xA185U, 0x4ADAU, 0x13EFU, 0xC551U, 0x9C64U,
+				   0x773BU, 0x2E0EU, 0x74F6U, 0x2DC3U, 0xC69CU, 0x9FA9U, 0x4917U, 0x1022U, 0xFB7DU, 0xA248U, 0x0F34U,
+				   0x5601U, 0xBD5EU, 0xE46BU, 0x32D5U, 0x6BE0U, 0x80BFU, 0xD98AU, 0x6A9EU, 0x33ABU, 0xD8F4U, 0x81C1U,
+				   0x577FU, 0x0E4AU, 0xE515U, 0xBC20U, 0x115CU, 0x4869U, 0xA336U, 0xFA03U, 0x2CBDU, 0x7588U, 0x9ED7U,
+				   0xC7E2U, 0x9D1AU, 0xC42FU, 0x2F70U, 0x7645U, 0xA0FBU, 0xF9CEU, 0x1291U, 0x4BA4U, 0xE6D8U, 0xBFEDU,
+				   0x54B2U, 0x0D87U, 0xDB39U, 0x820CU, 0x6953U, 0x3066U, 0xDCA3U, 0x8596U, 0x6EC9U, 0x37FCU, 0xE142U,
+				   0xB877U, 0x5328U, 0x0A1DU, 0xA761U, 0xFE54U, 0x150BU, 0x4C3EU, 0x9A80U, 0xC3B5U, 0x28EAU, 0x71DFU,
+				   0x2B27U, 0x7212U, 0x994DU, 0xC078U, 0x16C6U, 0x4FF3U, 0xA4ACU, 0xFD99U, 0x50E5U, 0x09D0U, 0xE28FU,
+				   0xBBBAU, 0x6D04U, 0x3431U, 0xDF6EU, 0x865BU, 0x5FD1U, 0x06E4U, 0xEDBBU, 0xB48EU, 0x6230U, 0x3B05U,
+				   0xD05AU, 0x896FU, 0x2413U, 0x7D26U, 0x9679U, 0xCF4CU, 0x19F2U, 0x40C7U, 0xAB98U, 0xF2ADU, 0xA855U,
+				   0xF160U, 0x1A3FU, 0x430AU, 0x95B4U, 0xCC81U, 0x27DEU, 0x7EEBU, 0xD397U, 0x8AA2U, 0x61FDU, 0x38C8U,
+				   0xEE76U, 0xB743U, 0x5C1CU, 0x0529U, 0xE9ECU, 0xB0D9U, 0x5B86U, 0x02B3U, 0xD40DU, 0x8D38U, 0x6667U,
+				   0x3F52U, 0x922EU, 0xCB1BU, 0x2044U, 0x7971U, 0xAFCFU, 0xF6FAU, 0x1DA5U, 0x4490U, 0x1E68U, 0x475DU,
+				   0xAC02U, 0xF537U, 0x2389U, 0x7ABCU, 0x91E3U, 0xC8D6U, 0x65AAU, 0x3C9FU, 0xD7C0U, 0x8EF5U, 0x584BU,
+				   0x017EU, 0xEA21U, 0xB314U};
+
+const uint8_t BIT_MASK_TABLE[] = {0x80U, 0x40U, 0x20U, 0x10U, 0x08U, 0x04U, 0x02U, 0x01U};
+
+#define WRITE_BIT(p,i,b) p[(i)>>3] = (b) ? (p[(i)>>3] | BIT_MASK_TABLE[(i)&7]) : (p[(i)>>3] & ~BIT_MASK_TABLE[(i)&7])
+#define READ_BIT(p,i)    (p[(i)>>3] & BIT_MASK_TABLE[(i)&7])
 
 M17Codec::M17Codec(QString callsign, char module, QString hostname, QString host, int port, bool ipv6, QString modem, QString audioin, QString audioout) :
 	Codec(callsign, module, hostname, host, port, ipv6, NULL, modem, audioin, audioout),
@@ -107,7 +167,7 @@ void M17Codec::process_udp()
 #ifdef DEBUG
 	fprintf(stderr, "RECV: ");
 	for(int i = 0; i < buf.size(); ++i){
-		fprintf(stderr, "%02x ", (unsigned char)buf.data()[i]);
+		fprintf(stderr, "%02x ", (uint8_t)buf.data()[i]);
 	}
 	fprintf(stderr, "\n");
 	fflush(stderr);
@@ -118,6 +178,15 @@ void M17Codec::process_udp()
 	if((buf.size() == 4) && (::memcmp(buf.data(), "ACKN", 4U) == 0)){
 		if(m_modeinfo.status == CONNECTING){
 			m_modeinfo.status = CONNECTED_RW;
+
+			if(m_modemport != ""){
+				m_modem = new SerialModem("M17");
+				m_modem->set_modem_flags(m_rxInvert, m_txInvert, m_pttInvert, m_useCOSAsLockout, m_duplex);
+				m_modem->set_modem_params(m_rxfreq, m_txfreq, m_txDelay, m_rxLevel, m_rfLevel, m_ysfTXHang, m_cwIdTXLevel, m_dstarTXLevel, m_dmrTXLevel, m_ysfTXLevel, m_p25TXLevel, m_nxdnTXLevel, m_pocsagTXLevel, m_m17TXLevel);
+				m_modem->connect_to_serial(m_modemport);
+				connect(m_modem, SIGNAL(modem_data_ready(QByteArray)), this, SLOT(process_modem_data(QByteArray)));
+			}
+
 			m_c2 = new CCodec2(true);
 			m_txtimer = new QTimer();
 			connect(m_txtimer, SIGNAL(timeout()), this, SLOT(transmit()));
@@ -203,6 +272,9 @@ void M17Codec::process_udp()
 		else{
 			emit update(m_modeinfo);
 		}
+		if(m_modem){
+			send_modem_data(buf);
+		}
 	}
 	//emit update(m_modeinfo);
 }
@@ -230,12 +302,38 @@ void M17Codec::hostname_lookup(QHostInfo i)
 #ifdef DEBUG
 		fprintf(stderr, "CONN: ");
 		for(int i = 0; i < out.size(); ++i){
-			fprintf(stderr, "%02x ", (unsigned char)out.data()[i]);
+			fprintf(stderr, "%02x ", (uint8_t)out.data()[i]);
 		}
 		fprintf(stderr, "\n");
 		fflush(stderr);
 #endif
 	}
+}
+
+void M17Codec::mmdvm_direct_connect()
+{
+	if(m_modemport != ""){
+		m_modem = new SerialModem("M17");
+		m_modem->set_modem_flags(m_rxInvert, m_txInvert, m_pttInvert, m_useCOSAsLockout, m_duplex);
+		m_modem->set_modem_params(m_rxfreq, m_txfreq, m_txDelay, m_rxLevel, m_rfLevel, m_ysfTXHang, m_cwIdTXLevel, m_dstarTXLevel, m_dmrTXLevel, m_ysfTXLevel, m_p25TXLevel, m_nxdnTXLevel, m_pocsagTXLevel, m_m17TXLevel);
+		m_modem->connect_to_serial(m_modemport);
+		connect(m_modem, SIGNAL(modem_data_ready(QByteArray)), this, SLOT(process_modem_data(QByteArray)));
+		if(m_modeinfo.status == CONNECTING){
+			m_modeinfo.status = CONNECTED_RW;
+		}
+	}
+	else{
+		qDebug() << "No modem, cant do MMDVM_DIRECT";
+	}
+
+	m_c2 = new CCodec2(true);
+	m_txtimer = new QTimer();
+	connect(m_txtimer, SIGNAL(timeout()), this, SLOT(transmit()));
+	m_rxtimer = new QTimer();
+	connect(m_rxtimer, SIGNAL(timeout()), this, SLOT(process_rx_data()));
+	m_audio = new AudioEngine(m_audioin, m_audioout);
+	m_audio->init();
+	emit update(m_modeinfo);
 }
 
 void M17Codec::send_ping()
@@ -256,7 +354,7 @@ void M17Codec::send_ping()
 #ifdef DEBUG
 	fprintf(stderr, "PING: ");
 	for(int i = 0; i < out.size(); ++i){
-		fprintf(stderr, "%02x ", (unsigned char)out.data()[i]);
+		fprintf(stderr, "%02x ", (uint8_t)out.data()[i]);
 	}
 	fprintf(stderr, "\n");
 	fflush(stderr);
@@ -265,6 +363,10 @@ void M17Codec::send_ping()
 
 void M17Codec::send_disconnect()
 {
+	if(m_modeinfo.host == "MMDVM_DIRECT"){
+		return;
+	}
+
 	qDebug() << "send_disconnect()";
 	QByteArray out;
 	uint8_t cs[10];
@@ -282,11 +384,213 @@ void M17Codec::send_disconnect()
 #ifdef DEBUG
 	fprintf(stderr, "SEND: ");
 	for(int i = 0; i < out.size(); ++i){
-		fprintf(stderr, "%02x ", (unsigned char)out.data()[i]);
+		fprintf(stderr, "%02x ", (uint8_t)out.data()[i]);
 	}
 	fprintf(stderr, "\n");
 	fflush(stderr);
 #endif
+}
+
+void M17Codec::send_modem_data(QByteArray d)
+{
+	CM17Convolution conv;
+	static uint8_t lsf[M17_LSF_LENGTH_BYTES];
+	static uint8_t lsfcnt = 0;
+	uint8_t txframe[M17_FRAME_LENGTH_BYTES];
+	uint8_t tmp[M17_FRAME_LENGTH_BYTES];
+
+	// FIXME:  Hard code dst to "ALL      " until I better understand what to do here
+	::memset(&d.data()[6], 0, 4);
+	d.data()[10] = 0x4c;
+	d.data()[11] = 0xe1;
+
+	if(m_modeinfo.stream_state == STREAM_NEW){
+		::memcpy(lsf, &d.data()[6], M17_LSF_LENGTH_BYTES);
+		::memcpy(txframe, M17_LINK_SETUP_SYNC_BYTES, 2);
+		conv.encodeLinkSetup(lsf, txframe + M17_SYNC_LENGTH_BYTES);
+		interleave(txframe, tmp);
+		decorrelate(tmp, txframe);
+
+		m_rxmodemq.append(0xe0);
+		m_rxmodemq.append(M17_FRAME_LENGTH_BYTES + 4);
+		m_rxmodemq.append(0x45);
+		m_rxmodemq.append('\x00');
+
+		for(uint32_t i = 0; i < M17_FRAME_LENGTH_BYTES; ++i){
+			m_rxmodemq.append(txframe[i]);
+		}
+	}
+
+	if(lsfcnt == 0){
+		::memcpy(lsf, &d.data()[6], M17_LSF_LENGTH_BYTES);
+	}
+
+	::memcpy(txframe, M17_STREAM_SYNC_BYTES, 2);
+
+	uint8_t lich[M17_LICH_FRAGMENT_LENGTH_BYTES];
+	encodeCRC16(lsf, M17_LSF_LENGTH_BYTES);
+	::memcpy(lich, lsf + (lsfcnt * M17_LSF_FRAGMENT_LENGTH_BYTES), M17_LSF_FRAGMENT_LENGTH_BYTES);
+	lich[5U] = (lsfcnt & 0x07U) << 5;
+
+	uint32_t frag1, frag2, frag3, frag4;
+	splitFragmentLICH(lich, frag1, frag2, frag3, frag4);
+	uint32_t lich1 = CGolay24128::encode24128(frag1);
+	uint32_t lich2 = CGolay24128::encode24128(frag2);
+	uint32_t lich3 = CGolay24128::encode24128(frag3);
+	uint32_t lich4 = CGolay24128::encode24128(frag4);
+	combineFragmentLICHFEC(lich1, lich2, lich3, lich4, txframe + M17_SYNC_LENGTH_BYTES);
+
+	conv.encodeData((uint8_t *)&d.data()[34], txframe + M17_SYNC_LENGTH_BYTES + M17_LICH_FRAGMENT_FEC_LENGTH_BYTES);
+	interleave(txframe, tmp);
+	decorrelate(tmp, txframe);
+
+	m_rxmodemq.append(0xe0);
+	m_rxmodemq.append(M17_FRAME_LENGTH_BYTES + 4);
+	m_rxmodemq.append(0x46);
+	m_rxmodemq.append('\x00');
+
+	for(uint32_t i = 0; i < M17_FRAME_LENGTH_BYTES; ++i){
+		m_rxmodemq.append(txframe[i]);
+	}
+	lsfcnt++;
+	if (lsfcnt >= 6U)
+		lsfcnt = 0U;
+}
+
+void M17Codec::process_modem_data(QByteArray d)
+{
+	QByteArray txframe;
+	static uint16_t txstreamid = 0;
+	static uint8_t lsf[M17_LSF_LENGTH_BYTES];
+	CM17Convolution conv;
+	uint8_t tmp[M17_FRAME_LENGTH_BYTES];
+
+	if(d.size() < 3){
+		return;
+	}
+	uint8_t *p = (uint8_t *)d.data();
+
+	if((d.data()[2] == 0x45) || (d.data()[2] == 0x46)){
+		p += 4;
+		decorrelate(p, tmp);
+		interleave(tmp, p);
+	}
+
+	if((d.data()[2] == 0x48) || (d.data()[2] == 0x49)){
+		txstreamid = 0;
+		if(m_modeinfo.host == "MMDVM_DIRECT"){
+			m_modeinfo.streamid = 0;
+			m_modeinfo.stream_state = STREAM_END;
+		}
+	}
+
+	else if(d.data()[2] == 0x45){
+		::memset(lsf, 0x00U, M17_LSF_LENGTH_BYTES);
+		uint32_t ber = conv.decodeLinkSetup(p + M17_SYNC_LENGTH_BYTES, lsf);
+		bool valid = checkCRC16(lsf, M17_LSF_LENGTH_BYTES);
+		txstreamid = static_cast<uint16_t>((::rand() & 0xFFFF));
+		qDebug() << "LSF valid == " << valid;
+
+		if(m_modeinfo.host == "MMDVM_DIRECT"){
+			uint8_t cs[10];
+			::memcpy(cs, lsf, 6);
+			decode_callsign(cs);
+			m_modeinfo.dst = QString((char *)cs);
+			::memcpy(cs, lsf+6, 6);
+			decode_callsign(cs);
+			m_modeinfo.src = QString((char *)cs);
+		}
+	}
+	else if(d.data()[2] == 0x46){
+		uint8_t frame[M17_FN_LENGTH_BYTES + M17_PAYLOAD_LENGTH_BYTES];
+		uint32_t errors = conv.decodeData(p + M17_SYNC_LENGTH_BYTES + M17_LICH_FRAGMENT_FEC_LENGTH_BYTES, frame);
+		//uint16_t fn = (frame[0U] << 8) + (frame[1U] << 0);
+
+		uint8_t netframe[M17_LSF_LENGTH_BYTES + M17_FN_LENGTH_BYTES + M17_PAYLOAD_LENGTH_BYTES + M17_CRC_LENGTH_BYTES];
+		::memcpy(netframe, lsf, M17_LSF_LENGTH_BYTES);
+		::memcpy(netframe + M17_LSF_LENGTH_BYTES - M17_CRC_LENGTH_BYTES, frame, M17_FN_LENGTH_BYTES + M17_PAYLOAD_LENGTH_BYTES);
+		netframe[M17_LSF_LENGTH_BYTES - M17_CRC_LENGTH_BYTES + 0U] &= 0x7FU;
+
+		if(m_modeinfo.host == "MMDVM_DIRECT"){
+			if( !m_tx && (m_modeinfo.streamid == 0) ){
+				if(txstreamid == 0){
+					qDebug() << "No header, late entry...";
+					txstreamid = static_cast<uint16_t>((::rand() & 0xFFFF));
+				}
+				m_modeinfo.streamid = txstreamid;
+				m_audio->start_playback();
+
+				if((netframe[13] & 0x06U) == 0x04U){
+					m_modeinfo.type = 1;//"3200 Voice";
+					set_mode(true);
+				}
+				else{
+					m_modeinfo.type = 0;//"1600 V/D";
+					set_mode(false);
+				}
+
+				if(!m_rxtimer->isActive()){
+	#ifdef Q_OS_WIN
+					m_rxtimer->start(m_modeinfo.type ? m_rxtimerint : 32);
+	#else
+					m_rxtimer->start(m_modeinfo.type ? m_rxtimerint : m_rxtimerint*2);
+	#endif
+				}
+
+				m_modeinfo.stream_state = STREAM_NEW;
+				m_modeinfo.ts = QDateTime::currentMSecsSinceEpoch();
+				qDebug() << "New RF stream from " << m_modeinfo.src << " to " << m_modeinfo.dst << " id == " << QString::number(m_modeinfo.streamid, 16);
+			}
+			else{
+				m_modeinfo.stream_state = STREAMING;
+			}
+			m_modeinfo.frame_number = (netframe[28] << 8) | (netframe[29] & 0xff);
+			m_rxwatchdog = 0;
+			int s = 8;
+			if(get_mode()){
+				s = 16;
+			}
+
+			for(int i = 0; i < s; ++i){
+				m_rxcodecq.append(netframe[30+i]);
+			}
+			emit update(m_modeinfo);
+		}
+		else{
+			uint8_t dst[10];
+			memset(dst, ' ', 9);
+			memcpy(dst, m_hostname.toLocal8Bit(), m_hostname.size());
+			dst[8] =  m_module;
+			dst[9] = 0x00;
+			encode_callsign(dst);
+
+			txframe.append('M');
+			txframe.append('1');
+			txframe.append('7');
+			txframe.append(' ');
+			txframe.append(txstreamid >> 8);
+			txframe.append(txstreamid & 0xff);
+			txframe.append((char *)dst, 6);
+			//txframe.append((char *)src, 6);
+			txframe.append((char *)&netframe[6], 6);
+			txframe.append('\x00');
+			txframe.append(netframe[13]); // Frame type voice only
+			txframe.append(14, 0x00); //Blank nonce
+			txframe.append((char)(netframe[28] >> 8));
+			txframe.append((char)netframe[29] & 0xff);
+			txframe.append((char *)&netframe[30], 16);
+			txframe.append(2, 0x00);
+			m_udp->writeDatagram(txframe, m_address, m_modeinfo.port);
+#ifdef DEBUG
+			fprintf(stderr, "NETFRAME:%02x:", (uint8_t)d.data()[2]);
+			for(int i = 0; i < 50; ++i){
+				fprintf(stderr, "%02x ", netframe[i]);
+			}
+			fprintf(stderr, "\n");
+			fflush(stderr);
+#endif
+		}
+	}
 }
 
 void M17Codec::toggle_tx(bool tx)
@@ -346,7 +650,22 @@ void M17Codec::transmit()
 		if(txstreamid == 0){
 		   txstreamid = static_cast<uint16_t>((::rand() & 0xFFFF));
 		   //std::cerr << "txstreamid == " << txstreamid << std::endl;
+		   if(!m_rxtimer->isActive() && (m_modeinfo.host == "MMDVM_DIRECT")){
+			   m_modeinfo.stream_state = STREAM_NEW;
+#ifdef Q_OS_WIN
+			   m_rxtimer->start(m_modeinfo.type ? m_rxtimerint : 32);
+#else
+			   m_rxtimer->start(19);
+#endif
+		   }
+
 		}
+		else{
+			if(m_modeinfo.host == "MMDVM_DIRECT"){
+				m_modeinfo.stream_state = STREAMING;
+			}
+		}
+
 		uint8_t src[10];
 		uint8_t dst[10];
 		memset(dst, ' ', 9);
@@ -379,7 +698,14 @@ void M17Codec::transmit()
 		//QString ss = QString("%1").arg(txstreamid, 4, 16, QChar('0'));
 		//QString n = QString("TX %1").arg(tx_cnt, 4, 16, QChar('0'));
 
-		m_udp->writeDatagram(txframe, m_address, m_modeinfo.port);
+		if(m_modeinfo.host == "MMDVM_DIRECT"){
+			send_modem_data(txframe);
+			m_rxwatchdog = 0;
+		}
+		else{
+			m_udp->writeDatagram(txframe, m_address, m_modeinfo.port);
+		}
+
 		++tx_cnt;
 		m_modeinfo.src = m_modeinfo.callsign;
 		m_modeinfo.dst = m_hostname;
@@ -390,7 +716,7 @@ void M17Codec::transmit()
 
 		fprintf(stderr, "SEND:%d: ", txframe.size());
 		for(int i = 0; i < txframe.size(); ++i){
-			fprintf(stderr, "%02x ", (unsigned char)txframe.data()[i]);
+			fprintf(stderr, "%02x ", (uint8_t)txframe.data()[i]);
 		}
 		fprintf(stderr, "\n");
 		fflush(stderr);
@@ -431,7 +757,13 @@ void M17Codec::transmit()
 		txframe.append(2, 0x00);
 
 		//QString n = QString("%1").arg(tx_cnt, 4, 16, QChar('0'));
-		m_udp->writeDatagram(txframe, m_address, m_modeinfo.port);
+		if(m_modeinfo.host == "MMDVM_DIRECT"){
+			send_modem_data(txframe);
+			m_modeinfo.stream_state = STREAM_END;
+		}
+		else{
+			m_udp->writeDatagram(txframe, m_address, m_modeinfo.port);
+		}
 		txstreamid = 0;
 		tx_cnt = 0;
 #ifdef USE_FLITE
@@ -449,7 +781,7 @@ void M17Codec::transmit()
 		emit update(m_modeinfo);
 		fprintf(stderr, "LAST:%d: ", txframe.size());
 		for(int i = 0; i < txframe.size(); ++i){
-			fprintf(stderr, "%02x ", (unsigned char)txframe.data()[i]);
+			fprintf(stderr, "%02x ", (uint8_t)txframe.data()[i]);
 		}
 		fprintf(stderr, "\n");
 		fflush(stderr);
@@ -460,6 +792,7 @@ void M17Codec::process_rx_data()
 {
 	int16_t pcm[320];
 	uint8_t codec2[8];
+	static uint8_t cnt = 0;
 
 	if(m_rxwatchdog++ > 50){
 		qDebug() << "RX stream timeout ";
@@ -468,6 +801,18 @@ void M17Codec::process_rx_data()
 		m_modeinfo.ts = QDateTime::currentMSecsSinceEpoch();
 		emit update(m_modeinfo);
 		m_modeinfo.streamid = 0;
+	}
+
+	if((m_rxmodemq.size() > 2) && (++cnt >= 2)){
+		QByteArray out;
+		int s = m_rxmodemq[1];
+		if((m_rxmodemq[0] == 0xe0) && (m_rxmodemq.size() >= s)){
+			for(int i = 0; i < s; ++i){
+				out.append(m_rxmodemq.dequeue());
+			}
+			m_modem->write(out);
+		}
+		cnt = 0;
 	}
 
 	if((!m_tx) && (m_rxcodecq.size() > 7) ){
@@ -488,4 +833,154 @@ void M17Codec::process_rx_data()
 		qDebug() << "M17 playback stopped";
 		return;
 	}
+}
+
+void M17Codec::decorrelate(uint8_t *in, uint8_t *out)
+{
+	for (uint32_t i = M17_SYNC_LENGTH_BYTES; i < M17_FRAME_LENGTH_BYTES; i++) {
+		out[i] = in[i] ^ SCRAMBLER[i];
+	}
+}
+
+void M17Codec::interleave(uint8_t *in, uint8_t *out)
+{
+	for (uint32_t i = 0U; i < (M17_FRAME_LENGTH_BITS - M17_SYNC_LENGTH_BITS); i++) {
+		uint32_t n1 = i + M17_SYNC_LENGTH_BITS;
+		bool b = READ_BIT(in, n1) != 0U;
+		uint32_t n2 = INTERLEAVER[i] + M17_SYNC_LENGTH_BITS;
+		WRITE_BIT(out, n2, b);
+	}
+}
+
+void M17Codec::splitFragmentLICH(const uint8_t* data, uint32_t& frag1, uint32_t& frag2, uint32_t& frag3, uint32_t& frag4)
+{
+	assert(data != NULL);
+
+	frag1 = frag2 = frag3 = frag4 = 0x00U;
+
+	uint32_t offset = 0U;
+	uint32_t MASK = 0x800U;
+	for (uint32_t i = 0U; i < (M17_LICH_FRAGMENT_LENGTH_BITS / 4U); i++, offset++, MASK >>= 1) {
+		bool b = READ_BIT(data, offset) != 0x00U;
+		if (b)
+			frag1 |= MASK;
+	}
+
+	MASK = 0x800U;
+	for (uint32_t i = 0U; i < (M17_LICH_FRAGMENT_LENGTH_BITS / 4U); i++, offset++, MASK >>= 1) {
+		bool b = READ_BIT(data, offset) != 0x00U;
+		if (b)
+			frag2 |= MASK;
+	}
+
+	MASK = 0x800U;
+	for (uint32_t i = 0U; i < (M17_LICH_FRAGMENT_LENGTH_BITS / 4U); i++, offset++, MASK >>= 1) {
+		bool b = READ_BIT(data, offset) != 0x00U;
+		if (b)
+			frag3 |= MASK;
+	}
+
+	MASK = 0x800U;
+	for (uint32_t i = 0U; i < (M17_LICH_FRAGMENT_LENGTH_BITS / 4U); i++, offset++, MASK >>= 1) {
+		bool b = READ_BIT(data, offset) != 0x00U;
+		if (b)
+			frag4 |= MASK;
+	}
+}
+
+void M17Codec::combineFragmentLICH(uint32_t frag1, uint32_t frag2, uint32_t frag3, uint32_t frag4, uint8_t* data)
+{
+	assert(data != NULL);
+
+	unsigned int offset = 0U;
+	unsigned int MASK = 0x800U;
+	for (uint32_t i = 0U; i < (M17_LICH_FRAGMENT_LENGTH_BITS / 4U); i++, offset++, MASK >>= 1) {
+		bool b = (frag1 & MASK) == MASK;
+		WRITE_BIT(data, offset, b);
+	}
+
+	MASK = 0x800U;
+	for (uint32_t i = 0U; i < (M17_LICH_FRAGMENT_LENGTH_BITS / 4U); i++, offset++, MASK >>= 1) {
+		bool b = (frag2 & MASK) == MASK;
+		WRITE_BIT(data, offset, b);
+	}
+
+	MASK = 0x800U;
+	for (uint32_t i = 0U; i < (M17_LICH_FRAGMENT_LENGTH_BITS / 4U); i++, offset++, MASK >>= 1) {
+		bool b = (frag3 & MASK) == MASK;
+		WRITE_BIT(data, offset, b);
+	}
+
+	MASK = 0x800U;
+	for (uint32_t i = 0U; i < (M17_LICH_FRAGMENT_LENGTH_BITS / 4U); i++, offset++, MASK >>= 1) {
+		bool b = (frag4 & MASK) == MASK;
+		WRITE_BIT(data, offset, b);
+	}
+}
+
+void M17Codec::combineFragmentLICHFEC(uint32_t frag1, uint32_t frag2, uint32_t frag3, uint32_t frag4, uint8_t* data)
+{
+	assert(data != NULL);
+
+	uint32_t offset = 0U;
+	uint32_t MASK = 0x800000U;
+	for (uint32_t i = 0U; i < (M17_LICH_FRAGMENT_FEC_LENGTH_BITS / 4U); i++, offset++, MASK >>= 1) {
+		bool b = (frag1 & MASK) == MASK;
+		WRITE_BIT(data, offset, b);
+	}
+
+	MASK = 0x800000U;
+	for (uint32_t i = 0U; i < (M17_LICH_FRAGMENT_FEC_LENGTH_BITS / 4U); i++, offset++, MASK >>= 1) {
+		bool b = (frag2 & MASK) == MASK;
+		WRITE_BIT(data, offset, b);
+	}
+
+	MASK = 0x800000U;
+	for (uint32_t i = 0U; i < (M17_LICH_FRAGMENT_FEC_LENGTH_BITS / 4U); i++, offset++, MASK >>= 1) {
+		bool b = (frag3 & MASK) == MASK;
+		WRITE_BIT(data, offset, b);
+	}
+
+	MASK = 0x800000U;
+	for (uint32_t i = 0U; i < (M17_LICH_FRAGMENT_FEC_LENGTH_BITS / 4U); i++, offset++, MASK >>= 1) {
+		bool b = (frag4 & MASK) == MASK;
+		WRITE_BIT(data, offset, b);
+	}
+}
+
+bool M17Codec::checkCRC16(const uint8_t* in, uint32_t nBytes)
+{
+	assert(in != NULL);
+	assert(nBytes > 2U);
+
+	uint16_t crc = createCRC16(in, nBytes - 2U);
+
+	uint8_t temp[2U];
+	temp[0U] = (crc >> 8) & 0xFFU;
+	temp[1U] = (crc >> 0) & 0xFFU;
+
+	return temp[0U] == in[nBytes - 2U] && temp[1U] == in[nBytes - 1U];
+}
+
+void M17Codec::encodeCRC16(uint8_t* in, uint32_t nBytes)
+{
+	assert(in != NULL);
+	assert(nBytes > 2U);
+
+	uint16_t crc = createCRC16(in, nBytes - 2U);
+
+	in[nBytes - 2U] = (crc >> 8) & 0xFFU;
+	in[nBytes - 1U] = (crc >> 0) & 0xFFU;
+}
+
+uint16_t M17Codec::createCRC16(const uint8_t* in, uint32_t nBytes)
+{
+	assert(in != NULL);
+
+	uint16_t crc = 0xFFFFU;
+
+	for (uint32_t i = 0U; i < nBytes; i++)
+		crc = (crc << 8) ^ CRC16_TABLE[((crc >> 8) ^ uint16_t(in[i])) & 0x00FFU];
+
+	return crc;
 }

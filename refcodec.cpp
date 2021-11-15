@@ -20,7 +20,7 @@
 #include "refcodec.h"
 #include "CRCenc.h"
 
-#define DEBUG
+//#define DEBUG
 
 const unsigned char MMDVM_DSTAR_HEADER = 0x10U;
 const unsigned char MMDVM_DSTAR_DATA   = 0x11U;
@@ -105,7 +105,7 @@ void REFCodec::process_udp()
 			if(m_modemport != ""){
 				m_modem = new SerialModem("REF");
 				m_modem->set_modem_flags(m_rxInvert, m_txInvert, m_pttInvert, m_useCOSAsLockout, m_duplex);
-				m_modem->set_modem_params(m_rxfreq, m_txfreq, m_txDelay, m_rxLevel, m_rfLevel, m_ysfTXHang, m_cwIdTXLevel, m_dstarTXLevel, m_dmrTXLevel, m_ysfTXLevel, m_p25TXLevel, m_nxdnTXLevel, m_pocsagTXLevel);
+				m_modem->set_modem_params(m_rxfreq, m_txfreq, m_txDelay, m_rxLevel, m_rfLevel, m_ysfTXHang, m_cwIdTXLevel, m_dstarTXLevel, m_dmrTXLevel, m_ysfTXLevel, m_p25TXLevel, m_nxdnTXLevel, m_pocsagTXLevel, m_m17TXLevel);
 				m_modem->connect_to_serial(m_modemport);
 				connect(m_modem, SIGNAL(modem_data_ready(QByteArray)), this, SLOT(process_modem_data(QByteArray)));
 			}

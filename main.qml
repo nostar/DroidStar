@@ -137,7 +137,9 @@ ApplicationWindow {
 	Connections {
 		target: Qt.application
 		function onStateChanged() {
-			//console.debug("applicationStateChanged: " + Qt.application.state)
+			if (Qt.application.state !== Qt.ApplicationActive) {
+				droidstar.reset_connect_status();
+			}
 		}
 	}
     Connections {
@@ -463,7 +465,6 @@ ApplicationWindow {
 				mainTab.agcBox.checked = true;
 			}
 			if(c === 3){
-				connectDialog.open();
 			}
 			if(c === 4){
 				idcheckDialog.open();

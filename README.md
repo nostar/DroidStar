@@ -10,7 +10,7 @@ The DudeStar application used the Qt Widgets UI, while DroidStar uses the Qt Qui
 The Codec2 vocoder library is open source and is included as a C++ implementation of the original C library taken from the mvoice project.  More info on M17 can be found here: https://m17project.org/
 
 # MMDVM support -- work in progress
-DroidStar supports MMDVM and MMDVM_HS (hotspot) modems, with basic (possibly buggy) support for D-STAR, Fusion, and DMR.  Support for M17, P25, and NXDN coming soon.  When connecting to a digital mode reflector/DMR server and selecting an MMDVM device under Modems, then DroidStar acts as a hotspot/repeater.  When 'MMDVM Direct' is selected as the reflector/server, then DroidStar becomes a stand-alone transceiver.
+DroidStar supports MMDVM and MMDVM_HS (hotspot) modems, with basic (possibly buggy) support for M17, D-STAR, Fusion, and DMR.  Support for P25 and NXDN coming soon.  When connecting to a digital mode reflector/DMR server and selecting an MMDVM device under Modems, then DroidStar acts as a hotspot/repeater.  When 'MMDVM Direct' (currently M17 only) is selected as the host, then DroidStar becomes a stand-alone transceiver.
 
 # Software vocoder plugin API
 There is a vocoder plugin API available for loading of vocoder software.  Any vocoder plugin used with DroidStar should be properly licensed by the user if any copyright patents apply.  Do not use any patented vocoder plugin that you are not licensed to use.  I have no information regarding aquiring a software vocoder.
@@ -64,8 +64,8 @@ Port: UDP port of node, usually 4569.
 
 Add DTMF commands like \*3node, \*1node, \*70, etc in the IAX DTMF box and hit send to send the DTMF string.  The asterisk (*) character is already added on the Droidstar app, so only input the numeric portion of the command (70 instead of *70, etc). Details on various commands can be found at the AllStar wiki and others.
 
-# Building
-This software is written primarily in C++ on Linux and requires Qt5, and natually the devel packages to build.  Java, QML (Javascript based), and C# code is also used where necessary.  
+# General building instructions
+This software is written primarily in C++ on Linux and requires Qt5 >= Qt5.15, and natually the devel packages to build.  Java, QML (Javascript based), and C# code is also used where necessary.  
 
 Qt5 and Qt5-Quick development packages are required to build this software from source.  With these requirements met, run the following:
 ```
@@ -74,10 +74,20 @@ make
 ```
 qmake may have a different name on your distribution i.e. on Fedora it's called qmake-qt5
 
-Notes for building/running Debian/Raspbian:  In addition to the Linux build requirements, there are some additional requirements for running this QT application in order for the audio devices to be correctly detected:
+# Building on Raspbian/RaspiOS
+DroidStar requires >= Qt 5.15 and RaspiOS currently packages Qt 5.11.  Fortunately there is a great Qt 5.15.2 installer for RaspiOS:
+
+https://github.com/koendv/qt5-opengl-raspberrypi
+
+with this version of Qt installed, simply run the qmake from that version:
 ```
-sudo apt-get install libqt5multimedia5-plugins libqt5serialport5-dev qtmultimedia5-dev libqt5multimediawidgets5 libqt5multimedia5-plugins libqt5multimedia5
+cd DroidStar
+mkdir build
+cd build
+/usr/lib/qt5.15.2/bin/qmake ..
+make
 ```
+
 And if pulseaudio is not currently installed:
 ```
 sudo apt-get install pulseaudio

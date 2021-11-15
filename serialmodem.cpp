@@ -20,7 +20,7 @@
 #include <QDebug>
 #include "serialmodem.h"
 
-#define DEBUGHW
+//#define DEBUGHW
 #define ENDLINE "\n"
 
 const unsigned char MODE_IDLE    = 0U;
@@ -29,6 +29,7 @@ const unsigned char MODE_DMR     = 2U;
 const unsigned char MODE_YSF     = 3U;
 const unsigned char MODE_P25     = 4U;
 const unsigned char MODE_NXDN    = 5U;
+const unsigned char MODE_M17     = 7U;
 const unsigned char MODE_CW      = 98U;
 const unsigned char MODE_LOCKOUT = 99U;
 const unsigned char MODE_ERROR   = 100U;
@@ -103,6 +104,12 @@ const unsigned char MMDVM_P25_LOST    = 0x32U;
 const unsigned char MMDVM_NXDN_DATA   = 0x40U;
 const unsigned char MMDVM_NXDN_LOST   = 0x41U;
 
+const unsigned char MMDVM_M17_LINK_SETUP = 0x45U;
+const unsigned char MMDVM_M17_STREAM     = 0x46U;
+const unsigned char MMDVM_M17_PACKET     = 0x47U;
+const unsigned char MMDVM_M17_LOST       = 0x48U;
+const unsigned char MMDVM_M17_EOT        = 0x49U;
+
 const unsigned char MMDVM_POCSAG_DATA = 0x50U;
 
 const unsigned char MMDVM_FM_PARAMS1  = 0x60U;
@@ -133,6 +140,8 @@ SerialModem::SerialModem(QString protocol)
 	m_dmrDelay = 0;
 	m_debug = false;
 	m_dmrColorCode = 1;
+	m_m17support = 1;
+	m_m17TXHang = 5;
 }
 
 SerialModem::~SerialModem()
@@ -164,6 +173,9 @@ void SerialModem::set_mode(QString m)
 	else if(m == "NXDN"){
 		m_nxdnEnabled = 1;
 	}
+	else if(m == "M17"){
+		m_m17Enabled = 1;
+	}
 }
 
 void SerialModem::set_modem_flags(bool rxInvert, bool txInvert, bool pttInvert, bool useCOSAsLockout, bool duplex)
@@ -176,7 +188,7 @@ void SerialModem::set_modem_flags(bool rxInvert, bool txInvert, bool pttInvert, 
 	m_ysfLoDev = 0;
 }
 
-void SerialModem::set_modem_params(uint32_t rxfreq, uint32_t txfreq, uint32_t txDelay, float rxLevel, float rfLevel, uint32_t ysfTXHang, float cwIdTXLevel, float dstarTXLevel, float dmrTXLevel, float ysfTXLevel, float p25TXLevel, float nxdnTXLevel, float pocsagTXLevel)
+void SerialModem::set_modem_params(uint32_t rxfreq, uint32_t txfreq, uint32_t txDelay, float rxLevel, float rfLevel, uint32_t ysfTXHang, float cwIdTXLevel, float dstarTXLevel, float dmrTXLevel, float ysfTXLevel, float p25TXLevel, float nxdnTXLevel, float pocsagTXLevel, float m17TXLevel)
 {
 	m_rxfreq = rxfreq;
 	m_txfreq = txfreq;
@@ -190,6 +202,7 @@ void SerialModem::set_modem_params(uint32_t rxfreq, uint32_t txfreq, uint32_t tx
 	m_p25TXLevel = p25TXLevel;
 	m_nxdnTXLevel = nxdnTXLevel;
 	m_pocsagTXLevel = pocsagTXLevel;
+	m_m17TXLevel = m17TXLevel;
 	m_ysfTXHang = ysfTXHang;
 }
 
@@ -230,7 +243,7 @@ void SerialModem::connect_to_serial(QString p)
 				//if((d.data()[i] == 0x61) && (data.data()[i+1] == 0x01) && (data.data()[i+2] == 0x42) && (data.data()[i+3] == 0x02)){
 				//	i+= 6;
 				//}
-				fprintf(stderr, "%02x ", (unsigned char)a.data()[i]);
+				fprintf(stderr, "%02x ", (uint8_t)a.data()[i]);
 			}
 			fprintf(stderr, "\n");
 			fflush(stderr);
@@ -260,7 +273,7 @@ void SerialModem::process_serial()
 		//if((d.data()[i] == 0x61) && (data.data()[i+1] == 0x01) && (data.data()[i+2] == 0x42) && (data.data()[i+3] == 0x02)){
 		//	i+= 6;
 		//}
-		fprintf(stderr, "%02x ", (unsigned char)d.data()[i]);
+		fprintf(stderr, "%02x ", (uint8_t)d.data()[i]);
 	}
 	fprintf(stderr, "\n");
 	fflush(stderr);
@@ -329,7 +342,7 @@ void SerialModem::set_freq()
 	out.append((m_txfreq >> 8) & 0xFFU);
 	out.append((m_txfreq >> 16) & 0xFFU);
 	out.append((m_txfreq >> 24) & 0xFFU);
-	out.append((unsigned char)(m_rfLevel * 2.55F + 0.5F));
+	out.append((uint8_t)(m_rfLevel * 2.55F + 0.5F));
 	out.append((pfreq >> 0) & 0xFFU);
 	out.append((pfreq >> 8) & 0xFFU);
 	out.append((pfreq >> 16) & 0xFFU);
@@ -341,7 +354,7 @@ void SerialModem::set_freq()
 		//if((d.data()[i] == 0x61) && (data.data()[i+1] == 0x01) && (data.data()[i+2] == 0x42) && (data.data()[i+3] == 0x02)){
 		//	i+= 6;
 		//}
-		fprintf(stderr, "%02x ", (unsigned char)out.data()[i]);
+		fprintf(stderr, "%02x ", (uint8_t)out.data()[i]);
 	}
 	fprintf(stderr, "\n");
 	fflush(stderr);
@@ -352,11 +365,17 @@ void SerialModem::set_config()
 {
 	QByteArray out;
 	uint8_t c;
-
 	out.clear();
 
 	out.append(MMDVM_FRAME_START);
-	out.append(24U);
+
+	if(m_m17support){
+		out.append(26U);
+	}
+	else{
+		out.append(24U);
+	}
+
 	out.append(MMDVM_SET_CONFIG);
 
 	c = 0x00U;
@@ -390,28 +409,36 @@ void SerialModem::set_config()
 		c |= 0x10U;
 	if (m_pocsagEnabled)
 		c |= 0x20U;
+	if (m_m17Enabled)
+		c |= 0x40U;
 
 	out.append(c);
 
 	out.append(m_txDelay / 10U);		// In 10ms units
 	out.append(MODE_IDLE);
-	out.append((unsigned char)(m_rxLevel * 2.55F + 0.5F));
-	out.append((unsigned char)(m_cwIdTXLevel * 2.55F + 0.5F));
+	out.append((uint8_t)(m_rxLevel * 2.55F + 0.5F));
+	out.append((uint8_t)(m_cwIdTXLevel * 2.55F + 0.5F));
 	out.append(m_dmrColorCode);
 	out.append(m_dmrDelay);
 	out.append(128U);           // Was OscOffset
-	out.append((unsigned char)(m_dstarTXLevel * 2.55F + 0.5F));
-	out.append((unsigned char)(m_dmrTXLevel * 2.55F + 0.5F));
-	out.append((unsigned char)(m_ysfTXLevel * 2.55F + 0.5F));
-	out.append((unsigned char)(m_p25TXLevel * 2.55F + 0.5F));
-	out.append((unsigned char)(m_txDCOffset + 128));
-	out.append((unsigned char)(m_rxDCOffset + 128));
-	out.append((unsigned char)(m_nxdnTXLevel * 2.55F + 0.5F));
-	out.append((unsigned char)m_ysfTXHang);
-	out.append((unsigned char)(m_pocsagTXLevel * 2.55F + 0.5F));
-	out.append((unsigned char)(m_fmTXLevel * 2.55F + 0.5F));
-	out.append((unsigned char)m_p25TXHang);
-	out.append((unsigned char)m_nxdnTXHang);
+	out.append((uint8_t)(m_dstarTXLevel * 2.55F + 0.5F));
+	out.append((uint8_t)(m_dmrTXLevel * 2.55F + 0.5F));
+	out.append((uint8_t)(m_ysfTXLevel * 2.55F + 0.5F));
+	out.append((uint8_t)(m_p25TXLevel * 2.55F + 0.5F));
+	out.append((uint8_t)(m_txDCOffset + 128));
+	out.append((uint8_t)(m_rxDCOffset + 128));
+	out.append((uint8_t)(m_nxdnTXLevel * 2.55F + 0.5F));
+	out.append((uint8_t)m_ysfTXHang);
+	out.append((uint8_t)(m_pocsagTXLevel * 2.55F + 0.5F));
+	out.append((uint8_t)(m_fmTXLevel * 2.55F + 0.5F));
+	out.append((uint8_t)m_p25TXHang);
+	out.append((uint8_t)m_nxdnTXHang);
+
+	if(m_m17support){
+		out.append((uint8_t)(m_m17TXLevel * 2.55F + 0.5F));
+		out.append((uint8_t)m_m17TXHang);
+	}
+
 	m_serial->write(out);
 #ifdef DEBUGHW
 	fprintf(stderr, "MODEMTX %d:%d:", out.size(), m_serialdata.size());

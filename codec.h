@@ -36,7 +36,7 @@ public:
 	Codec(QString callsign, char module, QString hostname, QString host, int port, bool ipv6, QString vocoder, QString modem, QString audioin, QString audioout);
 	~Codec();
 	void set_modem_flags(bool rxInvert, bool txInvert, bool pttInvert, bool useCOSAsLockout, bool duplex) { m_rxInvert = rxInvert; m_txInvert = txInvert; m_pttInvert = pttInvert; m_useCOSAsLockout = useCOSAsLockout; m_duplex = duplex; }
-	void set_modem_params(uint32_t rxfreq, uint32_t txfreq, uint32_t txDelay, float rxLevel, float rfLevel, uint32_t ysfTXHang, float cwIdTXLevel, float dstarTXLevel, float dmrTXLevel, float ysfTXLevel, float p25TXLevel, float nxdnTXLevel, float pocsagTXLevel)
+	void set_modem_params(uint32_t rxfreq, uint32_t txfreq, uint32_t txDelay, float rxLevel, float rfLevel, uint32_t ysfTXHang, float cwIdTXLevel, float dstarTXLevel, float dmrTXLevel, float ysfTXLevel, float p25TXLevel, float nxdnTXLevel, float pocsagTXLevel, float m17TXLevel)
 	{
 		m_rxfreq = rxfreq;
 		m_txfreq = txfreq;
@@ -51,6 +51,7 @@ public:
 		m_p25TXLevel = p25TXLevel;
 		m_nxdnTXLevel = nxdnTXLevel;
 		m_pocsagTXLevel = pocsagTXLevel;
+		m_m17TXLevel = m17TXLevel;
 	}
 	bool get_hwrx() { return m_hwrx; }
 	bool get_hwtx() { return m_hwtx; }
@@ -109,6 +110,7 @@ signals:
 protected slots:
 	virtual void send_disconnect(){}
 	virtual void hostname_lookup(QHostInfo){}
+	virtual void mmdvm_direct_connect(){}
 	void send_connect();
 	void input_src_changed(int id, QString t) { m_ttsid = id; m_ttstext = t; }
 	void start_tx();
@@ -191,6 +193,7 @@ protected:
 	float m_nxdnTXLevel;
 	float m_pocsagTXLevel;
 	float m_fmTXLevel;
+	float m_m17TXLevel;
 	bool m_debug;
 	bool m_useCOSAsLockout;
 	bool m_dstarEnabled;

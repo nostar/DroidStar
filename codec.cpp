@@ -92,7 +92,11 @@ void Codec::agc_state_changed(int s)
 void Codec::send_connect()
 {
 	m_modeinfo.status = CONNECTING;
-	if(m_ipv6 && (m_modeinfo.host != "none")){
+
+	if(m_modeinfo.host == "MMDVM_DIRECT"){
+		mmdvm_direct_connect();
+	}
+	else if(m_ipv6 && (m_modeinfo.host != "none")){
 		qDebug() << "Host == " << m_modeinfo.host;
 		QList<QHostAddress> h;
 		QHostInfo i;
@@ -184,8 +188,8 @@ bool Codec::load_vocoder_plugin()
 void Codec::deleteLater()
 {
 	if(m_modeinfo.status == CONNECTED_RW){
-		m_udp->disconnect();
-		m_ping_timer->stop();
+		//m_udp->disconnect();
+		//m_ping_timer->stop();
 		send_disconnect();
 		delete m_audio;
 		if(m_hwtx){

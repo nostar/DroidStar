@@ -34,7 +34,7 @@ public:
 	~SerialModem();
 	void set_mode(QString);
 	void set_modem_flags(bool, bool, bool, bool, bool);
-	void set_modem_params(uint32_t, uint32_t, uint32_t, float, float, uint32_t, float, float, float, float, float, float, float);
+	void set_modem_params(uint32_t, uint32_t, uint32_t, float, float, uint32_t, float, float, float, float, float, float, float, float);
 	static QMap<QString, QString>  discover_devices();
 	void connect_to_serial(QString);
 	void write(QByteArray);
@@ -61,6 +61,7 @@ private:
 	uint32_t m_ysfTXHang;
 	uint32_t m_p25TXHang;
 	uint32_t m_nxdnTXHang;
+	uint32_t m_m17TXHang;
 	bool m_duplex;
 	bool m_rxInvert;
 	bool m_txInvert;
@@ -76,6 +77,7 @@ private:
 	float m_p25TXLevel;
 	float m_nxdnTXLevel;
 	float m_pocsagTXLevel;
+	float m_m17TXLevel;
 	float m_fmTXLevel;
 	bool m_debug;
 	bool m_useCOSAsLockout;
@@ -85,7 +87,9 @@ private:
 	bool m_p25Enabled;
 	bool m_nxdnEnabled;
 	bool m_pocsagEnabled;
+	bool m_m17Enabled;
 	bool m_fmEnabled;
+	bool m_m17support;
 	int m_rxDCOffset;
 	int m_txDCOffset;	
 signals:

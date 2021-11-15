@@ -15,15 +15,14 @@ ios:QMAKE_INFO_PLIST = Info.plist
 VERSION_BUILD='$(shell cd $$PWD;git rev-parse --short HEAD)'
 DEFINES += VERSION_NUMBER=\"\\\"$${VERSION_BUILD}\\\"\"
 DEFINES += QT_DEPRECATED_WARNINGS
-
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 #DEFINES += USE_FLITE
-DEFINES += AMBESW_SUPPORTED
 
 SOURCES += \
         CRCenc.cpp \
         DMRData.cpp \
         Golay24128.cpp \
+        M17Convolution.cpp \
         SHA256.cpp \
         YSFConvolution.cpp \
         YSFFICH.cpp \
@@ -97,6 +96,8 @@ HEADERS += \
 	DMRData.h \
 	DMRDefines.h \
 	Golay24128.h \
+	M17Convolution.h \
+	M17Defines.h \
 	SHA256.h \
 	YSFConvolution.h \
 	YSFFICH.h \

@@ -227,8 +227,10 @@ public slots:
 	QString get_modemNXDNTxLevel() { return m_modemNXDNTxLevel; }
 #if defined(Q_OS_ANDROID)
 	QString get_platform() { return QSysInfo::productType(); }
+	void reset_connect_status();
 #else
 	QString get_platform() { return QSysInfo::kernelType(); }
+	void reset_connect_status() {}
 #endif
 	QString get_arch() { return QSysInfo::currentCpuArchitecture(); }
 	QString get_build_abi() { return QSysInfo::buildAbi(); }

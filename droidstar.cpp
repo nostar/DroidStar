@@ -99,6 +99,14 @@ void DroidStar::keepScreenOn()
 		}
 	}});
 }
+
+void DroidStar::reset_connect_status()
+{
+	if(connect_status == Codec::CONNECTED_RW){
+		connect_status = Codec::CONNECTING;
+		process_connect();
+	}
+}
 #endif
 
 void DroidStar::discover_devices()
@@ -197,7 +205,6 @@ void DroidStar::dtmf_send_clicked(QString dtmf)
 
 void DroidStar::process_connect()
 {
-	//QSize size = qApp->screens()[0]->size();
 	if(connect_status != Codec::DISCONNECTED){
 		connect_status = Codec::DISCONNECTED;
 		m_modethread->quit();
@@ -214,6 +221,9 @@ void DroidStar::process_connect()
 #ifdef Q_OS_IOS
 		MicPermission::check_permission();
 #endif
+
+//#include "build.h"
+
 		if( (m_callsign.size() < 4) ||
 			(m_dmrid < 250000) ||
 			(m_callsign != m_dmrids[m_dmrid]))
@@ -258,13 +268,16 @@ void DroidStar::process_connect()
 			m_hostname = m_hostmap[m_host];
 			sl = m_hostname.split(',');
 
-			if( (m_protocol == "M17") && (m_ipv6) && (sl.size() > 2) && (sl.at(2) != "none") ){
+			if( (m_protocol == "M17") && (m_host != "MMDVM_DIRECT") && (m_ipv6) && (sl.size() > 2) && (sl.at(2) != "none") ){
 				m_hostname = sl.at(2).simplified();
 				m_port = sl.at(1).toInt();
 			}
 			else if(sl.size() > 1){
 				m_hostname = sl.at(0).simplified();
 				m_port = sl.at(1).toInt();
+			}
+			else if( (m_protocol == "M17") && (m_host == "MMDVM_DIRECT") ){
+				qDebug() << "Going MMDVM_DIRECT";
 			}
 			else{
 				m_errortxt = "Invalid host selection";
@@ -284,21 +297,21 @@ void DroidStar::process_connect()
 			QStringList ml = m_modem.split(':');
 			modem = ml.at(0);
 		}
-		//vocoder = "USB";
-		//modem = "USB";
+
 		const bool rxInvert = true;
 		const bool txInvert = false;
 		const bool pttInvert = false;
 		const bool useCOSAsLockout = 0;
 		const uint32_t ysfTXHang = 4;
 		const float pocsagTXLevel = 50;
+		const float m17TXLevel = 50;
 		const bool duplex = m_modemRxFreq.toUInt() != m_modemTxFreq.toUInt();
 
 		emit update_log("Connecting to " + m_hostname + ":" + QString::number(m_port) + "...");
 		if( (m_protocol == "REF") || ((m_protocol == "XRF") && m_xrf2ref) ){
 			m_ref = new REFCodec(m_callsign, m_host, m_module, m_hostname, 20001, false, vocoder, modem, m_playback, m_capture);
 			m_ref->set_modem_flags(rxInvert, txInvert, pttInvert, useCOSAsLockout, duplex);
-			m_ref->set_modem_params(m_modemRxFreq.toInt(), m_modemTxFreq.toInt(), m_modemTxDelay.toInt(), m_modemRxLevel.toFloat(), m_modemRFLevel.toFloat(), ysfTXHang, m_modemCWIdTxLevel.toFloat(), m_modemDstarTxLevel.toFloat(), m_modemDMRTxLevel.toFloat(), m_modemYSFTxLevel.toFloat(), m_modemP25TxLevel.toFloat(), m_modemNXDNTxLevel.toFloat(), pocsagTXLevel);
+			m_ref->set_modem_params(m_modemRxFreq.toInt(), m_modemTxFreq.toInt(), m_modemTxDelay.toInt(), m_modemRxLevel.toFloat(), m_modemRFLevel.toFloat(), ysfTXHang, m_modemCWIdTxLevel.toFloat(), m_modemDstarTxLevel.toFloat(), m_modemDMRTxLevel.toFloat(), m_modemYSFTxLevel.toFloat(), m_modemP25TxLevel.toFloat(), m_modemNXDNTxLevel.toFloat(), pocsagTXLevel, m17TXLevel);
 			m_modethread = new QThread;
 			m_ref->moveToThread(m_modethread);
 			connect(this, SIGNAL(module_changed(char)), m_ref, SLOT(module_changed(char)));
@@ -327,10 +340,9 @@ void DroidStar::process_connect()
 		if(m_protocol == "DCS"){
 			m_dcs = new DCSCodec(m_callsign, m_host, m_module, m_hostname, m_port, false, vocoder, modem, m_playback, m_capture);
 			m_dcs->set_modem_flags(rxInvert, txInvert, pttInvert, useCOSAsLockout, duplex);
-			m_dcs->set_modem_params(m_modemRxFreq.toInt(), m_modemTxFreq.toInt(), m_modemTxDelay.toInt(), m_modemRxLevel.toFloat(), m_modemRFLevel.toFloat(), ysfTXHang, m_modemCWIdTxLevel.toFloat(), m_modemDstarTxLevel.toFloat(), m_modemDMRTxLevel.toFloat(), m_modemYSFTxLevel.toFloat(), m_modemP25TxLevel.toFloat(), m_modemNXDNTxLevel.toFloat(), pocsagTXLevel);
+			m_dcs->set_modem_params(m_modemRxFreq.toInt(), m_modemTxFreq.toInt(), m_modemTxDelay.toInt(), m_modemRxLevel.toFloat(), m_modemRFLevel.toFloat(), ysfTXHang, m_modemCWIdTxLevel.toFloat(), m_modemDstarTxLevel.toFloat(), m_modemDMRTxLevel.toFloat(), m_modemYSFTxLevel.toFloat(), m_modemP25TxLevel.toFloat(), m_modemNXDNTxLevel.toFloat(), pocsagTXLevel, m17TXLevel);
 			m_modethread = new QThread;
 			m_dcs->moveToThread(m_modethread);
-			//connect(this, SIGNAL(module_changed(char)), m_dcs, SLOT(module_changed(char)));
 			connect(m_dcs, SIGNAL(update(Codec::MODEINFO)), this, SLOT(update_dcs_data(Codec::MODEINFO)));
 			connect(m_dcs, SIGNAL(update_output_level(unsigned short)), this, SLOT(update_output_level(unsigned short)));
 			connect(m_modethread, SIGNAL(started()), m_dcs, SLOT(send_connect()));
@@ -346,7 +358,6 @@ void DroidStar::process_connect()
 			connect(this, SIGNAL(urcall_changed(QString)), m_dcs, SLOT(urcall_changed(QString)));
 			connect(this, SIGNAL(rptr1_changed(QString)), m_dcs, SLOT(rptr1_changed(QString)));
 			connect(this, SIGNAL(rptr2_changed(QString)), m_dcs, SLOT(rptr2_changed(QString)));
-			//emit module_changed(m_module);
 			emit mycall_changed(m_mycall);
 			emit urcall_changed(m_urcall);
 			emit rptr1_changed(m_rptr1);
@@ -356,10 +367,9 @@ void DroidStar::process_connect()
 		if( (m_protocol == "XRF") && (m_xrf2ref == false) ){
 			m_xrf = new XRFCodec(m_callsign, m_host, m_module, m_hostname, m_port, false, vocoder, modem, m_playback, m_capture);
 			m_xrf->set_modem_flags(rxInvert, txInvert, pttInvert, useCOSAsLockout, duplex);
-			m_xrf->set_modem_params(m_modemRxFreq.toInt(), m_modemTxFreq.toInt(), m_modemTxDelay.toInt(), m_modemRxLevel.toFloat(), m_modemRFLevel.toFloat(), ysfTXHang, m_modemCWIdTxLevel.toFloat(), m_modemDstarTxLevel.toFloat(), m_modemDMRTxLevel.toFloat(), m_modemYSFTxLevel.toFloat(), m_modemP25TxLevel.toFloat(), m_modemNXDNTxLevel.toFloat(), pocsagTXLevel);
+			m_xrf->set_modem_params(m_modemRxFreq.toInt(), m_modemTxFreq.toInt(), m_modemTxDelay.toInt(), m_modemRxLevel.toFloat(), m_modemRFLevel.toFloat(), ysfTXHang, m_modemCWIdTxLevel.toFloat(), m_modemDstarTxLevel.toFloat(), m_modemDMRTxLevel.toFloat(), m_modemYSFTxLevel.toFloat(), m_modemP25TxLevel.toFloat(), m_modemNXDNTxLevel.toFloat(), pocsagTXLevel, m17TXLevel);
 			m_modethread = new QThread;
 			m_xrf->moveToThread(m_modethread);
-			//connect(this, SIGNAL(module_changed(char)), m_xrf, SLOT(module_changed(char)));
 			connect(m_xrf, SIGNAL(update(Codec::MODEINFO)), this, SLOT(update_xrf_data(Codec::MODEINFO)));
 			connect(m_xrf, SIGNAL(update_output_level(unsigned short)), this, SLOT(update_output_level(unsigned short)));
 			connect(m_modethread, SIGNAL(started()), m_xrf, SLOT(send_connect()));
@@ -375,7 +385,6 @@ void DroidStar::process_connect()
 			connect(this, SIGNAL(urcall_changed(QString)), m_xrf, SLOT(urcall_changed(QString)));
 			connect(this, SIGNAL(rptr1_changed(QString)), m_xrf, SLOT(rptr1_changed(QString)));
 			connect(this, SIGNAL(rptr2_changed(QString)), m_xrf, SLOT(rptr2_changed(QString)));
-			//emit module_changed(m_module);
 			emit mycall_changed(m_mycall);
 			emit urcall_changed(m_urcall);
 			emit rptr1_changed(m_rptr1);
@@ -399,7 +408,7 @@ void DroidStar::process_connect()
 
 			m_dmr = new DMRCodec(m_callsign, m_dmrid, m_essid, dmrpass, m_latitude, m_longitude, m_location, m_description, m_freq, m_url, m_swid, m_pkgid, m_dmropts, m_dmr_destid, m_hostname, m_port, false, vocoder, modem, m_playback, m_capture);
 			m_dmr->set_modem_flags(rxInvert, txInvert, pttInvert, useCOSAsLockout, duplex);
-			m_dmr->set_modem_params(m_modemRxFreq.toInt(), m_modemTxFreq.toInt(), m_modemTxDelay.toInt(), m_modemRxLevel.toFloat(), m_modemRFLevel.toFloat(), ysfTXHang, m_modemCWIdTxLevel.toFloat(), m_modemDstarTxLevel.toFloat(), m_modemDMRTxLevel.toFloat(), m_modemYSFTxLevel.toFloat(), m_modemP25TxLevel.toFloat(), m_modemNXDNTxLevel.toFloat(), pocsagTXLevel);
+			m_dmr->set_modem_params(m_modemRxFreq.toInt(), m_modemTxFreq.toInt(), m_modemTxDelay.toInt(), m_modemRxLevel.toFloat(), m_modemRFLevel.toFloat(), ysfTXHang, m_modemCWIdTxLevel.toFloat(), m_modemDstarTxLevel.toFloat(), m_modemDMRTxLevel.toFloat(), m_modemYSFTxLevel.toFloat(), m_modemP25TxLevel.toFloat(), m_modemNXDNTxLevel.toFloat(), pocsagTXLevel, m17TXLevel);
 			m_dmr->set_cc(1);
 			m_modethread = new QThread;
 			m_dmr->moveToThread(m_modethread);
@@ -421,7 +430,7 @@ void DroidStar::process_connect()
 		if( (m_protocol == "YSF") || (m_protocol == "FCS") ){
 			m_ysf = new YSFCodec(m_callsign, m_host, m_hostname, m_port, false, vocoder, modem, m_playback, m_capture);
 			m_ysf->set_modem_flags(rxInvert, txInvert, pttInvert, useCOSAsLockout, duplex);
-			m_ysf->set_modem_params(m_modemRxFreq.toInt(), m_modemTxFreq.toInt(), m_modemTxDelay.toInt(), m_modemRxLevel.toFloat(), m_modemRFLevel.toFloat(), ysfTXHang, m_modemCWIdTxLevel.toFloat(), m_modemDstarTxLevel.toFloat(), m_modemDMRTxLevel.toFloat(), m_modemYSFTxLevel.toFloat(), m_modemP25TxLevel.toFloat(), m_modemNXDNTxLevel.toFloat(), pocsagTXLevel);
+			m_ysf->set_modem_params(m_modemRxFreq.toInt(), m_modemTxFreq.toInt(), m_modemTxDelay.toInt(), m_modemRxLevel.toFloat(), m_modemRFLevel.toFloat(), ysfTXHang, m_modemCWIdTxLevel.toFloat(), m_modemDstarTxLevel.toFloat(), m_modemDMRTxLevel.toFloat(), m_modemYSFTxLevel.toFloat(), m_modemP25TxLevel.toFloat(), m_modemNXDNTxLevel.toFloat(), pocsagTXLevel, m17TXLevel);
 			m_modethread = new QThread;
 			m_ysf->moveToThread(m_modethread);
 			connect(m_ysf, SIGNAL(update(Codec::MODEINFO)), this, SLOT(update_ysf_data(Codec::MODEINFO)));
@@ -475,6 +484,8 @@ void DroidStar::process_connect()
 		}
 		if(m_protocol == "M17"){
 			m_m17 = new M17Codec(m_callsign, m_module, m_host, m_hostname, m_port, false, modem, m_playback, m_capture);
+			m_m17->set_modem_flags(rxInvert, txInvert, pttInvert, useCOSAsLockout, duplex);
+			m_m17->set_modem_params(m_modemRxFreq.toInt(), m_modemTxFreq.toInt(), m_modemTxDelay.toInt(), m_modemRxLevel.toFloat(), m_modemRFLevel.toFloat(), ysfTXHang, m_modemCWIdTxLevel.toFloat(), m_modemDstarTxLevel.toFloat(), m_modemDMRTxLevel.toFloat(), m_modemYSFTxLevel.toFloat(), m_modemP25TxLevel.toFloat(), m_modemNXDNTxLevel.toFloat(), pocsagTXLevel, m17TXLevel);
 			m_modethread = new QThread;
 			m_m17->moveToThread(m_modethread);
 			connect(m_m17, SIGNAL(update(Codec::MODEINFO)), this, SLOT(update_m17_data(Codec::MODEINFO)));
@@ -1128,6 +1139,8 @@ void DroidStar::process_m17_hosts()
 {
 	m_hostmap.clear();
 	m_hostsmodel.clear();
+	m_hostmap["MMDVM_DIRECT"] = "MMDVM_DIRECT";
+
 	QFileInfo check_file(config_path + "/M17Hosts-full.csv");
 	if(check_file.exists() && check_file.isFile()){
 		QFile f(config_path + "/M17Hosts-full.csv");
