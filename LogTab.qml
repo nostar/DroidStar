@@ -47,6 +47,7 @@ Item {
 						   logTxt.height
 			flickableDirection: Flickable.VerticalFlick
 			clip: true
+			ScrollBar.vertical: ScrollBar {}
 			TextArea {
 				id: logTxt
 				width: logTextBox.width

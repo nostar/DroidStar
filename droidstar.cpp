@@ -290,12 +290,12 @@ void DroidStar::process_connect()
 		QString vocoder = "";
 		if( (m_vocoder != "Software vocoder") && (m_vocoder.contains(':')) ){
 			QStringList vl = m_vocoder.split(':');
-			vocoder = vl.at(0);
+			vocoder = vl.at(1);
 		}
 		QString modem = "";
 		if( (m_modem != "None") && (m_modem.contains(':')) ){
 			QStringList ml = m_modem.split(':');
-			modem = ml.at(0);
+			modem = ml.at(1);
 		}
 
 		const bool rxInvert = true;

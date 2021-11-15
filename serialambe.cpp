@@ -74,14 +74,14 @@ QMap<QString, QString> SerialAMBE::discover_devices()
 			fprintf(stderr, "%s", out.toStdString().c_str());fflush(stderr);
 			if(!serialPortInfo.isBusy()){
 				//devlist[serialPortInfo.systemLocation()] = serialPortInfo.portName() + " - " + serialPortInfo.manufacturer() + " " + serialPortInfo.description() + " - " + serialPortInfo.serialNumber();
-				devlist[serialPortInfo.systemLocation()] = serialPortInfo.systemLocation() + ":" + serialPortInfo.description();
+				devlist[serialPortInfo.systemLocation()] = serialPortInfo.description() + ":" + serialPortInfo.systemLocation();
 			}
 		}
 	}
 #else
 	QStringList list = AndroidSerialPort::GetInstance().discover_devices();
 	for ( const auto& i : list  ){
-		devlist[i] = i + ":" + i;
+		devlist[i] = i;
 	}
 #endif
 return devlist;

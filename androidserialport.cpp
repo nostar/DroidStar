@@ -80,7 +80,9 @@ int AndroidSerialPort::write(QByteArray data)
 
 void AndroidSerialPort::setPortName(QString s)
 {
-	qDebug() << "setPortName() == " << s;
+	QAndroidJniObject p = QAndroidJniObject::fromString(s);
+	jstring j = p.object<jstring>();
+	serialJavaObject.callMethod<void>("set_port_name", "(Ljava/lang/String;)V", j);
 }
 
 void AndroidSerialPort::setBaudRate(int br)

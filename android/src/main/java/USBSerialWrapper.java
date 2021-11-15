@@ -36,6 +36,7 @@ public class USBSerialWrapper implements SerialInputOutputManagerTest.Listener {
 	public int m_parity = 0;
 	public int m_flowcontrol = 0;
 	public int m_rts = 0;
+	public String m_devicename;
 	
     UsbSerialPort m_port;
     SerialInputOutputManagerTest usbIoManager;
@@ -45,6 +46,12 @@ public class USBSerialWrapper implements SerialInputOutputManagerTest.Listener {
         System.out.println("Created USBSerialWrapper object with id: " + this.id);
         counter++;
     }
+    
+    public void set_port_name(String d)
+    {
+		m_devicename = d;
+		System.out.println("Java Devicename: " + m_devicename);
+	}
     
     public void set_baud_rate(int br)
     {
@@ -96,7 +103,7 @@ public class USBSerialWrapper implements SerialInputOutputManagerTest.Listener {
 			System.out.println(availableDrivers.size() + " found");
 
 			for(int i = 0; i < availableDrivers.size(); ++i){
-				devices[i] = availableDrivers.get(i).getDevice().getProductName();
+				devices[i] = availableDrivers.get(i).getDevice().getProductName() + ":" + availableDrivers.get(i).getDevice().getDeviceName();
 				System.out.println("USB device getDeviceName() == " + availableDrivers.get(i).getDevice().getDeviceName());
 				System.out.println("USB device getProductName() == " + availableDrivers.get(i).getDevice().getProductName());
 				System.out.println("USB device getProductId() == " + availableDrivers.get(i).getDevice().getProductId());
@@ -109,6 +116,7 @@ public class USBSerialWrapper implements SerialInputOutputManagerTest.Listener {
     public String setup_serial(Context c)
     {
 		m_context = c;
+		int devicenum = 0;
 		UsbManager manager = (UsbManager) m_context.getSystemService(Context.USB_SERVICE);
 		List<UsbSerialDriver> availableDrivers = UsbSerialProber.getDefaultProber().findAllDrivers(manager);
 		
@@ -123,10 +131,17 @@ public class USBSerialWrapper implements SerialInputOutputManagerTest.Listener {
 				System.out.println("USB device getProductName() == " + availableDrivers.get(i).getDevice().getProductName());
 				System.out.println("USB device getProductId() == " + availableDrivers.get(i).getDevice().getProductId());
 				System.out.println("USB device getVendorId() == " + availableDrivers.get(i).getDevice().getVendorId());
+				
+				//if((availableDrivers.get(i).getDevice().getDeviceName()) == m_devicename){
+				if(m_devicename.equals(availableDrivers.get(i).getDevice().getDeviceName())){
+					devicenum = i;
+					System.out.println("Found device == " + devicenum);
+					
+				}
 			}
 		}
 		
-		UsbSerialDriver driver = availableDrivers.get(0);
+		UsbSerialDriver driver = availableDrivers.get(devicenum);
 		UsbDeviceConnection connection = manager.openDevice(driver.getDevice());
 		
 		if (connection == null) {

@@ -71,13 +71,14 @@ Item {
 	property alias modemNXDNTXLevelEdit: _modemNXDNTXLevelEdit
 
 	Flickable {
+		id: flickable
 		anchors.fill: parent
 		contentWidth: parent.width
 		contentHeight: vocoderButton.y +
 					   vocoderButton.height + 10
 		flickableDirection: Flickable.VerticalFlick
 		clip: true
-
+		ScrollBar.vertical: ScrollBar {}
 		Text {
 			id: csLabel
 			x: 10
