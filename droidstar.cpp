@@ -221,8 +221,6 @@ void DroidStar::process_connect()
 		MicPermission::check_permission();
 #endif
 
-#include "build.h"
-
 		if( (m_callsign.size() < 4) ||
 			(m_dmrid < 250000) ||
 			(m_callsign != m_dmrids[m_dmrid]))

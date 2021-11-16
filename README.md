@@ -96,6 +96,9 @@ My primary development platform is Fedora Linux.  With a proper build environmen
 
 All of the gradle build files are provided to create an APK file ready to be installed on an Android device.  A proper Android build system including the Android NDK is required and beyond the scope of this document.
 
-# No builds are available
-No builds for any platform are available here.  This is and always will be an open source project, to be used for educational and development purposes only.
+# No builds are available on Github
+No builds for any platform are available on this Github site.  This is and always will be an open source project, to be used for educational and development purposes only. I am currently providing a Windows build which is *not* to be confused as any sort of official release of any kind.  No support will be provided for any build at any time.
+
+http://www.dudetronics.com/index.php/droidstar
+
 
