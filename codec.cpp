@@ -16,7 +16,11 @@
 */
 #include "codec.h"
 #include <iostream>
+#ifdef Q_OS_WIN
+#include <windows.h>
+#else
 #include <dlfcn.h>
+#endif
 
 #ifdef USE_FLITE
 extern "C" {
@@ -164,6 +168,7 @@ bool Codec::load_vocoder_plugin()
 #else
 	QString voc = config_path + "/vocoder_plugin." + QSysInfo::kernelType() + "." + QSysInfo::currentCpuArchitecture();
 #endif
+#if !defined(Q_OS_WIN)
 	//QString voc = "/mnt/data/src/mbe_vocoder/vocoder_plugin.linux.x86_64.so";
 	void* a = dlopen(voc.toLocal8Bit(), RTLD_LAZY);
 	if (!a) {
@@ -183,6 +188,26 @@ bool Codec::load_vocoder_plugin()
 	m_mbevocoder = create_a();
 	qDebug() << voc + " loaded";
 	return true;
+#else
+	HINSTANCE hinstvoclib;
+	hinstvoclib = LoadLibrary(reinterpret_cast<LPCWSTR>(voc.utf16()));
+
+	if (hinstvoclib != NULL) {
+		create_t* create_a = (create_t*)GetProcAddress(hinstvoclib, "create");
+
+		if (create_a != NULL) {
+			m_mbevocoder = create_a();
+			qDebug() << voc + " loaded";
+			return true;
+		}
+		else{
+			return false;
+		}
+	}
+	else{
+		return false;
+	}
+#endif
 }
 
 void Codec::deleteLater()

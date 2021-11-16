@@ -33,7 +33,6 @@
 #include <QDir>
 #include <stdio.h>
 #include <fcntl.h>
-#include <sys/mman.h>
 #include <iostream>
 
 DroidStar::DroidStar(QObject *parent) :
@@ -222,7 +221,7 @@ void DroidStar::process_connect()
 		MicPermission::check_permission();
 #endif
 
-//#include "build.h"
+#include "build.h"
 
 		if( (m_callsign.size() < 4) ||
 			(m_dmrid < 250000) ||

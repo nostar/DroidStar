@@ -20,7 +20,6 @@
 #include <QQuickStyle>
 #include <QIcon>
 #include <fcntl.h>
-#include <sys/mman.h>
 #include "droidstar.h"
 
 int main(int argc, char *argv[])
