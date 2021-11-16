@@ -50,7 +50,7 @@ SerialAMBE::SerialAMBE(QString protocol) :
 
 SerialAMBE::~SerialAMBE()
 {
-	//m_serial->close();
+	m_serial->close();
 }
 
 QMap<QString, QString> SerialAMBE::discover_devices()
@@ -169,11 +169,9 @@ void SerialAMBE::connect_to_serial(QString p)
 			fprintf(stderr, "\n");
 			fflush(stderr);
 #endif
-			//hw_ambe_present = true;
 		}
 		else{
-			//hw_ambe_present = false;
-			//std::cerr << "Error: Failed to open device." << std::endl;
+			qDebug() << "Error: Failed to open device.";
 		}
 	}
 }
@@ -199,7 +197,6 @@ void SerialAMBE::process_serial()
 		m_serialdata.append(d[i]);
 	}
 #ifdef DEBUG
-	qDebug() << "RECV: " << d.size() << " : " << m_serialdata.size() << " : " << d.toHex();
 	fprintf(stderr, "AMBEHW %d:%d:", d.size(), m_serialdata.size());
 	for(int i = 0; i < d.size(); ++i){
 		//if((d.data()[i] == 0x61) && (data.data()[i+1] == 0x01) && (data.data()[i+2] == 0x42) && (data.data()[i+3] == 0x02)){
