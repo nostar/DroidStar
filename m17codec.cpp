@@ -18,6 +18,7 @@
 
 #include <cstring>
 #include <iostream>
+#include "MMDVMDefines.h"
 #include "m17codec.h"
 #include "M17Defines.h"
 #include "M17Convolution.h"
@@ -411,9 +412,9 @@ void M17Codec::send_modem_data(QByteArray d)
 		interleave(txframe, tmp);
 		decorrelate(tmp, txframe);
 
-		m_rxmodemq.append(0xe0);
+		m_rxmodemq.append(MMDVM_FRAME_START);
 		m_rxmodemq.append(M17_FRAME_LENGTH_BYTES + 4);
-		m_rxmodemq.append(0x45);
+		m_rxmodemq.append(MMDVM_M17_LINK_SETUP);
 		m_rxmodemq.append('\x00');
 
 		for(uint32_t i = 0; i < M17_FRAME_LENGTH_BYTES; ++i){
@@ -444,9 +445,9 @@ void M17Codec::send_modem_data(QByteArray d)
 	interleave(txframe, tmp);
 	decorrelate(tmp, txframe);
 
-	m_rxmodemq.append(0xe0);
+	m_rxmodemq.append(MMDVM_FRAME_START);
 	m_rxmodemq.append(M17_FRAME_LENGTH_BYTES + 4);
-	m_rxmodemq.append(0x46);
+	m_rxmodemq.append(MMDVM_M17_STREAM);
 	m_rxmodemq.append('\x00');
 
 	for(uint32_t i = 0; i < M17_FRAME_LENGTH_BYTES; ++i){
@@ -470,13 +471,13 @@ void M17Codec::process_modem_data(QByteArray d)
 	}
 	uint8_t *p = (uint8_t *)d.data();
 
-	if((d.data()[2] == 0x45) || (d.data()[2] == 0x46)){
+	if((d.data()[2] == MMDVM_M17_LINK_SETUP) || (d.data()[2] == MMDVM_M17_STREAM)){
 		p += 4;
 		decorrelate(p, tmp);
 		interleave(tmp, p);
 	}
 
-	if((d.data()[2] == 0x48) || (d.data()[2] == 0x49)){
+	if((d.data()[2] == MMDVM_M17_LOST) || (d.data()[2] == MMDVM_M17_EOT)){
 		txstreamid = 0;
 		if(m_modeinfo.host == "MMDVM_DIRECT"){
 			m_modeinfo.streamid = 0;
@@ -484,9 +485,9 @@ void M17Codec::process_modem_data(QByteArray d)
 		}
 	}
 
-	else if(d.data()[2] == 0x45){
+	else if(d.data()[2] == MMDVM_M17_LINK_SETUP){
 		::memset(lsf, 0x00U, M17_LSF_LENGTH_BYTES);
-		uint32_t ber = conv.decodeLinkSetup(p + M17_SYNC_LENGTH_BYTES, lsf);
+		conv.decodeLinkSetup(p + M17_SYNC_LENGTH_BYTES, lsf);
 		bool valid = checkCRC16(lsf, M17_LSF_LENGTH_BYTES);
 		txstreamid = static_cast<uint16_t>((::rand() & 0xFFFF));
 		qDebug() << "LSF valid == " << valid;
@@ -501,9 +502,9 @@ void M17Codec::process_modem_data(QByteArray d)
 			m_modeinfo.src = QString((char *)cs);
 		}
 	}
-	else if(d.data()[2] == 0x46){
+	else if(d.data()[2] == MMDVM_M17_STREAM){
 		uint8_t frame[M17_FN_LENGTH_BYTES + M17_PAYLOAD_LENGTH_BYTES];
-		uint32_t errors = conv.decodeData(p + M17_SYNC_LENGTH_BYTES + M17_LICH_FRAGMENT_FEC_LENGTH_BYTES, frame);
+		conv.decodeData(p + M17_SYNC_LENGTH_BYTES + M17_LICH_FRAGMENT_FEC_LENGTH_BYTES, frame);
 		//uint16_t fn = (frame[0U] << 8) + (frame[1U] << 0);
 
 		uint8_t netframe[M17_LSF_LENGTH_BYTES + M17_FN_LENGTH_BYTES + M17_PAYLOAD_LENGTH_BYTES + M17_CRC_LENGTH_BYTES];
@@ -806,7 +807,7 @@ void M17Codec::process_rx_data()
 	if((m_rxmodemq.size() > 2) && (++cnt >= 2)){
 		QByteArray out;
 		int s = m_rxmodemq[1];
-		if((m_rxmodemq[0] == 0xe0) && (m_rxmodemq.size() >= s)){
+		if((m_rxmodemq[0] == MMDVM_FRAME_START) && (m_rxmodemq.size() >= s)){
 			for(int i = 0; i < s; ++i){
 				out.append(m_rxmodemq.dequeue());
 			}

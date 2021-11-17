@@ -18,6 +18,7 @@
 
 #if !defined(BPTC19696_H)
 #define	BPTC19696_H
+#include <cinttypes>
 
 class CBPTC19696
 {
@@ -25,25 +26,25 @@ public:
     CBPTC19696();
     ~CBPTC19696();
     
-    void decode(const unsigned char* in, unsigned char* out);
+	void decode(const uint8_t* in, uint8_t* out);
     
-    void encode(const unsigned char* in, unsigned char* out);
+	void encode(const uint8_t* in, uint8_t* out);
     
 private:
     bool m_rawData[196];
     bool m_deInterData[196];
     
-    void decodeExtractBinary(const unsigned char* in);
+	void decodeExtractBinary(const uint8_t* in);
     void decodeErrorCheck();
     void decodeDeInterleave();
-	void decodeExtractData(unsigned char* data);
+	void decodeExtractData(uint8_t* data);
     
-    void encodeExtractData(const unsigned char* in);
+	void encodeExtractData(const uint8_t* in);
     void encodeInterleave();
     void encodeErrorCheck();
-    void encodeExtractBinary(unsigned char* data);
-	void byteToBitsBE(unsigned char byte, bool* bits);
-	void bitsToByteBE(bool* bits, unsigned char& byte);
+	void encodeExtractBinary(uint8_t* data);
+	void byteToBitsBE(uint8_t byte, bool* bits);
+	void bitsToByteBE(bool* bits, uint8_t& byte);
 };
 
 #endif

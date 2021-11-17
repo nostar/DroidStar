@@ -20,6 +20,7 @@
 #include "CRCenc.h"
 #include "Golay24128.h"
 #include "chamming.h"
+#include "MMDVMDefines.h"
 #include <iostream>
 #include <cstring>
 
@@ -193,9 +194,9 @@ void YSFCodec::process_udp()
 		m_modeinfo.gw = QString(ysftag);
 		p_data = (uint8_t *)buf.data() + 35;
 		if(m_modem){
-			m_rxmodemq.append(0xe0);
+			m_rxmodemq.append(MMDVM_FRAME_START);
 			m_rxmodemq.append(124);
-			m_rxmodemq.append(0x20);
+			m_rxmodemq.append(MMDVM_YSF_DATA);
 			m_rxmodemq.append('\x00');
 
 			for(int i = 0; i < 120; ++i){
@@ -609,7 +610,8 @@ void YSFCodec::process_modem_data(QByteArray d)
 {
 	QByteArray txdata;
 	uint8_t *p_frame = (uint8_t *)(d.data());
-	if(m_fcs){
+
+	if(m_fcs && d.size() >= 130){
 		::memset(p_frame + 120U, 0, 10U);
 		::memcpy(p_frame + 121U, m_fcsname.c_str(), 8);
 	}
@@ -621,6 +623,7 @@ void YSFCodec::process_modem_data(QByteArray d)
 		m_ysfFrame[34U] = (m_txcnt & 0x7f) << 1;
 		::memcpy(m_ysfFrame + 35U, p_frame + 4U, 120);
 	}
+
 	++m_txcnt;
 	txdata.append((char *)m_ysfFrame, 155);
 	m_udp->writeDatagram(txdata, m_address, m_modeinfo.port);
@@ -1288,7 +1291,7 @@ void YSFCodec::process_rx_data()
 	if((m_rxmodemq.size() > 2) && (++cnt >= 5)){
 		QByteArray out;
 		int s = m_rxmodemq[1];
-		if((m_rxmodemq[0] == 0xe0) && (m_rxmodemq.size() >= s)){
+		if((m_rxmodemq[0] == MMDVM_FRAME_START) && (m_rxmodemq.size() >= s)){
 			for(int i = 0; i < s; ++i){
 				out.append(m_rxmodemq.dequeue());
 			}

@@ -35,7 +35,7 @@ CBPTC19696::~CBPTC19696()
 }
 
 // The main decode function
-void CBPTC19696::decode(const unsigned char* in, unsigned char* out)
+void CBPTC19696::decode(const uint8_t* in, uint8_t* out)
 {
     assert(in != NULL);
     assert(out != NULL);
@@ -54,7 +54,7 @@ void CBPTC19696::decode(const unsigned char* in, unsigned char* out)
 }
 
 // The main encode function
-void CBPTC19696::encode(const unsigned char* in, unsigned char* out)
+void CBPTC19696::encode(const uint8_t* in, uint8_t* out)
 {
     assert(in != NULL);
     assert(out != NULL);
@@ -72,7 +72,7 @@ void CBPTC19696::encode(const unsigned char* in, unsigned char* out)
     encodeExtractBinary(out);
 }
 
-void CBPTC19696::byteToBitsBE(unsigned char byte, bool* bits)
+void CBPTC19696::byteToBitsBE(uint8_t byte, bool* bits)
 {
 	assert(bits != NULL);
 
@@ -86,7 +86,7 @@ void CBPTC19696::byteToBitsBE(unsigned char byte, bool* bits)
 	bits[7U] = (byte & 0x01U) == 0x01U;
 }
 
-void CBPTC19696::bitsToByteBE(bool* bits, unsigned char& byte)
+void CBPTC19696::bitsToByteBE(bool* bits, uint8_t& byte)
 {
 	assert(bits != NULL);
 
@@ -100,7 +100,7 @@ void CBPTC19696::bitsToByteBE(bool* bits, unsigned char& byte)
 	byte |= bits[7U] ? 0x01U : 0x00U;
 }
 
-void CBPTC19696::decodeExtractBinary(const unsigned char* in)
+void CBPTC19696::decodeExtractBinary(const uint8_t* in)
 {
     // First block
 	byteToBitsBE(in[0U],  m_rawData + 0U);
@@ -141,13 +141,13 @@ void CBPTC19696::decodeExtractBinary(const unsigned char* in)
 // Deinterleave the raw data
 void CBPTC19696::decodeDeInterleave()
 {
-    for (unsigned int i = 0U; i < 196U; i++)
+	for (uint32_t i = 0U; i < 196U; i++)
         m_deInterData[i] = false;
     
     // The first bit is R(3) which is not used so can be ignored
-    for (unsigned int a = 0U; a < 196U; a++)	{
+	for (uint32_t a = 0U; a < 196U; a++)	{
         // Calculate the interleave sequence
-        unsigned int interleaveSequence = (a * 181U) % 196U;
+		uint32_t interleaveSequence = (a * 181U) % 196U;
         // Shuffle the data
         m_deInterData[a] = m_rawData[interleaveSequence];
     }
@@ -157,22 +157,22 @@ void CBPTC19696::decodeDeInterleave()
 void CBPTC19696::decodeErrorCheck()
 {
     bool fixing;
-    unsigned int count = 0U;
+	uint32_t count = 0U;
     do {
         fixing = false;
         
         // Run through each of the 15 columns
         bool col[13U];
-        for (unsigned int c = 0U; c < 15U; c++) {
-            unsigned int pos = c + 1U;
-            for (unsigned int a = 0U; a < 13U; a++) {
+		for (uint32_t c = 0U; c < 15U; c++) {
+			uint32_t pos = c + 1U;
+			for (uint32_t a = 0U; a < 13U; a++) {
                 col[a] = m_deInterData[pos];
                 pos = pos + 15U;
             }
             
             if (CHamming::decode1393(col)) {
-                unsigned int pos = c + 1U;
-                for (unsigned int a = 0U; a < 13U; a++) {
+				uint32_t pos = c + 1U;
+				for (uint32_t a = 0U; a < 13U; a++) {
                     m_deInterData[pos] = col[a];
                     pos = pos + 15U;
                 }
@@ -182,8 +182,8 @@ void CBPTC19696::decodeErrorCheck()
         }
         
         // Run through each of the 9 rows containing data
-        for (unsigned int r = 0U; r < 9U; r++) {
-            unsigned int pos = (r * 15U) + 1U;
+		for (uint32_t r = 0U; r < 9U; r++) {
+			uint32_t pos = (r * 15U) + 1U;
             if (CHamming::decode15113_2(m_deInterData + pos))
                 fixing = true;
         }
@@ -193,37 +193,38 @@ void CBPTC19696::decodeErrorCheck()
 }
 
 // Extract the 96 bits of payload
-void CBPTC19696::decodeExtractData(unsigned char* data)
+void CBPTC19696::decodeExtractData(uint8_t* data)
 {
     bool bData[96U];
-    unsigned int pos = 0U;
-    for (unsigned int a = 4U; a <= 11U; a++, pos++)
+	uint32_t pos = 0U;
+	for(uint32_t a = 4U; a <= 11U; a++, pos++){
         bData[pos] = m_deInterData[a];
-    
-    for (unsigned int a = 16U; a <= 26U; a++, pos++)
+	}
+	for(uint32_t a = 16U; a <= 26U; a++, pos++){
         bData[pos] = m_deInterData[a];
-    
-    for (unsigned int a = 31U; a <= 41U; a++, pos++)
+	}
+	for(uint32_t a = 31U; a <= 41U; a++, pos++){
         bData[pos] = m_deInterData[a];
-    
-    for (unsigned int a = 46U; a <= 56U; a++, pos++)
+	}
+	for(uint32_t a = 46U; a <= 56U; a++, pos++){
         bData[pos] = m_deInterData[a];
-    
-    for (unsigned int a = 61U; a <= 71U; a++, pos++)
+	}
+	for(uint32_t a = 61U; a <= 71U; a++, pos++){
         bData[pos] = m_deInterData[a];
-    
-    for (unsigned int a = 76U; a <= 86U; a++, pos++)
+	}
+	for(uint32_t a = 76U; a <= 86U; a++, pos++){
         bData[pos] = m_deInterData[a];
-    
-    for (unsigned int a = 91U; a <= 101U; a++, pos++)
+	}
+	for(uint32_t a = 91U; a <= 101U; a++, pos++){
         bData[pos] = m_deInterData[a];
-    
-    for (unsigned int a = 106U; a <= 116U; a++, pos++)
+	}
+	for(uint32_t a = 106U; a <= 116U; a++, pos++){
         bData[pos] = m_deInterData[a];
-    
-    for (unsigned int a = 121U; a <= 131U; a++, pos++)
+	}
+	for(uint32_t a = 121U; a <= 131U; a++, pos++){
         bData[pos] = m_deInterData[a];
-    
+	}
+
 	bitsToByteBE(bData + 0U,  data[0U]);
 	bitsToByteBE(bData + 8U,  data[1U]);
 	bitsToByteBE(bData + 16U, data[2U]);
@@ -239,7 +240,7 @@ void CBPTC19696::decodeExtractData(unsigned char* data)
 }
 
 // Extract the 96 bits of payload
-void CBPTC19696::encodeExtractData(const unsigned char* in)
+void CBPTC19696::encodeExtractData(const uint8_t* in)
 {
     bool bData[96U];
 	byteToBitsBE(in[0U],  bData + 0U);
@@ -255,35 +256,35 @@ void CBPTC19696::encodeExtractData(const unsigned char* in)
 	byteToBitsBE(in[10U], bData + 80U);
 	byteToBitsBE(in[11U], bData + 88U);
     
-    for (unsigned int i = 0U; i < 196U; i++)
+	for (uint32_t i = 0U; i < 196U; i++)
         m_deInterData[i] = false;
     
-    unsigned int pos = 0U;
-    for (unsigned int a = 4U; a <= 11U; a++, pos++)
+	uint32_t pos = 0U;
+	for (uint32_t a = 4U; a <= 11U; a++, pos++)
         m_deInterData[a] = bData[pos];
     
-    for (unsigned int a = 16U; a <= 26U; a++, pos++)
+	for (uint32_t a = 16U; a <= 26U; a++, pos++)
         m_deInterData[a] = bData[pos];
     
-    for (unsigned int a = 31U; a <= 41U; a++, pos++)
+	for (uint32_t a = 31U; a <= 41U; a++, pos++)
         m_deInterData[a] = bData[pos];
     
-    for (unsigned int a = 46U; a <= 56U; a++, pos++)
+	for (uint32_t a = 46U; a <= 56U; a++, pos++)
         m_deInterData[a] = bData[pos];
     
-    for (unsigned int a = 61U; a <= 71U; a++, pos++)
+	for (uint32_t a = 61U; a <= 71U; a++, pos++)
         m_deInterData[a] = bData[pos];
     
-    for (unsigned int a = 76U; a <= 86U; a++, pos++)
+	for (uint32_t a = 76U; a <= 86U; a++, pos++)
         m_deInterData[a] = bData[pos];
     
-    for (unsigned int a = 91U; a <= 101U; a++, pos++)
+	for (uint32_t a = 91U; a <= 101U; a++, pos++)
         m_deInterData[a] = bData[pos];
     
-    for (unsigned int a = 106U; a <= 116U; a++, pos++)
+	for (uint32_t a = 106U; a <= 116U; a++, pos++)
         m_deInterData[a] = bData[pos];
     
-    for (unsigned int a = 121U; a <= 131U; a++, pos++)
+	for (uint32_t a = 121U; a <= 131U; a++, pos++)
         m_deInterData[a] = bData[pos];
 }
 
@@ -292,16 +293,16 @@ void CBPTC19696::encodeErrorCheck()
 {
     
     // Run through each of the 9 rows containing data
-    for (unsigned int r = 0U; r < 9U; r++) {
-        unsigned int pos = (r * 15U) + 1U;
+	for (uint32_t r = 0U; r < 9U; r++) {
+		uint32_t pos = (r * 15U) + 1U;
         CHamming::encode15113_2(m_deInterData + pos);
     }
     
     // Run through each of the 15 columns
     bool col[13U];
-    for (unsigned int c = 0U; c < 15U; c++) {
-        unsigned int pos = c + 1U;
-        for (unsigned int a = 0U; a < 13U; a++) {
+	for (uint32_t c = 0U; c < 15U; c++) {
+		uint32_t pos = c + 1U;
+		for (uint32_t a = 0U; a < 13U; a++) {
             col[a] = m_deInterData[pos];
             pos = pos + 15U;
         }
@@ -309,7 +310,7 @@ void CBPTC19696::encodeErrorCheck()
         CHamming::encode1393(col);
         
         pos = c + 1U;
-        for (unsigned int a = 0U; a < 13U; a++) {
+		for (uint32_t a = 0U; a < 13U; a++) {
             m_deInterData[pos] = col[a];
             pos = pos + 15U;
         }
@@ -319,19 +320,19 @@ void CBPTC19696::encodeErrorCheck()
 // Interleave the raw data
 void CBPTC19696::encodeInterleave()
 {
-    for (unsigned int i = 0U; i < 196U; i++)
+	for (uint32_t i = 0U; i < 196U; i++)
         m_rawData[i] = false;
     
     // The first bit is R(3) which is not used so can be ignored
-    for (unsigned int a = 0U; a < 196U; a++)	{
+	for (uint32_t a = 0U; a < 196U; a++)	{
         // Calculate the interleave sequence
-        unsigned int interleaveSequence = (a * 181U) % 196U;
+		uint32_t interleaveSequence = (a * 181U) % 196U;
         // Unshuffle the data
         m_rawData[interleaveSequence] = m_deInterData[a];
     }
 }
 
-void CBPTC19696::encodeExtractBinary(unsigned char* data)
+void CBPTC19696::encodeExtractBinary(uint8_t* data)
 {
     // First block
 	bitsToByteBE(m_rawData + 0U,  data[0U]);
@@ -348,7 +349,7 @@ void CBPTC19696::encodeExtractBinary(unsigned char* data)
 	bitsToByteBE(m_rawData + 88U, data[11U]);
     
     // Handle the two bits
-    unsigned char byte;
+	uint8_t byte;
 	bitsToByteBE(m_rawData + 96U, byte);
     data[12U] = (data[12U] & 0x3FU) | ((byte >> 0) & 0xC0U);
     data[20U] = (data[20U] & 0xFCU) | ((byte >> 4) & 0x03U);

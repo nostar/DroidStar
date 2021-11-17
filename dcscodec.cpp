@@ -18,13 +18,9 @@
 #include <cstring>
 #include "dcscodec.h"
 #include "CRCenc.h"
+#include "MMDVMDefines.h"
 
 //#define DEBUG
-
-const unsigned char MMDVM_DSTAR_HEADER = 0x10U;
-const unsigned char MMDVM_DSTAR_DATA   = 0x11U;
-const unsigned char MMDVM_DSTAR_LOST   = 0x12U;
-const unsigned char MMDVM_DSTAR_EOT    = 0x13U;
 
 DCSCodec::DCSCodec(QString callsign, QString hostname, char module, QString host, int port, bool ipv6, QString vocoder, QString modem, QString audioin, QString audioout) :
 	Codec(callsign, module, hostname, host, port, ipv6, vocoder, modem, audioin, audioout)
@@ -133,7 +129,7 @@ void DCSCodec::process_udp()
 
 			if(m_modem){
 				uint8_t out[44];
-				out[0] = 0xe0;
+				out[0] = MMDVM_FRAME_START;
 				out[1] = 44;
 				out[2] = MMDVM_DSTAR_HEADER;
 				out[3] = 0x40;
@@ -217,14 +213,14 @@ void DCSCodec::process_udp()
 			emit update(m_modeinfo);
 			m_modeinfo.streamid = 0;
 			if(m_modem){
-				m_rxmodemq.append(0xe0);
+				m_rxmodemq.append(MMDVM_FRAME_START);
 				m_rxmodemq.append(3);
 				m_rxmodemq.append(MMDVM_DSTAR_EOT);
 			}
 		}
 		else if(m_modeinfo.stream_state == STREAMING){
 			if(m_modem){
-				m_rxmodemq.append(0xe0);
+				m_rxmodemq.append(MMDVM_FRAME_START);
 				m_rxmodemq.append(15);
 				m_rxmodemq.append(MMDVM_DSTAR_DATA);
 				for(int i = 0; i < 12; ++i){
@@ -568,7 +564,7 @@ void DCSCodec::process_rx_data()
 	if(m_rxmodemq.size() > 2){
 		QByteArray out;
 		int s = m_rxmodemq[1];
-		if((m_rxmodemq[0] == 0xe0) && (m_rxmodemq.size() >= s)){
+		if((m_rxmodemq[0] == MMDVM_FRAME_START) && (m_rxmodemq.size() >= s)){
 			for(int i = 0; i < s; ++i){
 				out.append(m_rxmodemq.dequeue());
 			}

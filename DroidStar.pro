@@ -102,6 +102,7 @@ HEADERS += \
 	Golay24128.h \
 	M17Convolution.h \
 	M17Defines.h \
+	MMDVMDefines.h \
 	SHA256.h \
 	YSFConvolution.h \
 	YSFFICH.h \

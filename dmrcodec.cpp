@@ -22,16 +22,9 @@
 #include "crs129.h"
 #include "SHA256.h"
 #include "CRCenc.h"
+#include "MMDVMDefines.h"
 
 //#define DEBUG
-
-const unsigned char MMDVM_DMR_DATA1   = 0x18U;
-const unsigned char MMDVM_DMR_LOST1   = 0x19U;
-const unsigned char MMDVM_DMR_DATA2   = 0x1AU;
-const unsigned char MMDVM_DMR_LOST2   = 0x1BU;
-const unsigned char MMDVM_DMR_SHORTLC = 0x1CU;
-const unsigned char MMDVM_DMR_START   = 0x1DU;
-const unsigned char MMDVM_DMR_ABORT   = 0x1EU;
 
 const uint32_t ENCODING_TABLE_1676[] =
 	{0x0000U, 0x0273U, 0x04E5U, 0x0696U, 0x09C9U, 0x0BBAU, 0x0D2CU, 0x0F5FU, 0x11E2U, 0x1391U, 0x1507U, 0x1774U,
@@ -221,7 +214,7 @@ void DMRCodec::process_udp()
 			qDebug() << "New DMR stream from " << m_modeinfo.srcid << " to " << m_modeinfo.dstid;
 		}
 		if(m_modem){
-			m_rxmodemq.append(0xe0);
+			m_rxmodemq.append(MMDVM_FRAME_START);
 			m_rxmodemq.append(0x25);
 			m_rxmodemq.append(MMDVM_DMR_DATA2);
 			m_rxmodemq.append(t);
@@ -274,7 +267,7 @@ void DMRCodec::process_udp()
 			uint8_t t = ((uint8_t)buf.data()[15] & 0x0f);
 			if(!t) t = 0x20;
 
-			m_rxmodemq.append(0xe0);
+			m_rxmodemq.append(MMDVM_FRAME_START);
 			m_rxmodemq.append(0x25);
 			m_rxmodemq.append(MMDVM_DMR_DATA2);
 			m_rxmodemq.append(t);
@@ -939,7 +932,7 @@ void DMRCodec::process_rx_data()
 	if((m_rxmodemq.size() > 2) && (++cnt >= 3)){
 		QByteArray out;
 		int s = m_rxmodemq[1];
-		if((m_rxmodemq[0] == 0xe0) && (m_rxmodemq.size() >= s)){
+		if((m_rxmodemq[0] == MMDVM_FRAME_START) && (m_rxmodemq.size() >= s)){
 			for(int i = 0; i < s; ++i){
 				out.append(m_rxmodemq.dequeue());
 			}

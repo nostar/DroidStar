@@ -55,7 +55,7 @@ QStringList AndroidSerialPort::discover_devices()
 int AndroidSerialPort::open(int p)
 {
 	qDebug() << serialJavaObject.callObjectMethod("setup_serial", "(Landroid/content/Context;)Ljava/lang/String;", QtAndroid::androidContext().object()).toString();
-	return 1;
+	return p;
 }
 
 int AndroidSerialPort::write(char *data, int s)

@@ -233,9 +233,9 @@ void SerialAMBE::encode(int16_t *audio)
 		packet [(i*2)+7] = (audio[i] >> 8) & 0xff;
 		packet [(i*2)+8] = audio[i] & 0xff;
 	}
-	int r = m_serial->write((char *)packet, 327);
+	m_serial->write((char *)packet, 327);
 #ifdef DEBUG
-			fprintf(stderr, "SENDHW:%d: ", r);
+			fprintf(stderr, "SENDHW: ");
 			for(int i = 0; i < 326; ++i){
 				//if((d.data()[i] == 0x61) && (data.data()[i+1] == 0x01) && (data.data()[i+2] == 0x42) && (data.data()[i+3] == 0x02)){
 				//	i+= 6;
