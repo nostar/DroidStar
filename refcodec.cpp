@@ -96,6 +96,7 @@ void REFCodec::process_udp()
 				m_modeinfo.hw_vocoder_loaded = true;
 				m_ambedev = new SerialAMBE("REF");
 				m_ambedev->connect_to_serial(m_vocoder);
+				connect(m_ambedev, SIGNAL(connected(bool)), this, SLOT(ambe_connect_status(bool)));
 				connect(m_ambedev, SIGNAL(data_ready()), this, SLOT(get_ambe()));
 			}
 			else{
@@ -107,6 +108,7 @@ void REFCodec::process_udp()
 				m_modem->set_modem_flags(m_rxInvert, m_txInvert, m_pttInvert, m_useCOSAsLockout, m_duplex);
 				m_modem->set_modem_params(m_rxfreq, m_txfreq, m_txDelay, m_rxLevel, m_rfLevel, m_ysfTXHang, m_cwIdTXLevel, m_dstarTXLevel, m_dmrTXLevel, m_ysfTXLevel, m_p25TXLevel, m_nxdnTXLevel, m_pocsagTXLevel, m_m17TXLevel);
 				m_modem->connect_to_serial(m_modemport);
+				connect(m_modem, SIGNAL(connected(bool)), this, SLOT(mmdvm_connect_status(bool)));
 				connect(m_modem, SIGNAL(modem_data_ready(QByteArray)), this, SLOT(process_modem_data(QByteArray)));
 			}
 			m_rxtimer = new QTimer();
@@ -152,7 +154,7 @@ void REFCodec::process_udp()
 		memcpy(temp, buf.data() + 44, 8); temp[8] = '\0';
 		QString mycall = QString(temp);
 		QString h = m_hostname + " " + m_module;
-		qDebug() << "h:r1:r2 == " << h.simplified() << ":" << rptr1.simplified() << ":" << rptr2.simplified();
+
 		if( (rptr2.simplified() == h.simplified()) || (rptr1.simplified() == h.simplified()) ){
 			m_rxwatchdog = 0;
 			const uint16_t streamid = (buf.data()[14] << 8) | (buf.data()[15] & 0xff);
@@ -204,7 +206,7 @@ void REFCodec::process_udp()
 		}
 		m_rxwatchdog = 0;
 		m_modeinfo.stream_state = STREAMING;
-		m_modeinfo.frame_number = buf.data()[16];
+		m_modeinfo.frame_number = (uint8_t)buf.data()[16];
 
 		if(m_modem){
 			m_rxmodemq.append(0xe0);
@@ -469,7 +471,6 @@ void REFCodec::send_frame(uint8_t *ambe)
 
 	if(txstreamid == 0){
 		txstreamid = static_cast<uint16_t>((::rand() & 0xFFFF));
-		//std::cerr << "txstreamid == " << txstreamid << std::endl;
 	}
 	if(sendheader){
 		sendheader = 0;
@@ -488,8 +489,8 @@ void REFCodec::send_frame(uint8_t *ambe)
 		txdata[11] = 0x00;
 		txdata[12] = 0x02;
 		txdata[13] = 0x01;
-		txdata[14] = txstreamid & 0xff;
-		txdata[15] = (txstreamid >> 8) & 0xff;
+		txdata[14] = (txstreamid >> 8) & 0xff;
+		txdata[15] = txstreamid & 0xff;
 		txdata[16] = 0x80;
 		txdata[17] = 0x00;
 		txdata[18] = 0x00;
@@ -506,7 +507,7 @@ void REFCodec::send_frame(uint8_t *ambe)
 		m_modeinfo.gw = m_txrptr1;
 		m_modeinfo.gw2 = m_txrptr2;
 		m_modeinfo.streamid = txstreamid;
-		m_modeinfo.frame_number = m_txcnt;
+		m_modeinfo.frame_number = m_txcnt % 21;
 
 		m_udp->writeDatagram(txdata, m_address, m_modeinfo.port);
 	}
@@ -526,22 +527,13 @@ void REFCodec::send_frame(uint8_t *ambe)
 		txdata[11] = 0x00;
 		txdata[12] = 0x02;
 		txdata[13] = 0x01;
-		txdata[14] = txstreamid & 0xff;
-		txdata[15] = (txstreamid >> 8) & 0xff;
+		txdata[14] = (txstreamid >> 8) & 0xff;
+		txdata[15] = txstreamid & 0xff;
 		txdata[16] = m_txcnt % 21;
 		memcpy(txdata.data() + 17, ambe, 9);
 
-		//for(int i = 0; i < 9; ++i){
-			//txdata[17 + i] = ad8dp[(tx_cnt * 9) + i];
-			//if(ambeq.size()){
-			//	txdata[17 + i] = ambeq.dequeue();
-			//}
-			//else{
-			//	txdata[17 + i] = 0;
-			//}
-		//}
+		m_modeinfo.frame_number = m_txcnt % 21;
 
-		//memset(txdata.data() + 17, 0x00, 9);
 		switch(txdata.data()[16]){
 		case 0:
 			txdata[26] = 0x55;
@@ -594,9 +586,7 @@ void REFCodec::send_frame(uint8_t *ambe)
 			txdata[28] = 0xf5;
 			break;
 		}
-		//if((tx_cnt * 9) >= sizeof(ad8dp)){
-		//	tx_cnt = 0;
-		//}
+
 		if((m_txcnt % 21) == 0){
 			sendheader = 1;
 		}
@@ -632,7 +622,7 @@ void REFCodec::send_frame(uint8_t *ambe)
 
 	m_udp->writeDatagram(txdata, m_address, m_modeinfo.port);
 	emit update_output_level(m_audio->level());
-	update(m_modeinfo);
+	emit update(m_modeinfo);
 #ifdef DEBUG
 	fprintf(stderr, "SEND:%d: ", txdata.size());
 	for(int i = 0; i < txdata.size(); ++i){

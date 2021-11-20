@@ -67,6 +67,7 @@ void XRFCodec::process_udp()
 			m_modeinfo.hw_vocoder_loaded = true;
 			m_ambedev = new SerialAMBE("XRF");
 			m_ambedev->connect_to_serial(m_vocoder);
+			connect(m_ambedev, SIGNAL(connected(bool)), this, SLOT(ambe_connect_status(bool)));
 			connect(m_ambedev, SIGNAL(data_ready()), this, SLOT(get_ambe()));
 		}
 		if(m_modemport != ""){
@@ -74,6 +75,7 @@ void XRFCodec::process_udp()
 			m_modem->set_modem_flags(m_rxInvert, m_txInvert, m_pttInvert, m_useCOSAsLockout, m_duplex);
 			m_modem->set_modem_params(m_rxfreq, m_txfreq, m_txDelay, m_rxLevel, m_rfLevel, m_ysfTXHang, m_cwIdTXLevel, m_dstarTXLevel, m_dmrTXLevel, m_ysfTXLevel, m_p25TXLevel, m_nxdnTXLevel, m_pocsagTXLevel, m_m17TXLevel);
 			m_modem->connect_to_serial(m_modemport);
+			connect(m_modem, SIGNAL(connected(bool)), this, SLOT(mmdvm_connect_status(bool)));
 			connect(m_modem, SIGNAL(modem_data_ready(QByteArray)), this, SLOT(process_modem_data(QByteArray)));
 		}
 		m_rxtimer = new QTimer();
@@ -162,7 +164,7 @@ void XRFCodec::process_udp()
 			m_modeinfo.stream_state = STREAMING;
 		}
 		m_modeinfo.streamid = streamid;
-		m_modeinfo.frame_number = buf.data()[14];
+		m_modeinfo.frame_number = (uint8_t)buf.data()[14];
 
 		if(m_modeinfo.frame_number & 0x40){
 			qDebug() << "XRF RX stream ended ";
@@ -436,8 +438,8 @@ void XRFCodec::send_frame(uint8_t *ambe)
 		txdata[9] = 0x00;
 		txdata[10] = 0x01;
 		txdata[11] = 0x02;
-		txdata[12] = txstreamid & 0xff;
-		txdata[13] = (txstreamid >> 8) & 0xff;
+		txdata[12] = (txstreamid >> 8) & 0xff;
+		txdata[13] = txstreamid & 0xff;
 		txdata[14] = 0x80;
 		txdata[15] = 0x00;
 		txdata[16] = 0x00;
@@ -454,7 +456,7 @@ void XRFCodec::send_frame(uint8_t *ambe)
 		m_modeinfo.gw = m_txrptr1;
 		m_modeinfo.gw2 = m_txrptr2;
 		m_modeinfo.streamid = txstreamid;
-		m_modeinfo.frame_number = m_txcnt;
+		m_modeinfo.frame_number = m_txcnt % 21;
 	}
 	else{
 		txdata.resize(27);
@@ -470,10 +472,12 @@ void XRFCodec::send_frame(uint8_t *ambe)
 		txdata[9] = 0x00;
 		txdata[10] = 0x01;
 		txdata[11] = 0x02;
-		txdata[12] = txstreamid & 0xff;
-		txdata[13] = (txstreamid >> 8) & 0xff;
+		txdata[12] = (txstreamid >> 8) & 0xff;
+		txdata[13] = txstreamid & 0xff;
 		txdata[14] = m_txcnt % 21;
 		memcpy(txdata.data() + 15, ambe, 9);
+
+		m_modeinfo.frame_number = m_txcnt % 21;
 
 		switch(txdata.data()[14]){
 		case 0:

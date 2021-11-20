@@ -28,7 +28,6 @@ public:
 	~REFCodec();
 	unsigned char * get_frame(unsigned char *ambe);
 private:
-	QString m_txusrtxt;
 	uint8_t packet_size;
 private slots:
 	void toggle_tx(bool);
@@ -44,7 +43,6 @@ private slots:
 	void hostname_lookup(QHostInfo i);
 	void input_src_changed(int id, QString t) { m_ttsid = id; m_ttstext = t; }
 	void module_changed(int m) { m_module = 0x41 + m; m_modeinfo.streamid = 0; }
-	void usrtxt_changed(QString t) { m_txusrtxt = t; }
 	void send_frame(uint8_t *);
 };
 

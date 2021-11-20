@@ -23,16 +23,30 @@ import QtQuick.Controls 2.3
 
 Item {
 	id: mainTab
-	property alias element1: _element1
+	property int rows: 18;
+	onWidthChanged:{
+		if(_comboMode.currentText == "DMR"){
+			_comboMode.width = (mainTab.width / 5) - 5;
+			_connectbutton.width = (mainTab.width * 2 / 5 ) - 5
+			_connectbutton.x = (mainTab.width * 3 / 5 )
+		}
+		else{
+			_comboMode.width = (mainTab.width / 2) - 5;
+			_connectbutton.width = (mainTab.width / 2) - 5;
+			_connectbutton.x = mainTab.width / 2;
+		}
+	}
+
 	property alias element3: _element3
-	property alias element4: _element4
 	property alias label1: _label1
 	property alias label2: _label2
 	property alias label3: _label3
 	property alias label4: _label4
 	property alias label5: _label5
 	property alias label6: _label6
-	property alias status: _status
+	property alias ambestatus: _ambestatus
+	property alias mmdvmstatus: _mmdvmstatus
+	property alias netstatus: _netstatus
 	property alias levelMeter: _levelMeter
 	property alias uitimer: _uitimer
 	property alias comboMode: _comboMode
@@ -40,9 +54,12 @@ Item {
 	property alias editIAXDTMF: _editIAXDTMF
 	property alias dtmfsendbutton: _dtmfsendbutton
 	property alias comboModule: _comboModule
+	property alias comboSlot: _comboSlot
+	property alias comboCC: _comboCC
 	property alias dmrtgidEdit: _dmrtgidEdit
 	property alias privateBox: _privateBox
 	property alias connectbutton: _connectbutton
+	property alias sliderMicGain: _slidermicGain
 	property alias data1: _data1
 	property alias data2: _data2
 	property alias data3: _data3
@@ -56,157 +73,12 @@ Item {
 	property alias swrxBox: _swrxBox
 	property alias agcBox: _agcBox
 
-	Text {
-		id: element
-		x: 10
-		y: 0
-		width: parent.width / 4
-		height: parent.height / 15;
-		text: qsTr("Mode")
-		color: "white"
-		font.pixelSize: parent.height / 30;
-		verticalAlignment: Text.AlignVCenter
-	}
-
-	Text {
-		id: _element1
-		x: 10
-		y: (parent.height / 15 + 3) * 1;
-		width: parent.width / 4
-		height:  parent.height / 15;
-		text: qsTr("Host")
-		color: "white"
-		font.pixelSize: parent.height / 30;
-		verticalAlignment: Text.AlignVCenter
-	}
-
-	Text {
-		id: _element4
-		x: 10
-		y: (parent.height / 15 + 3) * 2;
-		width: parent.width / 5
-		height:  parent.height / 15;
-		text: qsTr("Mod")
-		color: "white"
-		font.pixelSize: parent.height / 30;
-		verticalAlignment: Text.AlignVCenter
-	}
-
-	Text {
-		id: _element3
-		x: 10
-		y: (parent.height / 15 + 3) * 3;
-		width: parent.width / 4
-		height:  parent.height / 15;
-		text: qsTr("TG ID")
-		color: "white"
-		font.pixelSize: parent.height / 30;
-		verticalAlignment: Text.AlignVCenter
-	}
-
-	Text {
-		id: _label1
-		x: 10
-		y: (parent.height / 15 + 3) * 4;
-		width: parent.width / 3
-		height: parent.height / 20;
-		text: qsTr("MYCALL")
-		color: "white"
-		font.pixelSize: parent.height / 30;
-	}
-
-	Text {
-		id: _label2
-		x: 10
-		y: (parent.height / 15 + 3) * 5;
-		width: parent.width / 3
-		height: parent.height / 20;
-		text: qsTr("URCALL")
-		color: "white"
-		font.pixelSize: parent.height / 30;
-	}
-
-	Text {
-		id: _label3
-		x: 10
-		y: (parent.height / 15 + 3) * 6;
-		width: parent.width / 3
-		height: parent.height / 20;
-		text: qsTr("RPTR1")
-		color: "white"
-		font.pixelSize: parent.height / 30;
-	}
-
-	Text {
-		id: _label4
-		x: 10
-		y: (parent.height / 15 + 3) * 7;
-		width: parent.width / 3
-		height: parent.height / 20;
-		text: qsTr("RPTR2")
-		color: "white"
-		font.pixelSize: parent.height / 30;
-	}
-
-	Text {
-		id: _label5
-		x: 10
-		y: (parent.height / 15 + 3) * 8;
-		width: parent.width / 3
-		height: parent.height / 20;
-		text: qsTr("StrmID")
-		color: "white"
-		font.pixelSize: parent.height / 30;
-	}
-
-	Text {
-		id: _label6
-		x: 10
-		y: (parent.height / 15 + 3) * 9;
-		width: parent.width / 3
-		height: parent.height / 20;
-		text: qsTr("Text")
-		color: "white"
-		font.pixelSize: parent.height / 30;
-	}
-
-	Text {
-		id: _status
-		x: 10
-		y: (parent.height / 15 + 3) * 10;
-		width: parent.width - 20
-		height: parent.height / 20;
-		text: qsTr("Not Connected")
-		color: "white"
-		font.pixelSize: parent.height / 35;
-	}
-	Rectangle {
-		x: 10
-		y: (parent.height / 15 + 3) * 11;
-		width: parent.width - 20
-		height: parent.height / 20;
-		color: "black"
-		border.color: "black"
-		border.width: 2
-		radius: 5
-	}
-	Rectangle {
-		id: _levelMeter
-		x: 10
-		y: (parent.height / 15 + 3) * 11;
-		width: 0
-		height: parent.height / 20;
-		color: "#80C342"
-		border.color: "black"
-		border.width: 2
-		radius: 5
-	}
 	Timer {
 		id: _uitimer
 		interval: 20; running: true; repeat: true
-		property var cnt: 0;
-		property var rxcnt: 0;
-		property var last_rxcnt: 0;
+		property int cnt: 0;
+		property int rxcnt: 0;
+		property int last_rxcnt: 0;
 		onTriggered: update_level();
 
 		function update_level(){
@@ -238,14 +110,17 @@ Item {
 			}
 		}
 	}
+
 	ComboBox {
 		id: _comboMode
 		property bool loaded: false
-		x: parent.width / 4
+		x: 5
 		y: 0
-		width: (parent.width * 3 / 8) - 4
-		height: parent.height / 15;
-		font.pixelSize: parent.height / 35
+		width: (parent.width / 2) - 5
+		height: parent.height / rows;
+		font.pixelSize: parent.height / 40
+		currentIndex: -1
+			displayText: currentIndex === -1 ? "Mode..." : currentText
 		model: ["M17", "YSF", "FCS", "DMR", "P25", "NXDN", "REF", "XRF", "DCS", "IAX"]
 		contentItem: Text {
 			text: _comboMode.displayText
@@ -258,143 +133,65 @@ Item {
 			if(_comboMode.loaded){
 				droidstar.process_mode_change(_comboMode.currentText);
 			}
+			if(_comboMode.currentText == "DMR"){
+				_comboMode.width = (mainTab.width / 5) - 5;
+				_connectbutton.width = (mainTab.width * 2 / 5 ) - 5;
+				_connectbutton.x = (mainTab.width * 3 / 5 );
+			}
+			else{
+				_comboMode.width = (mainTab.width / 2) - 5;
+				_connectbutton.width = (mainTab.width / 2) - 5;
+				_connectbutton.x = mainTab.width / 2;
+			}
+		}
+	}
+	ComboBox {
+		id: _comboSlot
+		x: (parent.width / 5 )
+		y: 0
+		width: (parent.width / 5)
+		height: parent.height / rows;
+		font.pixelSize: parent.height / 35
+		model: ["S1", "S2"]
+		currentIndex: 1
+		contentItem: Text {
+			text: _comboSlot.displayText
+			font: _comboSlot.font
+			leftPadding: 10
+			verticalAlignment: Text.AlignVCenter
+			color: _comboSlot.enabled ? "white" : "darkgrey"
+		}
+		onCurrentTextChanged: {
+			droidstar.set_slot(_comboSlot.currentIndex);
+
 		}
 	}
 
 	ComboBox {
-		id: _comboHost
-		x: (parent.width / 4)
-		y: (parent.height / 15 + 3) * 1;
-		width: ((parent.width * 3) / 4) - 5
-		height: parent.height / 15;
+		id: _comboCC
+		x: (parent.width * 2 / 5 )
+		y: 0
+		width: (parent.width / 5)
+		height: parent.height / rows;
 		font.pixelSize: parent.height / 35
+		model: ["CC1", "CC2", "CC3", "CC4", "CC5", "CC6", "CC7"]
 		contentItem: Text {
-			text: _comboHost.displayText
-			font: _comboHost.font
+			text: _comboCC.displayText
+			font: _comboCC.font
 			leftPadding: 10
 			verticalAlignment: Text.AlignVCenter
-			color: _comboHost.enabled ? "white" : "darkgrey"
+			color: _comboCC.enabled ? "white" : "darkgrey"
 		}
 		onCurrentTextChanged: {
-			if(!droidstar.get_modelchange()){
-				droidstar.process_host_change(_comboHost.currentText);
-			}
+			droidstar.set_cc(_comboCC.currentIndex);
 		}
 	}
-	TextField {
-		id: _editIAXDTMF
-		x: (parent.width / 4)
-		y: (parent.height / 15 + 3) * 1;
-		width: (parent.width * 3 / 8) - 4;
-		height: parent.height / 15;
-		font.pixelSize: parent.height / 35
-		inputMethodHints: "ImhPreferNumbers"
-	}
-	Button {
-		id: _dtmfsendbutton
-		x: (parent.width * 5 / 8)
-		y: (parent.height / 15 + 3) * 1;
-		width: (parent.width * 3 / 8) - 5;
-		height: parent.height / 15;
-		text: qsTr("Send")
-		font.pixelSize: parent.height / 30
-		onClicked: {
-			droidstar.dtmf_send_clicked(editIAXDTMF.text);
-		}
-	}
-
-	ComboBox {
-		id: _comboModule
-		x: parent.width / 5
-		y: (parent.height / 15 + 3) * 2
-		width: parent.width / 5
-		height: parent.height / 15;
-		font.pixelSize: parent.height / 35
-		model: ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z"]
-		contentItem: Text {
-			text: _comboModule.displayText
-			font: _comboModule.font
-			leftPadding: 10
-			verticalAlignment: Text.AlignVCenter
-			color: _comboModule.enabled ? "white" : "darkgrey"
-		}
-		onCurrentTextChanged: {
-			if(_comboMode.loaded){
-				droidstar.set_module(_comboModule.currentText);
-			}
-		}
-	}
-
-	CheckBox {
-		id: _swtxBox
-		x: (parent.width * 2 / 5)
-		y: (parent.height / 15 + 3) * 2;
-		width: parent.width / 4
-		height: parent.height / 15
-		text: qsTr("SWTX")
-		onClicked:{
-			droidstar.set_swtx(_swtxBox.checked)
-		}
-	}
-
-	CheckBox {
-		id: _swrxBox
-		x: (parent.width * 3 / 5)
-		y: (parent.height / 15 + 3) * 2;
-		width: parent.width / 4
-		height: parent.height / 15
-		text: qsTr("SWRX")
-		onClicked:{
-			droidstar.set_swrx(_swrxBox.checked)
-		}
-	}
-
-	CheckBox {
-		id: _agcBox
-		x: (parent.width * 4 / 5)
-		y: (parent.height / 15 + 3) * 2;
-		width: parent.width / 4
-		height: parent.height / 15
-		text: qsTr("AGC")
-		onClicked:{
-			droidstar.set_agc(_agcBox.checked)
-		}
-	}
-
-	TextField {
-		visible: false
-		id: _dmrtgidEdit
-		x: parent.width / 4
-		y: (parent.height / 15 + 3) * 3
-		width: (parent.width * 3 / 8) - 4
-		height: parent.height / 15
-		font.pixelSize: parent.height / 30
-		selectByMouse: true
-		inputMethodHints: "ImhPreferNumbers"
-		text: qsTr("")
-		onEditingFinished: {
-			droidstar.tgid_text_changed(dmrtgidEdit.text)
-		}
-	}
-	CheckBox {
-		id: _privateBox
-		x: (parent.width * 5 / 8)
-		y: (parent.height / 15 + 3) * 3;
-		width: (parent.width * 3 / 8) - 5
-		height: parent.height / 15
-		text: qsTr("Private")
-		onClicked:{
-			droidstar.set_dmr_pc(privateBox.checked)
-			//console.log("screen size ", parent.width, " x ", parent.height);
-		}
-	}
-
 	Button {
 		id: _connectbutton
-		x: (parent.width * 5 / 8)
+		x: parent.width / 2
 		y: 0
-		width: (parent.width * 3 / 8) - 5
-		height: parent.height / 15
+		width: parent.width / 2
+		height: parent.height / rows
 		text: qsTr("Connect")
 		font.pixelSize: parent.height / 30
 		onClicked: {
@@ -450,13 +247,254 @@ Item {
 			droidstar.process_connect();
 		}
 	}
+	ComboBox {
+		id: _comboHost
+		x: 5
+		y: (parent.height / rows + 1) * 1;
+		width: ((parent.width * 3) / 4) - 5
+		height: parent.height / rows;
+		font.pixelSize: parent.height / 35
+		currentIndex: -1
+			displayText: currentIndex === -1 ? "Host..." : currentText
+		contentItem: Text {
+			text: _comboHost.displayText
+			font: _comboHost.font
+			leftPadding: 10
+			verticalAlignment: Text.AlignVCenter
+			color: _comboHost.enabled ? "white" : "darkgrey"
+		}
+		onCurrentTextChanged: {
+			if(!droidstar.get_modelchange()){
+				droidstar.process_host_change(_comboHost.currentText);
+			}
+		}
+	}
+	ComboBox {
+		id: _comboModule
+		x: ((parent.width * 3) / 4)
+		y: (parent.height / rows + 1) * 1
+		width: (parent.width / 4) - 5
+		height: parent.height / rows;
+		font.pixelSize: parent.height / 35
+		currentIndex: -1
+			displayText: currentIndex === -1 ? "Mod..." : currentText
+		model: ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z"]
+		contentItem: Text {
+			text: _comboModule.displayText
+			font: _comboModule.font
+			leftPadding: 10
+			verticalAlignment: Text.AlignVCenter
+			color: _comboModule.enabled ? "white" : "darkgrey"
+		}
+		onCurrentTextChanged: {
+			if(_comboMode.loaded){
+				droidstar.set_module(_comboModule.currentText);
+			}
+		}
+	}
+	CheckBox {
+		id: _privateBox
+		x: ((parent.width * 3) / 4)
+		y: (parent.height / rows + 1) * 1;
+		width: (parent.width / 4) - 5
+		height: parent.height / rows
+		text: qsTr("Private")
+		onClicked:{
+			droidstar.set_dmr_pc(privateBox.checked)
+			//console.log("screen size ", parent.width, " x ", parent.height);
+		}
+	}
 
+	TextField {
+		id: _editIAXDTMF
+		x: (parent.width / 4)
+		y: (parent.height / rows + 1) * 1;
+		width: (parent.width * 3 / 8) - 4;
+		height: parent.height / rows;
+		font.pixelSize: parent.height / 35
+		inputMethodHints: "ImhPreferNumbers"
+	}
+	Button {
+		id: _dtmfsendbutton
+		x: (parent.width * 5 / 8)
+		y: (parent.height / rows + 1) * 1;
+		width: (parent.width * 3 / 8) - 5;
+		height: parent.height / rows;
+		text: qsTr("Send")
+		font.pixelSize: parent.height / 30
+		onClicked: {
+			droidstar.dtmf_send_clicked(editIAXDTMF.text);
+		}
+	}
+	Text {
+		id: _element3
+		x: 5
+		y: (parent.height / rows + 1) * 2;
+		width: parent.width / 5
+		height:  parent.height / rows;
+		text: qsTr("TGID")
+		color: "white"
+		font.pixelSize: parent.height / 30;
+		verticalAlignment: Text.AlignVCenter
+	}
+	TextField {
+		visible: false
+		id: _dmrtgidEdit
+		x: parent.width / 5
+		y: (parent.height / rows + 1) * 2
+		width: parent.width /5
+		height: parent.height / rows
+		font.pixelSize: parent.height / 35
+		selectByMouse: true
+		inputMethodHints: "ImhPreferNumbers"
+		text: qsTr("")
+		onEditingFinished: {
+			droidstar.tgid_text_changed(dmrtgidEdit.text)
+		}
+	}
+
+	CheckBox {
+		id: _swtxBox
+		x: (parent.width * 2 / 5) + 5
+		y: (parent.height / rows + 1) * 2;
+		width: parent.width / 4
+		height: parent.height / rows
+		font.pixelSize: parent.height / 40;
+		text: qsTr("SWTX")
+		onClicked:{
+			droidstar.set_swtx(_swtxBox.checked)
+		}
+	}
+
+	CheckBox {
+		id: _swrxBox
+		x: (parent.width * 3 / 5) + 5
+		y: (parent.height / rows + 1) * 2;
+		width: parent.width / 4
+		height: parent.height / rows
+		font.pixelSize: parent.height / 40;
+		text: qsTr("SWRX")
+		onClicked:{
+			droidstar.set_swrx(_swrxBox.checked)
+		}
+	}
+
+	CheckBox {
+		id: _agcBox
+		x: (parent.width * 4 / 5) + 5
+		y: (parent.height / rows + 1) * 2;
+		width: parent.width / 4
+		height: parent.height / rows
+		font.pixelSize: parent.height / 40;
+		text: qsTr("AGC")
+		onClicked:{
+			droidstar.set_agc(_agcBox.checked)
+		}
+	}
+	Text {
+		id: micgain_label
+		x: 10
+		y: (parent.height / rows + 1) * 3;
+		width: parent.width / 4;
+		height: parent.height / rows;
+		text: qsTr("Mic gain")
+		color: "white"
+		font.pixelSize: parent.height / 30;
+		verticalAlignment: Text.AlignVCenter
+	}
+	Slider {
+		visible: true
+		id: _slidermicGain
+		x: parent.width / 4
+		y: (parent.height / rows + 1) * 3;
+		width: (parent.width * 3 / 4) - 10
+		height: parent.height / rows;
+		value: 0.5
+		onValueChanged: {
+			droidstar.set_input_volume(value);
+		}
+	}
+	Text {
+		id: _label1
+		x: 10
+		y: (parent.height / rows + 1) * 4;
+		width: parent.width / 3
+		height: parent.height / rows;
+		text: qsTr("MYCALL")
+		color: "white"
+		font.pixelSize: parent.height / 30;
+	}
+
+	Text {
+		id: _label2
+		x: 10
+		y: (parent.height / rows + 1) * 5;
+		width: parent.width / 3
+		height: parent.height / rows;
+		text: qsTr("URCALL")
+		color: "white"
+		font.pixelSize: parent.height / 30;
+	}
+
+	Text {
+		id: _label3
+		x: 10
+		y: (parent.height / rows + 1) * 6;
+		width: parent.width / 3
+		height: parent.height / rows;
+		text: qsTr("RPTR1")
+		color: "white"
+		font.pixelSize: parent.height / 30;
+	}
+
+	Text {
+		id: _label4
+		x: 10
+		y: (parent.height / rows + 1) * 7;
+		width: parent.width / 3
+		height: parent.height / rows;
+		text: qsTr("RPTR2")
+		color: "white"
+		font.pixelSize: parent.height / 30;
+	}
+
+	Text {
+		id: _label5
+		x: 10
+		y: (parent.height / rows + 1) * 8;
+		width: parent.width / 3
+		height: parent.height / rows;
+		text: qsTr("StrmID")
+		color: "white"
+		font.pixelSize: parent.height / 30;
+	}
+
+	Text {
+		id: _label6
+		x: 10
+		y: (parent.height / rows + 1) * 9;
+		width: parent.width / 3
+		height: parent.height / rows;
+		text: qsTr("Text")
+		color: "white"
+		font.pixelSize: parent.height / 30;
+	}
+	Text {
+		id: _label7
+		x: 10
+		y: (parent.height / rows + 1) * 10;
+		width: parent.width / 3
+		height: parent.height / rows;
+		text: qsTr("")
+		color: "white"
+		font.pixelSize: parent.height / 30;
+	}
 	Text {
 		id: _data1
 		x: parent.width / 3
-		y: (parent.height / 15 + 3) * 4;
+		y: (parent.height / rows + 1) * 4;
 		width: (parent.width * 2) / 3
-		height: parent.height / 20;
+		height: parent.height / rows;
 		text: qsTr("")
 		color: "white"
 		font.pixelSize: parent.height / 30;
@@ -465,9 +503,9 @@ Item {
 	Text {
 		id: _data2
 		x: parent.width / 3
-		y: (parent.height / 15 + 3) * 5;
+		y: (parent.height / rows + 1) * 5;
 		width: (parent.width * 2) / 3
-		height: parent.height / 20;
+		height: parent.height / rows;
 		text: qsTr("")
 		color: "white"
 		font.pixelSize: parent.height / 30;
@@ -476,9 +514,9 @@ Item {
 	Text {
 		id: _data3
 		x: parent.width / 3
-		y: (parent.height / 15 + 3) * 6;
+		y: (parent.height / rows + 1) * 6;
 		width: (parent.width * 2) / 3
-		height: parent.height / 20;
+		height: parent.height / rows;
 		text: qsTr("")
 		color: "white"
 		font.pixelSize: parent.height / 30;
@@ -487,9 +525,9 @@ Item {
 	Text {
 		id: _data4
 		x: parent.width / 3
-		y: (parent.height / 15 + 3) * 7;
+		y: (parent.height / rows + 1) * 7;
 		width: (parent.width * 2) / 3
-		height: parent.height / 20;
+		height: parent.height / rows;
 		text: qsTr("")
 		color: "white"
 		font.pixelSize: parent.height / 30;
@@ -498,9 +536,9 @@ Item {
 	Text {
 		id: _data5
 		x: parent.width / 3
-		y: (parent.height / 15 + 3) * 8;
+		y: (parent.height / rows + 1) * 8;
 		width: (parent.width * 2) / 3
-		height: parent.height / 20;
+		height: parent.height / rows;
 		text: qsTr("")
 		color: "white"
 		font.pixelSize: parent.height / 30;
@@ -509,12 +547,74 @@ Item {
 	Text {
 		id: _data6
 		x: parent.width / 3
-		y:(parent.height / 15 + 3) * 9;
+		y:(parent.height / rows + 1) * 9;
 		width: (parent.width * 2) / 3
-		height: parent.height / 20;
+		height: parent.height / rows;
 		text: qsTr("")
 		color: "white"
 		font.pixelSize: parent.height / 30;
+	}
+	Text {
+		id: _data7
+		x: parent.width / 3
+		y:(parent.height / rows + 1) * 10;
+		width: (parent.width * 2) / 3
+		height: parent.height / rows;
+		text: qsTr("")
+		color: "white"
+		font.pixelSize: parent.height / 30;
+	}
+
+	Text {
+		id: _ambestatus
+		x: 10
+		y: (parent.height / rows + 1) * 11;
+		width: parent.width - 20
+		height: parent.height / rows;
+		text: qsTr("No AMBE hardware connected")
+		color: "white"
+		font.pixelSize: parent.height / 35;
+	}
+	Text {
+		id: _mmdvmstatus
+		x: 10
+		y: (parent.height / rows + 1) * 12;
+		width: parent.width - 20
+		height: parent.height / rows;
+		text: qsTr("No MMDVM connected")
+		color: "white"
+		font.pixelSize: parent.height / 35;
+	}
+	Text {
+		id: _netstatus
+		x: 10
+		y: (parent.height / rows + 1) * 13;
+		width: parent.width - 20
+		height: parent.height / rows;
+		text: qsTr("Not Connected to network")
+		color: "white"
+		font.pixelSize: parent.height / 35;
+	}
+	Rectangle {
+		x: 10
+		y: (parent.height / rows + 1) * 14;
+		width: parent.width - 20
+		height: parent.height / 30;
+		color: "black"
+		border.color: "black"
+		border.width: 1
+		radius: 5
+	}
+	Rectangle {
+		id: _levelMeter
+		x: 10
+		y: (parent.height / rows + 1) * 14;
+		width: 0
+		height: parent.height / 30;
+		color: "#80C342"
+		border.color: "black"
+		border.width: 1
+		radius: 5
 	}
 
 	Button {
@@ -549,7 +649,7 @@ Item {
 			}
 		}
 		x: 10
-		y: (parent.height / 15 + 3) * 12;
+		y: (parent.height / rows + 1) * 15;
 		//y: parent.height - ((parent.height / 5) + 5);
 		width: parent.width - 20
 		height: parent.height - y - 10

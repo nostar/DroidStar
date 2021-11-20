@@ -40,11 +40,11 @@ Item {
 	property alias iaxportEdit: iaxportedit
 	property alias m173200: m17_3200
 	property alias m171600: m17_1600
-	property alias sliderMicGain: slidermicGain
 	property alias mycallEdit: mycalledit
 	property alias urcallEdit: urcalledit
 	property alias rptr1Edit: rptr1edit
 	property alias rptr2Edit: rptr2edit
+	property alias usrtxtEdit: usrtxtedit
 	property alias txtimerEdit: txtimeredit
 	property alias toggleTX: toggletx
 	property alias xrf2ref: xrf2Ref
@@ -74,15 +74,84 @@ Item {
 		id: flickable
 		anchors.fill: parent
 		contentWidth: parent.width
-		contentHeight: vocoderButton.y +
-					   vocoderButton.height + 10
+		contentHeight: _modemNXDNTXLevelLabel.y +
+					   _modemNXDNTXLevelLabel.height + 10
 		flickableDirection: Flickable.VerticalFlick
 		clip: true
 		ScrollBar.vertical: ScrollBar {}
+
+		Text {
+			id: vocoderLabel
+			x: 10
+			y: 0
+			width: 80
+			height: 25
+			text: qsTr("Vocoder")
+			color: "white"
+			verticalAlignment: Text.AlignVCenter
+		}
+		ComboBox {
+			id: _comboVocoder
+			x: 100
+			y: vocoderLabel.y
+			width: parent.width - 110
+			height: 30
+		}
+		Text {
+			id: modemLabel
+			x: 10
+			y: 30
+			width: 80
+			height: 25
+			text: qsTr("Modem")
+			color: "white"
+			verticalAlignment: Text.AlignVCenter
+		}
+		ComboBox {
+			id: _comboModem
+			x: 100
+			y: modemLabel.y
+			width: parent.width - 110
+			height: 30
+		}
+		Text {
+			id: playbackLabel
+			x: 10
+			y: 60
+			width: 80
+			height: 25
+			text: qsTr("Playback")
+			color: "white"
+			verticalAlignment: Text.AlignVCenter
+		}
+		ComboBox {
+			id: _comboPlayback
+			x: 100
+			y: playbackLabel.y
+			width: parent.width - 110
+			height: 30
+		}
+		Text {
+			id: captureLabel
+			x: 10
+			y: 90
+			width: 80
+			height: 25
+			text: qsTr("Capture")
+			color: "white"
+			verticalAlignment: Text.AlignVCenter
+		}
+		ComboBox {
+			id: _comboCapture
+			x: 100
+			y: captureLabel.y
+			width: parent.width - 110
+			height: 30
+		}
 		Text {
 			id: csLabel
 			x: 10
-			y: 0
+			y: 120
 			width: 80
 			height: 25
 			text: qsTr("Callsign")
@@ -92,7 +161,7 @@ Item {
 		TextField {
 			id: csedit
 			x: 100
-			y: 0
+			y: csLabel.y
 			width: 125
 			height: 25
 			text: qsTr("")
@@ -102,7 +171,7 @@ Item {
 		Text {
 			id: dmridLabel
 			x: 10
-			y: 30
+			y: 150
 			width: 80
 			height: 25
 			text: qsTr("DMRID")
@@ -112,7 +181,7 @@ Item {
 		TextField {
 			id: dmridedit
 			x: 100
-			y: 30
+			y: dmridLabel.y
 			width: 125
 			height: 25
 			selectByMouse: true
@@ -121,7 +190,7 @@ Item {
 		Text {
 			id: essidLabel
 			x: 10
-			y: 60
+			y: 180
 			width: 80
 			height: 25
 			text: qsTr("ESSID")
@@ -131,8 +200,8 @@ Item {
 		ComboBox {
 			id: comboessid
 			x: 100
-			y: 60
-			width: 60
+			y: essidLabel.y
+			width: 80
 			height: 30
 			function build_model(){
 				console.log("build_model() called");
@@ -153,7 +222,7 @@ Item {
 		Text {
 			id: bmpwLabel
 			x: 10
-			y: 95
+			y: 210
 			width: 80
 			height: 25
 			text: qsTr("BM Pass")
@@ -163,7 +232,7 @@ Item {
 		TextField {
 			id: bmpwedit
 			x: 100
-			y: 95
+			y: bmpwLabel.y
 			width: parent.width - 110
 			height: 25
 			selectByMouse: true
@@ -172,7 +241,7 @@ Item {
 		Text {
 			id: tgifpwLabel
 			x: 10
-			y: 130
+			y: 240
 			width: 80
 			height: 25
 			text: qsTr("TGIF Pass")
@@ -182,7 +251,7 @@ Item {
 		TextField {
 			id: tgifpwedit
 			x: 100
-			y: 130
+			y: tgifpwLabel.y
 			width: parent.width - 110
 			height: 25
 			selectByMouse: true
@@ -191,7 +260,7 @@ Item {
 		Text {
 			id: latLabel
 			x: 10
-			y: 160
+			y: 270
 			width: 80
 			height: 25
 			text: qsTr("Latitude")
@@ -201,7 +270,7 @@ Item {
 		TextField {
 			id: latedit
 			x: 100
-			y: 160
+			y: latLabel.y
 			width: 125
 			height: 25
 			selectByMouse: true
@@ -209,7 +278,7 @@ Item {
 		Text {
 			id: lonLabel
 			x: 10
-			y: 190
+			y: 300
 			width: 80
 			height: 25
 			text: qsTr("Longitude")
@@ -219,7 +288,7 @@ Item {
 		TextField {
 			id: lonedit
 			x: 100
-			y: 190
+			y: lonLabel.y
 			width: 125
 			height: 25
 			selectByMouse: true
@@ -227,7 +296,7 @@ Item {
 		Text {
 			id: locLabel
 			x: 10
-			y: 220
+			y: 330
 			width: 80
 			height: 25
 			text: qsTr("Location")
@@ -237,7 +306,7 @@ Item {
 		TextField {
 			id: locedit
 			x: 100
-			y: 220
+			y: locLabel.y
 			width: 125
 			height: 25
 			selectByMouse: true
@@ -245,7 +314,7 @@ Item {
 		Text {
 			id: descLabel
 			x: 10
-			y: 250
+			y: 360
 			width: 80
 			height: 25
 			text: qsTr("Description")
@@ -255,7 +324,7 @@ Item {
 		TextField {
 			id: descedit
 			x: 100
-			y: 250
+			y: descLabel.y
 			width: 125
 			height: 25
 			selectByMouse: true
@@ -263,7 +332,7 @@ Item {
 		Text {
 			id: urlLabel
 			x: 10
-			y: 280
+			y: 390
 			width: 80
 			height: 25
 			text: qsTr("URL")
@@ -273,7 +342,7 @@ Item {
 		TextField {
 			id: urledit
 			x: 100
-			y: 280
+			y: urlLabel.y
 			width: 125
 			height: 25
 			selectByMouse: true
@@ -281,7 +350,7 @@ Item {
 		Text {
 			id: swidLabel
 			x: 10
-			y: 310
+			y: 420
 			width: 80
 			height: 25
 			text: qsTr("SoftwareID")
@@ -291,7 +360,7 @@ Item {
 		TextField {
 			id: swidedit
 			x: 100
-			y: 310
+			y: swidLabel.y
 			width: 125
 			height: 25
 			selectByMouse: true
@@ -299,7 +368,7 @@ Item {
 		Text {
 			id: pkgidLabel
 			x: 10
-			y: 340
+			y: 450
 			width: 80
 			height: 25
 			text: qsTr("PackageID")
@@ -309,15 +378,15 @@ Item {
 		TextField {
 			id: pkgidedit
 			x: 100
-			y: 340
-			width: 125
+			y: pkgidLabel.y
+			width: parent.width - 110
 			height: 25
 			selectByMouse: true
 		}
 		Text {
 			id: dmroptslabel
 			x: 10
-			y: 370
+			y: 480
 			width: 80
 			height: 25
 			text: qsTr("DMR+ Opts")
@@ -327,7 +396,7 @@ Item {
 		TextField {
 			id: dmroptsedit
 			x: 100
-			y: 370
+			y: dmroptslabel.y
 			width: parent.width - 110
 			height: 25
 			selectByMouse: true
@@ -335,7 +404,7 @@ Item {
 		Text {
 			id: iaxuserlabel
 			x: 10
-			y: 400
+			y: 510
 			width: 80
 			height: 25
 			text: qsTr("IAX User")
@@ -345,7 +414,7 @@ Item {
 		TextField {
 			id: iaxuseredit
 			x: 100
-			y: 400
+			y: iaxuserlabel.y
 			width: 125
 			height: 25
 			selectByMouse: true
@@ -353,7 +422,7 @@ Item {
 		Text {
 			id: iaxpasslabel
 			x: 10
-			y: 430
+			y: 540
 			width: 80
 			height: 25
 			text: qsTr("IAX secret")
@@ -363,7 +432,7 @@ Item {
 		TextField {
 			id: iaxpassedit
 			x: 100
-			y: 430
+			y: iaxpasslabel.y
 			width: 125
 			height: 25
 			selectByMouse: true
@@ -372,7 +441,7 @@ Item {
 		Text {
 			id: iaxnodelabel
 			x: 10
-			y: 460
+			y: 570
 			width: 80
 			height: 25
 			text: qsTr("IAX Node")
@@ -382,7 +451,7 @@ Item {
 		TextField {
 			id: iaxnodeedit
 			x: 100
-			y: 460
+			y: iaxnodelabel.y
 			width: 125
 			height: 25
 			selectByMouse: true
@@ -391,7 +460,7 @@ Item {
 		Text {
 			id: iaxhostlabel
 			x: 10
-			y: 490
+			y: 600
 			width: 80
 			height: 25
 			text: qsTr("IAX Host")
@@ -401,7 +470,7 @@ Item {
 		TextField {
 			id: iaxhostedit
 			x: 100
-			y: 490
+			y: iaxhostlabel.y
 			width: 125
 			height: 25
 			selectByMouse: true
@@ -409,7 +478,7 @@ Item {
 		Text {
 			id: iaxportlabel
 			x: 10
-			y: 520
+			y: 630
 			width: 80
 			height: 25
 			text: qsTr("IAX Port")
@@ -419,16 +488,143 @@ Item {
 		TextField {
 			id: iaxportedit
 			x: 100
-			y: 520
+			y: iaxportlabel.y
 			width: 125
 			height: 25
 			selectByMouse: true
 			inputMethodHints: "ImhPreferNumbers"
 		}
 		Text {
+			id: mycallLabel
+			x: 10
+			y: 660
+			width: 80
+			height: 25
+			text: qsTr("MYCALL")
+			color: "white"
+			verticalAlignment: Text.AlignVCenter
+		}
+		TextField {
+			id: mycalledit
+			x: 100
+			y: mycallLabel.y
+			width: 125
+			height: 25
+			selectByMouse: true
+			font.capitalization: Font.AllUppercase
+			onEditingFinished: {
+				droidstar.set_mycall(mycalledit.text.toUpperCase())
+			}
+		}
+		Text {
+			id: urcallLabel
+			x: 10
+			y: 690
+			width: 80
+			height: 25
+			text: qsTr("URCALL")
+			color: "white"
+			verticalAlignment: Text.AlignVCenter
+		}
+		TextField {
+			id: urcalledit
+			x: 100
+			y: urcallLabel.y
+			width: 125
+			height: 25
+			selectByMouse: true
+			font.capitalization: Font.AllUppercase
+			onEditingFinished: {
+				droidstar.set_urcall(urcalledit.text.toUpperCase())
+			}
+		}
+		Text {
+			id: rptr1Label
+			x: 10
+			y: 720
+			width: 80
+			height: 25
+			text: qsTr("RPTR1")
+			color: "white"
+			verticalAlignment: Text.AlignVCenter
+		}
+		TextField {
+			id: rptr1edit
+			x: 100
+			y: rptr1Label.y
+			width: 125
+			height: 25
+			selectByMouse: true
+			font.capitalization: Font.AllUppercase
+			onEditingFinished: {
+				droidstar.set_rptr1(rptr1edit.text.toUpperCase())
+			}
+		}
+		Text {
+			id: rptr2Label
+			x: 10
+			y: 750
+			width: 80
+			height: 25
+			text: qsTr("RPTR2")
+			color: "white"
+			verticalAlignment: Text.AlignVCenter
+		}
+		TextField {
+			id: rptr2edit
+			x: 100
+			y: rptr2Label.y
+			width: 125
+			height: 25
+			selectByMouse: true
+			font.capitalization: Font.AllUppercase
+			onEditingFinished: {
+				droidstar.set_rptr2(rptr2edit.text.toUpperCase())
+			}
+		}
+		Text {
+			id: usrtxtLabel
+			x: 10
+			y: 780
+			width: 80
+			height: 25
+			text: qsTr("USRTXT")
+			color: "white"
+			verticalAlignment: Text.AlignVCenter
+		}
+		TextField {
+			id: usrtxtedit
+			x: 100
+			y: usrtxtLabel.y
+			width: parent.width - 110
+			height: 25
+			selectByMouse: true
+			onEditingFinished: {
+				droidstar.set_usrtxt(usrtxtedit.text)
+			}
+		}
+		Text {
+			id: txtimerLabel
+			x: 10
+			y: 810
+			width: 80
+			height: 25
+			text: qsTr("TX Timeout")
+			color: "white"
+			verticalAlignment: Text.AlignVCenter
+		}
+		TextField {
+			id: txtimeredit
+			x: 100
+			y: txtimerLabel.y
+			width: 125
+			height: 25
+			selectByMouse: true
+		}
+		Text {
 			id: m17rateLabel
 			x: 10
-			y: 550
+			y: 840
 			width: 100
 			height: 25
 			text: qsTr("M17/YSF rate")
@@ -444,7 +640,7 @@ Item {
 		CheckBox {
 			id: m17_3200
 			x: 120
-			y: 550
+			y: m17rateLabel.y
 			//width: 100
 			height: 25
 			spacing: 1
@@ -455,39 +651,17 @@ Item {
 		CheckBox {
 			id: m17_1600
 			x: 220
-			y: 550
+			y: m17rateLabel.y
 			//width: 100
 			height: 25
 			spacing: 1
 			text: qsTr("Voice/Data")
 			ButtonGroup.group: m17rateGroup
 		}
-		Text {
-			id: micgain_label
-			x: 10
-			y: 590
-			width: 80
-			height: 25
-			text: qsTr("Mic gain")
-			color: "white"
-			verticalAlignment: Text.AlignVCenter
-		}
-		Slider {
-			visible: true
-			id: slidermicGain
-			x: 72
-			y: 590
-			width: parent.parent.width - 80
-			height: parent.parent.height / 15
-			value: 0.5
-			onValueChanged: {
-				droidstar.set_input_volume(value);
-			}
-		}
 		Button {
 			id: updatehostsButton
 			x: 10
-			y: 630
+			y: 870
 			width: 150
 			height: 30
 			text: qsTr("Update hosts")
@@ -499,7 +673,7 @@ Item {
 		Button {
 			id: updatedmridsButton
 			x: 170
-			y: 630
+			y: updatehostsButton.y
 			width: 150
 			height: 30
 			text: qsTr("Update ID files")
@@ -508,116 +682,10 @@ Item {
 				updateDialog.open()
 			}
 		}
-		Text {
-			id: mycallLabel
-			x: 10
-			y: 700
-			width: 80
-			height: 25
-			text: qsTr("MYCALL")
-			color: "white"
-			verticalAlignment: Text.AlignVCenter
-		}
-		TextField {
-			id: mycalledit
-			x: 100
-			y: 700
-			width: 125
-			height: 25
-			selectByMouse: true
-			font.capitalization: Font.AllUppercase
-			onEditingFinished: {
-				droidstar.set_mycall(mycalledit.text.toUpperCase())
-			}
-		}
-		Text {
-			id: urcallLabel
-			x: 10
-			y: 730
-			width: 80
-			height: 25
-			text: qsTr("URCALL")
-			color: "white"
-			verticalAlignment: Text.AlignVCenter
-		}
-		TextField {
-			id: urcalledit
-			x: 100
-			y: 730
-			width: 125
-			height: 25
-			selectByMouse: true
-			font.capitalization: Font.AllUppercase
-			onEditingFinished: {
-				droidstar.set_urcall(urcalledit.text.toUpperCase())
-			}
-		}
-		Text {
-			id: rptr1Label
-			x: 10
-			y: 760
-			width: 80
-			height: 25
-			text: qsTr("RPTR1")
-			color: "white"
-			verticalAlignment: Text.AlignVCenter
-		}
-		TextField {
-			id: rptr1edit
-			x: 100
-			y: 760
-			width: 125
-			height: 25
-			selectByMouse: true
-			font.capitalization: Font.AllUppercase
-			onEditingFinished: {
-				droidstar.set_rptr1(rptr1edit.text.toUpperCase())
-			}
-		}
-		Text {
-			id: rptr2Label
-			x: 10
-			y: 790
-			width: 80
-			height: 25
-			text: qsTr("RPTR2")
-			color: "white"
-			verticalAlignment: Text.AlignVCenter
-		}
-		TextField {
-			id: rptr2edit
-			x: 100
-			y: 790
-			width: 125
-			height: 25
-			selectByMouse: true
-			font.capitalization: Font.AllUppercase
-			onEditingFinished: {
-				droidstar.set_rptr2(rptr2edit.text.toUpperCase())
-			}
-		}
-		Text {
-			id: txtimerLabel
-			x: 10
-			y: 820
-			width: 80
-			height: 25
-			text: qsTr("TX Timeout")
-			color: "white"
-			verticalAlignment: Text.AlignVCenter
-		}
-		TextField {
-			id: txtimeredit
-			x: 100
-			y: 820
-			width: 125
-			height: 25
-			selectByMouse: true
-		}
 		CheckBox {
 			id: toggletx
 			x: 10
-			y: 850
+			y: 900
 			//width: 100
 			height: 25
 			spacing: 1
@@ -629,7 +697,7 @@ Item {
 		CheckBox {
 			id: xrf2Ref
 			x: 10
-			y: 880
+			y: 930
 			//width: 100
 			height: 25
 			spacing: 1
@@ -638,388 +706,16 @@ Item {
 		CheckBox {
 			id: ipV6
 			x: 10
-			y: 910
+			y: 960
 			//width: 100
 			height: 25
 			spacing: 1
 			text: qsTr("Use IPv6 when available")
 		}
 		Text {
-			id: vocoderLabel
-			x: 10
-			y: 940
-			width: 80
-			height: 25
-			text: qsTr("Vocoder")
-			color: "white"
-			verticalAlignment: Text.AlignVCenter
-		}
-		ComboBox {
-			id: _comboVocoder
-			x: 100
-			y: 940
-			width: parent.width - 110
-			height: 30
-		}
-		Text {
-			id: modemLabel
-			x: 10
-			y: 970
-			width: 80
-			height: 25
-			text: qsTr("Modem")
-			color: "white"
-			verticalAlignment: Text.AlignVCenter
-		}
-		ComboBox {
-			id: _comboModem
-			x: 100
-			y: 970
-			width: parent.width - 110
-			height: 30
-		}
-		Text {
-			id: playbackLabel
-			x: 10
-			y: 1000
-			width: 80
-			height: 25
-			text: qsTr("Playback")
-			color: "white"
-			verticalAlignment: Text.AlignVCenter
-		}
-		ComboBox {
-			id: _comboPlayback
-			x: 100
-			y: 1000
-			width: parent.width - 110
-			height: 30
-		}
-		Text {
-			id: captureLabel
-			x: 10
-			y: 1030
-			width: 80
-			height: 25
-			text: qsTr("Capture")
-			color: "white"
-			verticalAlignment: Text.AlignVCenter
-		}
-		ComboBox {
-			id: _comboCapture
-			x: 100
-			y: 1030
-			width: parent.width - 110
-			height: 30
-		}
-		Text {
-			id: _modemRXFreqLabel
-			x: 10
-			y: 1070
-			width: 80
-			height: 25
-			text: qsTr("RX Freq")
-			color: "white"
-			verticalAlignment: Text.AlignVCenter
-		}
-		TextField {
-			id: _modemRXFreqEdit
-			x: 100
-			y: 1070
-			width: parent.width - 110
-			height: 25
-			selectByMouse: true
-			inputMethodHints: "ImhPreferNumbers"
-		}
-		Text {
-			id: _modemTXFreqLabel
-			x: 10
-			y: 1100
-			width: 80
-			height: 25
-			text: qsTr("TX Freq")
-			color: "white"
-			verticalAlignment: Text.AlignVCenter
-		}
-		TextField {
-			id: _modemTXFreqEdit
-			x: 100
-			y: 1100
-			width: parent.width - 110
-			height: 25
-			selectByMouse: true
-			inputMethodHints: "ImhPreferNumbers"
-		}
-		Text {
-			id: _modemRXOffsetLabel
-			x: 10
-			y: 1130
-			width: 80
-			height: 25
-			text: qsTr("RX Offset")
-			color: "white"
-			verticalAlignment: Text.AlignVCenter
-		}
-		TextField {
-			id: _modemRXOffsetEdit
-			x: 100
-			y: 1130
-			width: parent.width - 110
-			height: 25
-			selectByMouse: true
-			//inputMethodHints: "ImhPreferNumbers"
-		}
-		Text {
-			id: _modemTXOffsetLabel
-			x: 10
-			y: 1160
-			width: 80
-			height: 25
-			text: qsTr("TX Offset")
-			color: "white"
-			verticalAlignment: Text.AlignVCenter
-		}
-		TextField {
-			id: _modemTXOffsetEdit
-			x: 100
-			y: 1160
-			width: parent.width - 110
-			height: 25
-			selectByMouse: true
-			//inputMethodHints: "ImhPreferNumbers"
-		}
-		Text {
-			id: _modemRXLevelLabel
-			x: 10
-			y: 1190
-			width: 80
-			height: 25
-			text: qsTr("RX Level")
-			color: "white"
-			verticalAlignment: Text.AlignVCenter
-		}
-		TextField {
-			id: _modemRXLevelEdit
-			x: 100
-			y: 1190
-			width: parent.width - 110
-			height: 25
-			selectByMouse: true
-			inputMethodHints: "ImhPreferNumbers"
-		}
-		Text {
-			id: _modemTXLevelLabel
-			x: 10
-			y: 1220
-			width: 80
-			height: 25
-			text: qsTr("TX Level")
-			color: "white"
-			verticalAlignment: Text.AlignVCenter
-		}
-		TextField {
-			id: _modemTXLevelEdit
-			x: 100
-			y: 1220
-			width: parent.width - 110
-			height: 25
-			selectByMouse: true
-			inputMethodHints: "ImhPreferNumbers"
-		}
-		Text {
-			id: _modemRXDCOffsetLabel
-			x: 10
-			y: 1250
-			width: 80
-			height: 25
-			text: qsTr("RX DC Offset")
-			color: "white"
-			verticalAlignment: Text.AlignVCenter
-		}
-		TextField {
-			id: _modemRXDCOffsetEdit
-			x: 100
-			y: 1250
-			width: parent.width - 110
-			height: 25
-			selectByMouse: true
-			inputMethodHints: "ImhPreferNumbers"
-		}
-		Text {
-			id: _modemTXDCOffsetLabel
-			x: 10
-			y: 1280
-			width: 80
-			height: 25
-			text: qsTr("TX DC Offset")
-			color: "white"
-			verticalAlignment: Text.AlignVCenter
-		}
-		TextField {
-			id: _modemTXDCOffsetEdit
-			x: 100
-			y: 1280
-			width: parent.width - 110
-			height: 25
-			selectByMouse: true
-			inputMethodHints: "ImhPreferNumbers"
-		}
-		Text {
-			id: _modemRFLevelLabel
-			x: 10
-			y: 1310
-			width: 80
-			height: 25
-			text: qsTr("RF Level")
-			color: "white"
-			verticalAlignment: Text.AlignVCenter
-		}
-		TextField {
-			id: _modemRFLevelEdit
-			x: 100
-			y: 1310
-			width: parent.width - 110
-			height: 25
-			selectByMouse: true
-			inputMethodHints: "ImhPreferNumbers"
-		}
-		Text {
-			id: _modemTXDelayLabel
-			x: 10
-			y: 1340
-			width: 80
-			height: 25
-			text: qsTr("TX Delay")
-			color: "white"
-			verticalAlignment: Text.AlignVCenter
-		}
-		TextField {
-			id: _modemTXDelayEdit
-			x: 100
-			y: 1340
-			width: parent.width - 110
-			height: 25
-			selectByMouse: true
-			inputMethodHints: "ImhPreferNumbers"
-		}
-		Text {
-			id: _modemCWIdTXLevelLabel
-			x: 10
-			y: 1370
-			width: 80
-			height: 25
-			text: qsTr("CWIdTXLevel")
-			color: "white"
-			verticalAlignment: Text.AlignVCenter
-		}
-		TextField {
-			id: _modemCWIdTXLevelEdit
-			x: 100
-			y: 1370
-			width: parent.width - 110
-			height: 25
-			selectByMouse: true
-			inputMethodHints: "ImhPreferNumbers"
-		}
-		Text {
-			id: _modemDStarTXLevelLabel
-			x: 10
-			y: 1400
-			width: 80
-			height: 25
-			text: qsTr("DStarTXLevel")
-			color: "white"
-			verticalAlignment: Text.AlignVCenter
-		}
-		TextField {
-			id: _modemDStarTXLevelEdit
-			x: 100
-			y: 1400
-			width: parent.width - 110
-			height: 25
-			selectByMouse: true
-			inputMethodHints: "ImhPreferNumbers"
-		}
-		Text {
-			id: _modemDMRTXLevelLabel
-			x: 10
-			y: 1430
-			width: 80
-			height: 25
-			text: qsTr("DMRTXLevel")
-			color: "white"
-			verticalAlignment: Text.AlignVCenter
-		}
-		TextField {
-			id: _modemDMRTXLevelEdit
-			x: 100
-			y: 1430
-			width: parent.width - 110
-			height: 25
-			selectByMouse: true
-			inputMethodHints: "ImhPreferNumbers"
-		}
-		Text {
-			id: _modemYSFTXLevelLabel
-			x: 10
-			y: 1460
-			width: 80
-			height: 25
-			text: qsTr("YSFTXLevel")
-			color: "white"
-			verticalAlignment: Text.AlignVCenter
-		}
-		TextField {
-			id: _modemYSFTXLevelEdit
-			x: 100
-			y: 1460
-			width: parent.width - 110
-			height: 25
-			selectByMouse: true
-			inputMethodHints: "ImhPreferNumbers"
-		}
-		Text {
-			id: _modemP25TXLevelLabel
-			x: 10
-			y: 1490
-			width: 80
-			height: 25
-			text: qsTr("P25TXLevel")
-			color: "white"
-			verticalAlignment: Text.AlignVCenter
-		}
-		TextField {
-			id: _modemP25TXLevelEdit
-			x: 100
-			y: 1490
-			width: parent.width - 110
-			height: 25
-			selectByMouse: true
-			inputMethodHints: "ImhPreferNumbers"
-		}
-		Text {
-			id: _modemNXDNTXLevelLabel
-			x: 10
-			y: 1520
-			width: 80
-			height: 25
-			text: qsTr("NXDNTXLevel")
-			color: "white"
-			verticalAlignment: Text.AlignVCenter
-		}
-		TextField {
-			id: _modemNXDNTXLevelEdit
-			x: 100
-			y: 1520
-			width: parent.width - 110
-			height: 25
-			selectByMouse: true
-			inputMethodHints: "ImhPreferNumbers"
-		}
-		Text {
 			id: _vocoderURLlabel
 			x: 10
-			y: 1550
+			y: 990
 			width: 80
 			height: 25
 			text: qsTr("Vocoder URL")
@@ -1029,7 +725,7 @@ Item {
 		TextField {
 			id: _vocoderURLEdit
 			x: 100
-			y: 1550
+			y: _vocoderURLlabel.y
 			width: parent.width - 110
 			height: 25
 			selectByMouse: true
@@ -1037,7 +733,7 @@ Item {
 		Button {
 			id: vocoderButton
 			x: 10
-			y: 1580
+			y: 1020
 			width: 150
 			height: 30
 			text: qsTr("Download vocoder")
@@ -1046,5 +742,311 @@ Item {
 				updateDialog.open();
 			}
 		}
+
+		Text {
+			id: _modemRXFreqLabel
+			x: 10
+			y: 1090
+			width: 60
+			height: 25
+			text: qsTr("RX Freq")
+			color: "white"
+			verticalAlignment: Text.AlignVCenter
+		}
+		TextField {
+			id: _modemRXFreqEdit
+			x: _modemRXFreqLabel.width+20
+			y: _modemRXFreqLabel.y
+			width: 100
+			height: 25
+			selectByMouse: true
+			inputMethodHints: "ImhPreferNumbers"
+		}
+		Text {
+			id: _modemTXFreqLabel
+			x: _modemRXFreqEdit.x + _modemRXFreqEdit.width + 10
+			y: _modemRXFreqLabel.y
+			width: 60
+			height: 25
+			text: qsTr("TX Freq")
+			color: "white"
+			verticalAlignment: Text.AlignVCenter
+		}
+		TextField {
+			id: _modemTXFreqEdit
+			x: _modemTXFreqLabel.x + _modemTXFreqLabel.width
+			y: _modemRXFreqLabel.y
+			width: 100
+			height: 25
+			selectByMouse: true
+			inputMethodHints: "ImhPreferNumbers"
+		}
+		Text {
+			id: _modemRXOffsetLabel
+			x: 10
+			y: 1120
+			width: 100
+			height: 25
+			text: qsTr("RX Offset")
+			color: "white"
+			verticalAlignment: Text.AlignVCenter
+		}
+		TextField {
+			id: _modemRXOffsetEdit
+			x: _modemRXOffsetLabel.x + _modemRXOffsetLabel.width
+			y: _modemRXOffsetLabel.y
+			width: 60
+			height: 25
+			selectByMouse: true
+			//inputMethodHints: "ImhPreferNumbers"
+		}
+		Text {
+			id: _modemTXOffsetLabel
+			x: _modemRXOffsetEdit.x + _modemRXOffsetEdit.width + 10
+			y: _modemRXOffsetLabel.y
+			width: 100
+			height: 25
+			text: qsTr("TX Offset")
+			color: "white"
+			verticalAlignment: Text.AlignVCenter
+		}
+		TextField {
+			id: _modemTXOffsetEdit
+			x: _modemTXOffsetLabel.x + _modemTXOffsetLabel.width
+			y: _modemRXOffsetLabel.y
+			width: 60
+			height: 25
+			selectByMouse: true
+			//inputMethodHints: "ImhPreferNumbers"
+		}
+		Text {
+			id: _modemRXLevelLabel
+			x: 10
+			y: 1150
+			width: 100
+			height: 25
+			text: qsTr("RX Level")
+			color: "white"
+			verticalAlignment: Text.AlignVCenter
+		}
+		TextField {
+			id: _modemRXLevelEdit
+			x: _modemRXLevelLabel.x + _modemRXLevelLabel.width
+			y: _modemRXLevelLabel.y
+			width: 60
+			height: 25
+			selectByMouse: true
+			inputMethodHints: "ImhPreferNumbers"
+		}
+		Text {
+			id: _modemTXLevelLabel
+			x: _modemRXLevelEdit.x + _modemRXLevelEdit.width + 10
+			y: _modemRXLevelLabel.y
+			width: 100
+			height: 25
+			text: qsTr("TX Level")
+			color: "white"
+			verticalAlignment: Text.AlignVCenter
+		}
+		TextField {
+			id: _modemTXLevelEdit
+			x: _modemTXLevelLabel.x + _modemTXLevelLabel.width
+			y: _modemRXLevelLabel.y
+			width: 60
+			height: 25
+			selectByMouse: true
+			inputMethodHints: "ImhPreferNumbers"
+		}
+		Text {
+			id: _modemRXDCOffsetLabel
+			x: 10
+			y: 1180
+			width: 100
+			height: 25
+			text: qsTr("RX DC Offset")
+			color: "white"
+			verticalAlignment: Text.AlignVCenter
+		}
+		TextField {
+			id: _modemRXDCOffsetEdit
+			x: _modemRXDCOffsetLabel.x + _modemRXDCOffsetLabel.width
+			y: _modemRXDCOffsetLabel.y
+			width: 60
+			height: 25
+			selectByMouse: true
+			inputMethodHints: "ImhPreferNumbers"
+		}
+		Text {
+			id: _modemTXDCOffsetLabel
+			x: _modemRXDCOffsetEdit.x + _modemRXDCOffsetEdit.width + 10
+			y: _modemRXDCOffsetLabel.y
+			width: 100
+			height: 25
+			text: qsTr("TX DC Offset")
+			color: "white"
+			verticalAlignment: Text.AlignVCenter
+		}
+		TextField {
+			id: _modemTXDCOffsetEdit
+			x: _modemTXDCOffsetLabel.x + _modemTXDCOffsetLabel.width
+			y: _modemRXDCOffsetLabel.y
+			width: 60
+			height: 25
+			selectByMouse: true
+			inputMethodHints: "ImhPreferNumbers"
+		}
+		Text {
+			id: _modemRFLevelLabel
+			x: 10
+			y: 1210
+			width: 100
+			height: 25
+			text: qsTr("RF Level")
+			color: "white"
+			verticalAlignment: Text.AlignVCenter
+		}
+		TextField {
+			id: _modemRFLevelEdit
+			x: _modemRFLevelLabel.x + _modemRFLevelLabel.width
+			y: _modemRFLevelLabel.y
+			width: 60
+			height: 25
+			selectByMouse: true
+			inputMethodHints: "ImhPreferNumbers"
+		}
+		Text {
+			id: _modemTXDelayLabel
+			x: _modemRFLevelEdit.x + _modemRFLevelEdit.width + 10
+			y: _modemRFLevelLabel.y
+			width: 100
+			height: 25
+			text: qsTr("TX Delay")
+			color: "white"
+			verticalAlignment: Text.AlignVCenter
+		}
+		TextField {
+			id: _modemTXDelayEdit
+			x: _modemTXDelayLabel.x + _modemTXDelayLabel.width
+			y: _modemRFLevelLabel.y
+			width: 60
+			height: 25
+			selectByMouse: true
+			inputMethodHints: "ImhPreferNumbers"
+		}
+		Text {
+			id: _modemCWIdTXLevelLabel
+			x: 10
+			y: 1240
+			width: 100
+			height: 25
+			text: qsTr("CWIdTXLevel")
+			color: "white"
+			verticalAlignment: Text.AlignVCenter
+		}
+		TextField {
+			id: _modemCWIdTXLevelEdit
+			x: _modemCWIdTXLevelLabel.x + _modemCWIdTXLevelLabel.width
+			y: _modemCWIdTXLevelLabel.y
+			width: 60
+			height: 25
+			selectByMouse: true
+			inputMethodHints: "ImhPreferNumbers"
+		}
+		Text {
+			id: _modemDStarTXLevelLabel
+			x: _modemCWIdTXLevelEdit.x + _modemCWIdTXLevelEdit.width + 10
+			y: _modemCWIdTXLevelLabel.y
+			width: 100
+			height: 25
+			text: qsTr("DStarTXLevel")
+			color: "white"
+			verticalAlignment: Text.AlignVCenter
+		}
+		TextField {
+			id: _modemDStarTXLevelEdit
+			x: _modemDStarTXLevelLabel.x + _modemDStarTXLevelLabel.width
+			y: _modemCWIdTXLevelLabel.y
+			width: 60
+			height: 25
+			selectByMouse: true
+			inputMethodHints: "ImhPreferNumbers"
+		}
+		Text {
+			id: _modemDMRTXLevelLabel
+			x: 10
+			y: 1270
+			width: 100
+			height: 25
+			text: qsTr("DMRTXLevel")
+			color: "white"
+			verticalAlignment: Text.AlignVCenter
+		}
+		TextField {
+			id: _modemDMRTXLevelEdit
+			x: _modemDMRTXLevelLabel.x + _modemDMRTXLevelLabel.width
+			y: _modemDMRTXLevelLabel.y
+			width: 60
+			height: 25
+			selectByMouse: true
+			inputMethodHints: "ImhPreferNumbers"
+		}
+		Text {
+			id: _modemYSFTXLevelLabel
+			x: _modemDMRTXLevelEdit.x + _modemDMRTXLevelEdit.width + 10
+			y: _modemDMRTXLevelLabel.y
+			width: 100
+			height: 25
+			text: qsTr("YSFTXLevel")
+			color: "white"
+			verticalAlignment: Text.AlignVCenter
+		}
+		TextField {
+			id: _modemYSFTXLevelEdit
+			x: _modemYSFTXLevelLabel.x + _modemYSFTXLevelLabel.width
+			y: _modemDMRTXLevelLabel.y
+			width: 60
+			height: 25
+			selectByMouse: true
+			inputMethodHints: "ImhPreferNumbers"
+		}
+		Text {
+			id: _modemP25TXLevelLabel
+			x: 10
+			y: 1300
+			width: 100
+			height: 25
+			text: qsTr("P25TXLevel")
+			color: "white"
+			verticalAlignment: Text.AlignVCenter
+		}
+		TextField {
+			id: _modemP25TXLevelEdit
+			x: _modemP25TXLevelLabel.x + _modemP25TXLevelLabel.width
+			y: _modemP25TXLevelLabel.y
+			width: 60
+			height: 25
+			selectByMouse: true
+			inputMethodHints: "ImhPreferNumbers"
+		}
+		Text {
+			id: _modemNXDNTXLevelLabel
+			x: _modemP25TXLevelEdit.x + _modemP25TXLevelEdit.width + 10
+			y: _modemP25TXLevelLabel.y
+			width: 100
+			height: 25
+			text: qsTr("NXDNTXLevel")
+			color: "white"
+			verticalAlignment: Text.AlignVCenter
+		}
+		TextField {
+			id: _modemNXDNTXLevelEdit
+			x: _modemNXDNTXLevelLabel.x + _modemNXDNTXLevelLabel.width
+			y: _modemP25TXLevelLabel.y
+			width: 60
+			height: 25
+			selectByMouse: true
+			inputMethodHints: "ImhPreferNumbers"
+		}
+
 	}
 }

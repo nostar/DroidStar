@@ -33,6 +33,9 @@ public:
 	~SerialAMBE();
 	static QMap<QString, QString>  discover_devices();
 	void connect_to_serial(QString);
+	QString get_ambe_description(){ return m_description; }
+	QString get_ambe_prodid(){ return m_ambeprodid; }
+	QString get_ambe_verstring(){ return m_ambeverstring; }
 	bool get_audio(int16_t *);
 	bool get_ambe(uint8_t *ambe);
 	void decode(uint8_t *);
@@ -52,6 +55,8 @@ private:
 	QString m_manufacturer;
 	QString m_serialnum;
 	QString m_protocol;
+	QString m_ambeverstring;
+	QString m_ambeprodid;
 	uint8_t packet_size;
 	qreal m_decode_gain;
 	QQueue<char> m_serialdata;
@@ -62,6 +67,7 @@ private:
 	void process_serial_2020();
 	void process_serial_3000();
 signals:
+	void connected(bool);
 	void data_ready();
 };
 

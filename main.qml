@@ -25,7 +25,7 @@ ApplicationWindow {
 	// @disable-check M16
 	visible: true
 	 // @disable-check M16
-	width: 320
+	width: 340
 	 // @disable-check M16
 	height: 480
 	 // @disable-check M16
@@ -151,6 +151,12 @@ ApplicationWindow {
 			settingsTab.comboModem.model = droidstar.get_modems();
 			settingsTab.comboPlayback.model = droidstar.get_playbacks();
 			settingsTab.comboCapture.model = droidstar.get_captures();
+			mainTab.data1.font.family = droidstar.get_monofont();
+			mainTab.data2.font.family = droidstar.get_monofont();
+			mainTab.data3.font.family = droidstar.get_monofont();
+			mainTab.data4.font.family = droidstar.get_monofont();
+			mainTab.data5.font.family = droidstar.get_monofont();
+			mainTab.data6.font.family = droidstar.get_monofont();
 		}
 		function onSwtx_state(s){
 			mainTab.swtxBox.checked = s;
@@ -186,134 +192,144 @@ ApplicationWindow {
             droidstar.set_modelchange(false);
 			mainTab.comboMode.currentIndex = mainTab.comboMode.find(droidstar.get_mode());
             if(droidstar.get_mode() === "REF"){
+				//mainTab.comboMode.width = mainTab.width / 2;
 				mainTab.comboHost.visible = true;
-				mainTab.element1.text = "Host";
 				mainTab.editIAXDTMF.visible = false;
 				mainTab.dtmfsendbutton.visible = false;
 				mainTab.comboHost.currentIndex = mainTab.comboHost.find(droidstar.get_ref_host());
 				mainTab.comboModule.visible = true;
+				mainTab.comboSlot.visible = false;
+				mainTab.comboCC.visible = false;
 				mainTab.element3.visible = false;
 				mainTab.dmrtgidEdit.visible = false;
 				mainTab.privateBox.visible = false;
-				mainTab.element4.visible = true;
-				settingsTab.sliderMicGain.value = 0.0;
+				mainTab.sliderMicGain.value = 0.0;
             }
             if(droidstar.get_mode() === "DCS"){
+				//mainTab.comboMode.width = mainTab.width / 2;
 				mainTab.comboHost.visible = true;
-				mainTab.element1.text = "Host";
 				mainTab.editIAXDTMF.visible = false;
 				mainTab.dtmfsendbutton.visible = false;
 				mainTab.comboHost.currentIndex = mainTab.comboHost.find(droidstar.get_dcs_host());
 				mainTab.comboModule.visible = true;
+				mainTab.comboSlot.visible = false;
+				mainTab.comboCC.visible = false;
 				mainTab.element3.visible = false;
 				mainTab.dmrtgidEdit.visible = false;
 				mainTab.privateBox.visible = false;
-				mainTab.element4.visible = true;
-				settingsTab.sliderMicGain.value = 0.0;
+				mainTab.sliderMicGain.value = 0.0;
             }
             if(droidstar.get_mode() === "XRF"){
+				//mainTab.comboMode.width = mainTab.width / 2;
 				mainTab.comboHost.visible = true;
-				mainTab.element1.text = "Host";
 				mainTab.editIAXDTMF.visible = false;
 				mainTab.dtmfsendbutton.visible = false;
 				mainTab.comboHost.currentIndex = mainTab.comboHost.find(droidstar.get_xrf_host());
 				mainTab.comboModule.visible = true;
+				mainTab.comboSlot.visible = false;
+				mainTab.comboCC.visible = false;
 				mainTab.element3.visible = false;
 				mainTab.dmrtgidEdit.visible = false;
 				mainTab.privateBox.visible = false;
-				mainTab.element4.visible = true;
-				settingsTab.sliderMicGain.value = 0.0;
+				mainTab.sliderMicGain.value = 0.0;
             }
             if(droidstar.get_mode() === "YSF"){
+				//mainTab.comboMode.width = mainTab.width / 2;
 				mainTab.comboHost.visible = true;
-				mainTab.element1.text = "Host";
 				mainTab.editIAXDTMF.visible = false;
 				mainTab.dtmfsendbutton.visible = false;
 				mainTab.comboHost.currentIndex = mainTab.comboHost.find(droidstar.get_ysf_host());
 				mainTab.comboModule.visible = false;
+				mainTab.comboSlot.visible = false;
+				mainTab.comboCC.visible = false;
 				mainTab.element3.visible = false;
 				mainTab.dmrtgidEdit.visible = false;
 				mainTab.privateBox.visible = false;
-				mainTab.element4.visible = false;
-				settingsTab.sliderMicGain.value = 0.2;
+				mainTab.sliderMicGain.value = 0.2;
             }
 			if(droidstar.get_mode() === "FCS"){
+				//mainTab.comboMode.width = mainTab.width / 2;
 				mainTab.comboHost.visible = true;
-				mainTab.element1.text = "Host";
 				mainTab.editIAXDTMF.visible = false;
 				mainTab.dtmfsendbutton.visible = false;
 				mainTab.comboHost.currentIndex = mainTab.comboHost.find(droidstar.get_fcs_host());
 				mainTab.comboModule.visible = false;
+				mainTab.comboSlot.visible = false;
+				mainTab.comboCC.visible = false;
 				mainTab.element3.visible = false;
 				mainTab.dmrtgidEdit.visible = false;
 				mainTab.privateBox.visible = false;
-				mainTab.element4.visible = false;
-				settingsTab.sliderMicGain.value = 0.2;
+				mainTab.sliderMicGain.value = 0.2;
 			}
             if(droidstar.get_mode() === "DMR"){
+				//mainTab.comboMode.width = (mainTab.width / 5) - 5;
 				mainTab.comboHost.visible = true;
-				mainTab.element1.text = "Host";
 				mainTab.editIAXDTMF.visible = false;
 				mainTab.dtmfsendbutton.visible = false;
 				mainTab.comboHost.currentIndex = mainTab.comboHost.find(droidstar.get_dmr_host());
 				mainTab.comboModule.visible = false;
+				mainTab.comboSlot.visible = true;
+				mainTab.comboCC.visible = true;
 				mainTab.element3.visible = true;
 				mainTab.dmrtgidEdit.visible = true;
 				mainTab.privateBox.visible = true;
-				mainTab.element4.visible = false;
-				settingsTab.sliderMicGain.value = 0.3;
+				mainTab.sliderMicGain.value = 0.3;
             }
             if(droidstar.get_mode() === "P25"){
+				//mainTab.comboMode.width = mainTab.width / 2;
 				mainTab.comboHost.visible = true;
-				mainTab.element1.text = "Host";
 				mainTab.editIAXDTMF.visible = false;
 				mainTab.dtmfsendbutton.visible = false;
 				mainTab.comboHost.currentIndex = mainTab.comboHost.find(droidstar.get_p25_host());
 				mainTab.comboModule.visible = false;
+				mainTab.comboSlot.visible = false;
+				mainTab.comboCC.visible = false;
 				mainTab.element3.visible = true;
 				mainTab.dmrtgidEdit.visible = true;
 				mainTab.privateBox.visible = false;
-				mainTab.element4.visible = false;
-				settingsTab.sliderMicGain.value = 0.3;
+				mainTab.sliderMicGain.value = 0.3;
             }
             if(droidstar.get_mode() === "NXDN"){
+				//mainTab.comboMode.width = mainTab.width / 2;
 				mainTab.comboHost.visible = true;
-				mainTab.element1.text = "Host";
 				mainTab.editIAXDTMF.visible = false;
 				mainTab.dtmfsendbutton.visible = false;
 				mainTab.comboHost.currentIndex = mainTab.comboHost.find(droidstar.get_nxdn_host());
 				mainTab.comboModule.visible = false;
+				mainTab.comboSlot.visible = false;
+				mainTab.comboCC.visible = false;
 				mainTab.element3.visible = false;
 				mainTab.dmrtgidEdit.visible = false;
 				mainTab.privateBox.visible = false;
-				mainTab.element4.visible = false;
-				settingsTab.sliderMicGain.value = 0.3;
+				mainTab.sliderMicGain.value = 0.3;
             }
 			if(droidstar.get_mode() === "M17"){
+				//mainTab.comboMode.width = mainTab.width / 2;
 				mainTab.comboHost.visible = true;
-				mainTab.element1.text = "Host";
 				mainTab.editIAXDTMF.visible = false;
 				mainTab.dtmfsendbutton.visible = false;
 				mainTab.comboHost.currentIndex = mainTab.comboHost.find(droidstar.get_m17_host());
 				mainTab.comboModule.currentIndex = mainTab.comboModule.find(droidstar.get_module());
 				mainTab.comboModule.visible = true;
+				mainTab.comboSlot.visible = false;
+				mainTab.comboCC.visible = false;
 				mainTab.element3.visible = false;
 				mainTab.dmrtgidEdit.visible = false;
 				mainTab.privateBox.visible = false;
-				mainTab.element4.visible = true;
-				settingsTab.sliderMicGain.value = 0.5;
+				mainTab.sliderMicGain.value = 0.5;
 			}
 			if(droidstar.get_mode() === "IAX"){
+				//mainTab.comboMode.width = mainTab.width / 2;
 				mainTab.comboHost.visible = false;
-				mainTab.element1.text = "DTMF *";
 				mainTab.editIAXDTMF.visible = true;
 				mainTab.dtmfsendbutton.visible = true;
 				mainTab.comboModule.visible = false;
+				mainTab.comboSlot.visible = false;
+				mainTab.comboCC.visible = false;
 				mainTab.element3.visible = false;
 				mainTab.dmrtgidEdit.visible = false;
 				mainTab.privateBox.visible = false;
-				mainTab.element4.visible = false;
-				settingsTab.sliderMicGain.value = 0.5;
+				mainTab.sliderMicGain.value = 0.5;
 			}
         }
 		function onUpdate_data() {
@@ -323,7 +339,9 @@ ApplicationWindow {
 			mainTab.data4.text = droidstar.get_data4();
 			mainTab.data5.text = droidstar.get_data5();
 			mainTab.data6.text = droidstar.get_data6();
-			mainTab.status.text = droidstar.get_statustxt();
+			mainTab.ambestatus.text = droidstar.get_ambestatustxt();
+			mainTab.mmdvmstatus.text = droidstar.get_mmdvmstatustxt();
+			mainTab.netstatus.text = droidstar.get_netstatustxt();
 			++mainTab.uitimer.rxcnt;
         }
 		function onUpdate_settings() {
@@ -432,7 +450,7 @@ ApplicationWindow {
 				mainTab.data4.text = "";
 				mainTab.data5.text = "";
 				mainTab.data6.text = "";
-				mainTab.status.text = "Not connected";
+				mainTab.netstatus.text = "Not connected";
             }
 			if(c === 1){
 				mainTab.connectbutton.text = "Connecting";

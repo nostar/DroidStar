@@ -77,6 +77,32 @@ Codec::~Codec()
 {
 }
 
+void Codec::ambe_connect_status(bool s)
+{
+	if(s){
+		m_modeinfo.ambedesc = m_ambedev->get_ambe_description();
+		m_modeinfo.ambeprodid = m_ambedev->get_ambe_prodid();
+		m_modeinfo.ambeverstr = m_ambedev->get_ambe_verstring();
+	}
+	else{
+		m_modeinfo.ambeprodid = "Connect failed";
+		m_modeinfo.ambeverstr = "Connect failed";
+	}
+	emit update(m_modeinfo);
+}
+
+void Codec::mmdvm_connect_status(bool s)
+{
+	if(s){
+		//m_modeinfo.mmdvmdesc = m_modem->get_mmdvm_description();
+		m_modeinfo.mmdvm = m_modem->get_mmdvm_version();
+	}
+	else{
+		m_modeinfo.mmdvm = "Connect failed";
+	}
+	emit update(m_modeinfo);
+}
+
 void Codec::in_audio_vol_changed(qreal v)
 {
 	m_audio->set_input_volume(v);

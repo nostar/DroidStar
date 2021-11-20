@@ -86,6 +86,7 @@ void NXDNCodec::process_udp()
 				m_modeinfo.hw_vocoder_loaded = true;
 				m_ambedev = new SerialAMBE("NXDN");
 				m_ambedev->connect_to_serial(m_vocoder);
+				connect(m_ambedev, SIGNAL(connected(bool)), this, SLOT(ambe_connect_status(bool)));
 				connect(m_ambedev, SIGNAL(data_ready()), this, SLOT(get_ambe()));
 			}
 			else{

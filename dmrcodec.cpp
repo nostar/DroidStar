@@ -24,7 +24,7 @@
 #include "CRCenc.h"
 #include "MMDVMDefines.h"
 
-//#define DEBUG
+#define DEBUG
 
 const uint32_t ENCODING_TABLE_1676[] =
 	{0x0000U, 0x0273U, 0x04E5U, 0x0696U, 0x09C9U, 0x0BBAU, 0x0D2CU, 0x0F5FU, 0x11E2U, 0x1391U, 0x1507U, 0x1774U,
@@ -52,11 +52,12 @@ DMRCodec::DMRCodec(QString callsign, uint32_t dmrid, uint8_t essid, QString pass
 	m_swid(swid),
 	m_pkid(pkid),
 	m_txdstid(dstid),
-	m_pc(false),
+	m_txslot(2),
+	m_txcc(1),
 	m_options(options)
 {
 	m_dmrcnt = 0;
-	m_flco = FLCO(0);
+	m_flco = FLCO_GROUP;
 
 	if (essid){
 		m_essid = m_dmrid * 100 + (essid-1);
@@ -209,7 +210,8 @@ void DMRCodec::process_udp()
 			m_modeinfo.dstid = (uint32_t)((buf.data()[8] << 16) | ((buf.data()[9] << 8) & 0xff00) | (buf.data()[10] & 0xff));
 			m_modeinfo.gwid = (uint32_t)((buf.data()[11] << 24) | ((buf.data()[12] << 16) & 0xff0000) | ((buf.data()[13] << 8) & 0xff00) | (buf.data()[14] & 0xff));
 			m_modeinfo.streamid = (uint32_t)((buf.data()[16] << 24) | ((buf.data()[17] << 16) & 0xff0000) | ((buf.data()[18] << 8) & 0xff00) | (buf.data()[19] & 0xff));
-			m_modeinfo.frame_number = buf.data()[4];
+			m_modeinfo.frame_number = (uint8_t)buf.data()[4];
+			m_modeinfo.slot = (buf.data()[15] & 0x80) ? 2 : 1;
 			t = 0x41;
 			qDebug() << "New DMR stream from " << m_modeinfo.srcid << " to " << m_modeinfo.dstid;
 		}
@@ -261,7 +263,7 @@ void DMRCodec::process_udp()
 		m_modeinfo.dstid =		(uint32_t)((buf.data()[8] << 16) | ((buf.data()[9] << 8) & 0xff00) | (buf.data()[10] & 0xff));
 		m_modeinfo.gwid =		(uint32_t)((buf.data()[11] << 24) | ((buf.data()[12] << 16) & 0xff0000) | ((buf.data()[13] << 8) & 0xff00) | (buf.data()[14] & 0xff));
 		m_modeinfo.streamid =	(uint32_t)((buf.data()[16] << 24) | ((buf.data()[17] << 16) & 0xff0000) | ((buf.data()[18] << 8) & 0xff00) | (buf.data()[19] & 0xff));
-		m_modeinfo.frame_number = buf.data()[4];
+		m_modeinfo.frame_number = (uint8_t)buf.data()[4];
 
 		if(m_modem){
 			uint8_t t = ((uint8_t)buf.data()[15] & 0x0f);
@@ -315,6 +317,7 @@ void DMRCodec::setup_connection()
 		m_modeinfo.hw_vocoder_loaded = true;
 		m_ambedev = new SerialAMBE("DMR");
 		m_ambedev->connect_to_serial(m_vocoder);
+		connect(m_ambedev, SIGNAL(connected(bool)), this, SLOT(ambe_connect_status(bool)));
 		connect(m_ambedev, SIGNAL(data_ready()), this, SLOT(get_ambe()));
 	}
 	else{
@@ -326,6 +329,7 @@ void DMRCodec::setup_connection()
 		m_modem->set_modem_flags(m_rxInvert, m_txInvert, m_pttInvert, m_useCOSAsLockout, m_duplex);
 		m_modem->set_modem_params(m_rxfreq, m_txfreq, m_txDelay, m_rxLevel, m_rfLevel, m_ysfTXHang, m_cwIdTXLevel, m_dstarTXLevel, m_dmrTXLevel, m_ysfTXLevel, m_p25TXLevel, m_nxdnTXLevel, m_pocsagTXLevel, m_m17TXLevel);
 		m_modem->connect_to_serial(m_modemport);
+		connect(m_modem, SIGNAL(connected(bool)), this, SLOT(mmdvm_connect_status(bool)));
 		connect(m_modem, SIGNAL(modem_data_ready(QByteArray)), this, SLOT(process_modem_data(QByteArray)));
 	}
 	m_audio = new AudioEngine(m_audioin, m_audioout);
@@ -499,15 +503,11 @@ void DMRCodec::transmit()
 void DMRCodec::send_frame()
 {
 	QByteArray txdata;
-	if(m_pc){
-		set_calltype(3);
-	}
-	else{
-		set_calltype(0);
-	}
+
 	m_txsrcid = m_dmrid;
 	if(m_tx){
 		m_modeinfo.stream_state = TRANSMITTING;
+		m_modeinfo.slot = m_txslot;
 
 		if(!m_dmrcnt){
 			encode_header(DT_VOICE_LC_HEADER);
@@ -578,6 +578,7 @@ unsigned char * DMRCodec::get_eot()
 
 void DMRCodec::build_frame()
 {
+	qDebug() << "DMR: slot:cc == " << m_txslot << ":" << m_txcc;
 	m_dmrFrame[0U]  = 'D';
 	m_dmrFrame[1U]  = 'M';
 	m_dmrFrame[2U]  = 'R';
@@ -594,7 +595,7 @@ void DMRCodec::build_frame()
 	m_dmrFrame[13U]  = m_essid >> 8;
 	m_dmrFrame[14U]  = m_essid >> 0;
 
-	m_dmrFrame[15U] = (m_slot == 1U) ? 0x00U : 0x80U;
+	m_dmrFrame[15U] = (m_txslot == 1U) ? 0x00U : 0x80U;
 	m_dmrFrame[15U] |= (m_flco == FLCO_GROUP) ? 0x00U : 0x40U;
 
 	if (m_dataType == DT_VOICE_SYNC) {
@@ -661,7 +662,7 @@ void DMRCodec::encode_qr1676(uint8_t* data)
 void DMRCodec::get_emb_data(uint8_t* data, uint8_t lcss)
 {
 	uint8_t DMREMB[2U];
-	DMREMB[0U]  = (m_colorcode << 4) & 0xF0U;
+	DMREMB[0U]  = (m_modeinfo.cc << 4) & 0xF0U;
 	//DMREMB[0U] |= m_PI ? 0x08U : 0x00U;
 	DMREMB[0U] |= (lcss << 1) & 0x06U;
 	DMREMB[1U]  = 0x00U;
@@ -867,7 +868,7 @@ void DMRCodec::full_lc_encode(uint8_t* data, uint8_t type)  // for header
 void DMRCodec::get_slot_data(uint8_t* data)
 {
 	uint8_t DMRSlotType[3U];
-	DMRSlotType[0U]  = (m_colorcode << 4) & 0xF0U;
+	DMRSlotType[0U]  = (m_modeinfo.cc << 4) & 0xF0U;
 	DMRSlotType[0U] |= (m_dataType  << 0) & 0x0FU;
 	DMRSlotType[1U]  = 0x00U;
 	DMRSlotType[2U]  = 0x00U;

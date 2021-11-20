@@ -70,6 +70,7 @@ void DCSCodec::process_udp()
 			m_modeinfo.hw_vocoder_loaded = true;
 			m_ambedev = new SerialAMBE("DCS");
 			m_ambedev->connect_to_serial(m_vocoder);
+			connect(m_ambedev, SIGNAL(connected(bool)), this, SLOT(ambe_connect_status(bool)));
 			connect(m_ambedev, SIGNAL(data_ready()), this, SLOT(get_ambe()));
 		}
 		else{
@@ -81,6 +82,7 @@ void DCSCodec::process_udp()
 			m_modem->set_modem_flags(m_rxInvert, m_txInvert, m_pttInvert, m_useCOSAsLockout, m_duplex);
 			m_modem->set_modem_params(m_rxfreq, m_txfreq, m_txDelay, m_rxLevel, m_rfLevel, m_ysfTXHang, m_cwIdTXLevel, m_dstarTXLevel, m_dmrTXLevel, m_ysfTXLevel, m_p25TXLevel, m_nxdnTXLevel, m_pocsagTXLevel, m_m17TXLevel);
 			m_modem->connect_to_serial(m_modemport);
+			connect(m_modem, SIGNAL(connected(bool)), this, SLOT(mmdvm_connect_status(bool)));
 			connect(m_modem, SIGNAL(modem_data_ready(QByteArray)), this, SLOT(process_modem_data(QByteArray)));
 		}
 		m_rxtimer = new QTimer();
@@ -152,7 +154,7 @@ void DCSCodec::process_udp()
 			m_modeinfo.stream_state = STREAMING;
 		}
 		
-		m_modeinfo.frame_number = buf.data()[0x2d];
+		m_modeinfo.frame_number = (uint8_t)buf.data()[0x2d];
 		
 		if((buf.data()[45] == 0) && (buf.data()[55] == 0x55) && (buf.data()[56] == 0x2d) && (buf.data()[57] == 0x16)){
 			sd_sync = 1;
@@ -434,8 +436,8 @@ void DCSCodec::send_frame(uint8_t *ambe)
 	txdata.replace(23, 8, m_txurcall.toLocal8Bit().data());
 	txdata.replace(31, 8, m_txmycall.toLocal8Bit().data());
 	txdata.replace(39, 4, "AMBE");
-	txdata[43] = txstreamid & 0xff;
-	txdata[44] = (txstreamid >> 8) & 0xff;
+	txdata[43] = (txstreamid >> 8) & 0xff;
+	txdata[44] = txstreamid & 0xff;
 	txdata[45] = (m_txcnt % 21) & 0xff;
 	memcpy(txdata.data() + 46, ambe, 9);
 

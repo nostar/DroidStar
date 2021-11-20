@@ -41,6 +41,8 @@ public:
 signals:
 	void mode_changed();
 	void module_changed(char);
+	void slot_changed(int);
+	void cc_changed(int);
 	void update_data();
 	void update_log(QString);
 	void open_vocoder_dialog();
@@ -64,10 +66,13 @@ signals:
 	void rptr2_changed(QString);
 	void mycall_changed(QString);
 	void urcall_changed(QString);
+	void usrtxt_changed(QString);
 public slots:
 	void set_callsign(const QString &callsign) { m_callsign = callsign.simplified(); save_settings(); }
 	void set_dmrtgid(const QString &dmrtgid) { m_dmr_destid = dmrtgid.simplified().toUInt(); save_settings(); }
-	void tgid_text_changed(QString s){ qDebug() << "dmrid_text_changed() called s == " << s; emit dmr_tgid_changed(s.toUInt());}
+	void set_slot(const int slot) {emit slot_changed(slot); }
+	void set_cc(const int cc) {emit cc_changed(cc); }
+	void tgid_text_changed(QString s){emit dmr_tgid_changed(s.toUInt());}
 	void set_dmrid(const QString &dmrid) { m_dmrid = dmrid.simplified().toUInt(); save_settings(); }
 	void set_essid(const QString &essid)
 	{
@@ -104,6 +109,7 @@ public slots:
 	void set_urcall(const QString &urcall) { m_urcall = urcall; save_settings(); emit urcall_changed(urcall); }
 	void set_rptr1(const QString &rptr1) { m_rptr1 = rptr1; save_settings(); emit rptr1_changed(rptr1); }
 	void set_rptr2(const QString &rptr2) { m_rptr2 = rptr2; save_settings(); emit rptr2_changed(rptr2); }
+	void set_usrtxt(const QString &usrtxt) { m_dstarusertxt = usrtxt; save_settings(); emit usrtxt_changed(usrtxt); }
 	void set_txtimeout(const QString &t) { m_txtimeout = t.simplified().toUInt(); save_settings();}
 	void set_toggletx(bool x) { m_toggletx = x; save_settings(); }
 	void set_xrf2ref(bool x) { m_xrf2ref = x; save_settings(); }
@@ -134,7 +140,7 @@ public slots:
 	void set_modemP25TxLevel(QString m) { m_modemP25TxLevel = m; save_settings(); }
 	void set_modemNXDNTxLevel(QString m) { m_modemNXDNTxLevel = m; save_settings(); }
 
-	void m17_rate_changed(bool r) { qDebug() << "m17_rate_changed() r == " << r; emit m17_rate_changed((int)r); }
+	void m17_rate_changed(bool r) { emit m17_rate_changed((int)r); }
 	void process_connect();
 	void press_tx();
 	void release_tx();
@@ -161,7 +167,9 @@ public slots:
 	QString get_data4() { return m_data4; }
 	QString get_data5() { return m_data5; }
 	QString get_data6() { return m_data6; }
-	QString get_statustxt() { return m_statustxt; }
+	QString get_ambestatustxt() { return m_ambestatustxt; }
+	QString get_mmdvmstatustxt() { return m_mmdvmstatustxt; }
+	QString get_netstatustxt() { return m_netstatustxt; }
 	QString get_mode() { return m_protocol; }
 	QString get_host() { return m_host; }
 	QString get_module() { return QString(m_module); }
@@ -228,9 +236,15 @@ public slots:
 #if defined(Q_OS_ANDROID)
 	QString get_platform() { return QSysInfo::productType(); }
 	void reset_connect_status();
+	QString get_monofont() { return "Droid Sans Mono"; }
+#elif defined(Q_OS_WIN)
+	QString get_platform() { return QSysInfo::kernelType(); }
+	void reset_connect_status() {}
+	QString get_monofont() { return "Courier"; }
 #else
 	QString get_platform() { return QSysInfo::kernelType(); }
 	void reset_connect_status() {}
+	QString get_monofont() { return "monospace"; }
 #endif
 	QString get_arch() { return QSysInfo::currentCpuArchitecture(); }
 	QString get_build_abi() { return QSysInfo::buildAbi(); }
@@ -292,7 +306,9 @@ private:
 	QString m_data4;
 	QString m_data5;
 	QString m_data6;
-	QString m_statustxt;
+	QString m_ambestatustxt;
+	QString m_mmdvmstatustxt;
+	QString m_netstatustxt;
 	QString m_mycall;
 	QString m_urcall;
 	QString m_rptr1;

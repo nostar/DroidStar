@@ -72,6 +72,13 @@ public:
 		uint32_t gwid;
 		uint32_t srcid;
 		uint32_t dstid;
+		uint8_t slot;
+		uint8_t cc;
+		QString ambedesc;
+		QString ambeprodid;
+		QString ambeverstr;
+		QString mmdvmdesc;
+		QString mmdvm;
 		QString host;
 		int port;
 		bool path;
@@ -111,6 +118,8 @@ protected slots:
 	virtual void send_disconnect(){}
 	virtual void hostname_lookup(QHostInfo){}
 	virtual void mmdvm_direct_connect(){}
+	void ambe_connect_status(bool);
+	void mmdvm_connect_status(bool);
 	void send_connect();
 	void input_src_changed(int id, QString t) { m_ttsid = id; m_ttstext = t; }
 	void start_tx();
@@ -127,7 +136,8 @@ protected slots:
 	void urcall_changed(QString uc) { m_txurcall = uc; }
 	void rptr1_changed(QString r1) { m_txrptr1 = r1; }
 	void rptr2_changed(QString r2) { m_txrptr2 = r2; }
-	void module_changed(char m) { m_module = m; m_modeinfo.streamid = 0; qDebug() << "Codec::module_changed() m == " << m; }
+	void usrtxt_changed(QString t) { m_txusrtxt = t; }
+	void module_changed(char m) { m_module = m; m_modeinfo.streamid = 0; }
 protected:
 	QUdpSocket *m_udp = nullptr;
 	QHostAddress m_address;
@@ -142,6 +152,7 @@ protected:
 	QString m_txurcall;
 	QString m_txrptr1;
 	QString m_txrptr2;
+	QString m_txusrtxt;
 #ifdef USE_FLITE
 	cst_voice *voice_slt;
 	cst_voice *voice_kal;

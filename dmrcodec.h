@@ -30,9 +30,6 @@ public:
 	DMRCodec(QString callsign, uint32_t dmrid, uint8_t essid, QString password, QString lat, QString lon, QString location, QString desc, QString freq, QString url, QString swid, QString pkid, QString options, uint32_t dstid, QString host, uint32_t port, bool ipv6, QString vocoder, QString modem, QString audioin, QString audioout);
 	~DMRCodec();
 	unsigned char * get_eot();
-	void set_cc(uint32_t cc){m_colorcode = cc;}
-	void set_slot(uint32_t s){m_slot = s;}
-	void set_calltype(uint8_t c){m_flco = FLCO(c);}
 private slots:
 	void process_udp();
 	void process_rx_data();
@@ -43,9 +40,9 @@ private slots:
 	void transmit();
 	void hostname_lookup(QHostInfo i);
 	void dmr_tgid_changed(unsigned int id) { m_txdstid = id; }
-	void dmr_cc_changed(int cc) {m_colorcode = cc + 1; }
-	void dmr_slot_changed(int s) {m_slot = s + 1; }
-	void dmrpc_state_changed(int pc){ m_pc = (pc ? true : false); }
+	void dmrpc_state_changed(int p){m_flco = p ? FLCO_USER_USER : FLCO_GROUP; }
+	void cc_changed(int cc) {m_txcc = cc + 1; }
+	void slot_changed(int s) {m_txslot = s + 1; }
 	void send_frame();
 private:
 	uint32_t m_dmrid;
@@ -62,15 +59,14 @@ private:
 	uint32_t m_txsrcid;
 	uint32_t m_txdstid;
 	uint32_t m_txstreamid;
+	uint8_t m_txslot;
+	uint8_t m_txcc;
 	uint8_t packet_size;
 	uint8_t m_ambe[27];
 	uint32_t m_defsrcid;
 	uint8_t m_dmrFrame[55];
 	uint8_t m_dataType;
-	uint32_t m_colorcode;
-	uint32_t m_slot;
 	uint32_t m_dmrcnt;
-	bool m_pc;
 	FLCO m_flco;
 	CBPTC19696 m_bptc;
 	bool m_raw[128U];

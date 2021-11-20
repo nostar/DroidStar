@@ -37,6 +37,7 @@ public:
 	void set_modem_params(uint32_t, uint32_t, uint32_t, float, float, uint32_t, float, float, float, float, float, float, float, float);
 	static QMap<QString, QString>  discover_devices();
 	void connect_to_serial(QString);
+	QString get_mmdvm_version(){ return m_version; }
 	void write(QByteArray);
 private slots:
 	void process_serial();
@@ -51,6 +52,8 @@ private:
 #else
 	AndroidSerialPort *m_serial;
 #endif
+	QString m_version;
+	uint8_t m_protocol;
 	QTimer *m_modemtimer;
 	uint8_t packet_size;
 	QQueue<char> m_serialdata;
@@ -95,6 +98,7 @@ private:
 signals:
 	void data_ready();
 	void modem_data_ready(QByteArray);
+	void connected(bool);
 };
 
 #endif // SERIALMODEM_H

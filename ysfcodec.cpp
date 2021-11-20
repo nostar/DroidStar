@@ -26,7 +26,7 @@
 
 //#define DEBUG
 
-const unsigned int IMBE_INTERLEAVE[] = {
+const uint32_t IMBE_INTERLEAVE[] = {
 	0,  7, 12, 19, 24, 31, 36, 43, 48, 55, 60, 67, 72, 79, 84, 91,  96, 103, 108, 115, 120, 127, 132, 139,
 	1,  6, 13, 18, 25, 30, 37, 42, 49, 54, 61, 66, 73, 78, 85, 90,  97, 102, 109, 114, 121, 126, 133, 138,
 	2,  9, 14, 21, 26, 33, 38, 45, 50, 57, 62, 69, 74, 81, 86, 93,  98, 105, 110, 117, 122, 129, 134, 141,
@@ -41,7 +41,7 @@ const int dvsi_interleave[49] = {
 	2, 5, 8, 11, 14, 17, 20, 23, 26, 29, 32, 35, 38
 };
 
-const unsigned int INTERLEAVE_TABLE_5_20[] = {
+const uint32_t INTERLEAVE_TABLE_5_20[] = {
 	0U, 40U,  80U, 120U, 160U,
 	2U, 42U,  82U, 122U, 162U,
 	4U, 44U,  84U, 124U, 164U,
@@ -63,7 +63,7 @@ const unsigned int INTERLEAVE_TABLE_5_20[] = {
 	36U, 76U, 116U, 156U, 196U,
 	38U, 78U, 118U, 158U, 198U};
 
-const unsigned int INTERLEAVE_TABLE_9_20[] = {
+const uint32_t INTERLEAVE_TABLE_9_20[] = {
 		0U, 40U,  80U, 120U, 160U, 200U, 240U, 280U, 320U,
 		2U, 42U,  82U, 122U, 162U, 202U, 242U, 282U, 322U,
 		4U, 44U,  84U, 124U, 164U, 204U, 244U, 284U, 324U,
@@ -85,16 +85,16 @@ const unsigned int INTERLEAVE_TABLE_9_20[] = {
 	   36U, 76U, 116U, 156U, 196U, 236U, 276U, 316U, 356U,
 	   38U, 78U, 118U, 158U, 198U, 238U, 278U, 318U, 358U};
 
-const unsigned int INTERLEAVE_TABLE_26_4[] = {
+const uint32_t INTERLEAVE_TABLE_26_4[] = {
 	0U, 4U,  8U, 12U, 16U, 20U, 24U, 28U, 32U, 36U, 40U, 44U, 48U, 52U, 56U, 60U, 64U, 68U, 72U, 76U, 80U, 84U, 88U, 92U, 96U, 100U,
 	1U, 5U,  9U, 13U, 17U, 21U, 25U, 29U, 33U, 37U, 41U, 45U, 49U, 53U, 57U, 61U, 65U, 69U, 73U, 77U, 81U, 85U, 89U, 93U, 97U, 101U,
 	2U, 6U, 10U, 14U, 18U, 22U, 26U, 30U, 34U, 38U, 42U, 46U, 50U, 54U, 58U, 62U, 66U, 70U, 74U, 78U, 82U, 86U, 90U, 94U, 98U, 102U,
 	3U, 7U, 11U, 15U, 19U, 23U, 27U, 31U, 35U, 39U, 43U, 47U, 51U, 55U, 59U, 63U, 67U, 71U, 75U, 79U, 83U, 87U, 91U, 95U, 99U, 103U};
 
-const unsigned char WHITENING_DATA[] = {0x93U, 0xD7U, 0x51U, 0x21U, 0x9CU, 0x2FU, 0x6CU, 0xD0U, 0xEFU, 0x0FU,
+const uint32_t WHITENING_DATA[] = {0x93U, 0xD7U, 0x51U, 0x21U, 0x9CU, 0x2FU, 0x6CU, 0xD0U, 0xEFU, 0x0FU,
 										0xF8U, 0x3DU, 0xF1U, 0x73U, 0x20U, 0x94U, 0xEDU, 0x1EU, 0x7CU, 0xD8U};
 
-const unsigned char BIT_MASK_TABLE[] = {0x80U, 0x40U, 0x20U, 0x10U, 0x08U, 0x04U, 0x02U, 0x01U};
+const uint8_t BIT_MASK_TABLE[] = {0x80U, 0x40U, 0x20U, 0x10U, 0x08U, 0x04U, 0x02U, 0x01U};
 
 #define WRITE_BIT(p,i,b) p[(i)>>3] = (b) ? (p[(i)>>3] | BIT_MASK_TABLE[(i)&7]) : (p[(i)>>3] & ~BIT_MASK_TABLE[(i)&7])
 #define READ_BIT(p,i)    (p[(i)>>3] & BIT_MASK_TABLE[(i)&7])
@@ -148,6 +148,7 @@ void YSFCodec::process_udp()
 				m_modeinfo.hw_vocoder_loaded = true;
 				m_ambedev = new SerialAMBE("YSF");
 				m_ambedev->connect_to_serial(m_vocoder);
+				connect(m_ambedev, SIGNAL(connected(bool)), this, SLOT(ambe_connect_status(bool)));
 				connect(m_ambedev, SIGNAL(data_ready()), this, SLOT(get_ambe()));
 			}
 			else{
@@ -160,6 +161,7 @@ void YSFCodec::process_udp()
 				m_modem->set_modem_flags(m_rxInvert, m_txInvert, m_pttInvert, m_useCOSAsLockout, m_duplex);
 				m_modem->set_modem_params(m_rxfreq, m_txfreq, m_txDelay, m_rxLevel, m_rfLevel, m_ysfTXHang, m_cwIdTXLevel, m_dstarTXLevel, m_dmrTXLevel, m_ysfTXLevel, m_p25TXLevel, m_nxdnTXLevel, m_pocsagTXLevel, m_m17TXLevel);
 				m_modem->connect_to_serial(m_modemport);
+				connect(m_modem, SIGNAL(connected(bool)), this, SLOT(mmdvm_connect_status(bool)));
 				connect(m_modem, SIGNAL(modem_data_ready(QByteArray)), this, SLOT(process_modem_data(QByteArray)));
 			}
 
@@ -257,7 +259,7 @@ void YSFCodec::process_udp()
 		if(m_modeinfo.type == 3){
 			decode_vw(p_data);
 		}
-		else{
+		else if(m_modeinfo.type != 1){
 			decode_dn(p_data);
 		}
 	}
@@ -371,64 +373,65 @@ void YSFCodec::decode_vw(uint8_t* data)
 
 	data += YSF_SYNC_LENGTH_BYTES + YSF_FICH_LENGTH_BYTES;
 
-	unsigned int offset = 0U;
+	uint32_t offset = 0U;
 
 	// We have a total of 5 VCH sections, iterate through each
-	for (unsigned int j = 0U; j < 5U; j++, offset += 18U) {
+	for (uint32_t j = 0U; j < 5U; j++, offset += 18U) {
 		::memcpy(vch, data + offset, 18U);
 
-		for (unsigned int i = 0U; i < 144U; i++) {
-			unsigned int n = IMBE_INTERLEAVE[i];
+		for (uint32_t i = 0U; i < 144U; i++) {
+			uint32_t n = IMBE_INTERLEAVE[i];
 			bit[i] = READ_BIT(vch, n);
 		}
-		unsigned int c0data = 0U;
-		for (unsigned int i = 0U; i < 12U; i++)
+		uint32_t c0data = 0U;
+		for (uint32_t i = 0U; i < 12U; i++)
 			c0data = (c0data << 1) | (bit[i] ? 0x01U : 0x00U);
 
 		bool prn[114U];
 
 		// Create the whitening vector and save it for future use
-		unsigned int p = 16U * c0data;
-		for (unsigned int i = 0U; i < 114U; i++) {
+		uint32_t p = 16U * c0data;
+		for (uint32_t i = 0U; i < 114U; i++) {
 			p = (173U * p + 13849U) % 65536U;
 			prn[i] = p >= 32768U;
 		}
 
 		// De-whiten some bits
-		for (unsigned int i = 0U; i < 114U; i++)
+		for (uint32_t i = 0U; i < 114U; i++)
 			bit[i + 23U] ^= prn[i];
 
-		unsigned int offset = 0U;
-		for (unsigned int i = 0U; i < 12U; i++, offset++)
+		uint32_t offset = 0U;
+		for (uint32_t i = 0U; i < 12U; i++, offset++)
 			WRITE_BIT(imbe, offset, bit[i + 0U]);
-		for (unsigned int i = 0U; i < 12U; i++, offset++)
+		for (uint32_t i = 0U; i < 12U; i++, offset++)
 			WRITE_BIT(imbe, offset, bit[i + 23U]);
-		for (unsigned int i = 0U; i < 12U; i++, offset++)
+		for (uint32_t i = 0U; i < 12U; i++, offset++)
 			WRITE_BIT(imbe, offset, bit[i + 46U]);
-		for (unsigned int i = 0U; i < 12U; i++, offset++)
+		for (uint32_t i = 0U; i < 12U; i++, offset++)
 			WRITE_BIT(imbe, offset, bit[i + 69U]);
-		for (unsigned int i = 0U; i < 11U; i++, offset++)
+		for (uint32_t i = 0U; i < 11U; i++, offset++)
 			WRITE_BIT(imbe, offset, bit[i + 92U]);
-		for (unsigned int i = 0U; i < 11U; i++, offset++)
+		for (uint32_t i = 0U; i < 11U; i++, offset++)
 			WRITE_BIT(imbe, offset, bit[i + 107U]);
-		for (unsigned int i = 0U; i < 11U; i++, offset++)
+		for (uint32_t i = 0U; i < 11U; i++, offset++)
 			WRITE_BIT(imbe, offset, bit[i + 122U]);
-		for (unsigned int i = 0U; i < 7U; i++, offset++)
+		for (uint32_t i = 0U; i < 7U; i++, offset++)
 			WRITE_BIT(imbe, offset, bit[i + 137U]);
 
 		for(int i = 0; i < 11; ++i){
-			m_rxcodecq.append(imbe[i]);
+			m_rximbecodecq.append(imbe[i]);
+			//m_rxcodecq.append(imbe[i]);
 		}
 	}
 }
 
 void YSFCodec::decode_vd1(uint8_t* data, uint8_t *dt)
 {
-	unsigned char dch[45U];
+	uint8_t dch[45U];
 
-	const unsigned char* p1 = data;
-	unsigned char* p2 = dch;
-	for (unsigned int i = 0U; i < 5U; i++) {
+	const uint8_t* p1 = data;
+	uint8_t* p2 = dch;
+	for (uint32_t i = 0U; i < 5U; i++) {
 		::memcpy(p2, p1, 9U);
 		p1 += 18U; p2 += 9U;
 	}
@@ -436,8 +439,8 @@ void YSFCodec::decode_vd1(uint8_t* data, uint8_t *dt)
 	CYSFConvolution conv;
 	conv.start();
 
-	for (unsigned int i = 0U; i < 180U; i++) {
-		unsigned int n = INTERLEAVE_TABLE_9_20[i];
+	for (uint32_t i = 0U; i < 180U; i++) {
+		uint32_t n = INTERLEAVE_TABLE_9_20[i];
 		uint8_t s0 = READ_BIT(dch, n) ? 1U : 0U;
 
 		n++;
@@ -446,12 +449,12 @@ void YSFCodec::decode_vd1(uint8_t* data, uint8_t *dt)
 		conv.decode(s0, s1);
 	}
 
-	unsigned char output[23U];
+	uint8_t output[23U];
 	conv.chainback(output, 176U);
 
 	bool ret = CCRC::checkCCITT162(output, 22U);
 	if (ret) {
-		for (unsigned int i = 0U; i < 20U; i++){
+		for (uint32_t i = 0U; i < 20U; i++){
 			output[i] ^= WHITENING_DATA[i];
 		}
 		::memcpy(dt, output, 20U);
@@ -460,11 +463,11 @@ void YSFCodec::decode_vd1(uint8_t* data, uint8_t *dt)
 
 void YSFCodec::decode_vd2(uint8_t* data, uint8_t *dt)
 {
-	unsigned char dch[25U];
+	uint8_t dch[25U];
 
-	const unsigned char* p1 = data;
-	unsigned char* p2 = dch;
-	for (unsigned int i = 0U; i < 5U; i++) {
+	const uint8_t* p1 = data;
+	uint8_t* p2 = dch;
+	for (uint32_t i = 0U; i < 5U; i++) {
 		::memcpy(p2, p1, 5U);
 		p1 += 18U; p2 += 5U;
 	}
@@ -472,8 +475,8 @@ void YSFCodec::decode_vd2(uint8_t* data, uint8_t *dt)
 	CYSFConvolution conv;
 	conv.start();
 
-	for (unsigned int i = 0U; i < 100U; i++) {
-		unsigned int n = INTERLEAVE_TABLE_5_20[i];
+	for (uint32_t i = 0U; i < 100U; i++) {
+		uint32_t n = INTERLEAVE_TABLE_5_20[i];
 		uint8_t s0 = READ_BIT(dch, n) ? 1U : 0U;
 
 		n++;
@@ -482,12 +485,12 @@ void YSFCodec::decode_vd2(uint8_t* data, uint8_t *dt)
 		conv.decode(s0, s1);
 	}
 
-	unsigned char output[13U];
+	uint8_t output[13U];
 	conv.chainback(output, 96U);
 
 	bool ret = CCRC::checkCCITT162(output, 12U);
 	if (ret) {
-		for (unsigned int i = 0U; i < 10U; i++){
+		for (uint32_t i = 0U; i < 10U; i++){
 			output[i] ^= WHITENING_DATA[i];
 		}
 		::memcpy(dt, output, YSF_CALLSIGN_LENGTH);
@@ -747,7 +750,7 @@ void YSFCodec::send_frame()
 
 void YSFCodec::encode_header(bool eot)
 {
-	unsigned char callsign[12];
+	uint8_t callsign[12];
 	::memcpy(callsign, "          ", 10);
 	::memcpy(callsign, m_modeinfo.callsign.toStdString().c_str(), ::strlen(m_modeinfo.callsign.toStdString().c_str()));
 
@@ -802,7 +805,7 @@ void YSFCodec::encode_header(bool eot)
 
 void YSFCodec::encode_vw()
 {
-	unsigned char callsign[12];
+	uint8_t callsign[12];
 	::memcpy(callsign, "          ", 10);
 	::memcpy(callsign, m_modeinfo.callsign.toStdString().c_str(), ::strlen(m_modeinfo.callsign.toStdString().c_str()));
 	uint8_t *p_frame = m_ysfFrame;
@@ -857,18 +860,18 @@ void YSFCodec::encode_vw()
 	}
 }
 
-void YSFCodec::encode_imbe(unsigned char* data, const unsigned char* imbe)
+void YSFCodec::encode_imbe(uint8_t* data, const uint8_t* imbe)
 {
 	bool bTemp[144U];
 	bool* bit = bTemp;
 
 	// c0
-	unsigned int c0 = 0U;
-	for (unsigned int i = 0U; i < 12U; i++) {
+	uint32_t c0 = 0U;
+	for (uint32_t i = 0U; i < 12U; i++) {
 		bool b = READ_BIT(imbe, i);
 		c0 = (c0 << 1) | (b ? 0x01U : 0x00U);
 	}
-	unsigned int g2 = CGolay24128::encode23127(c0);
+	uint32_t g2 = CGolay24128::encode23127(c0);
 	for (int i = 23; i >= 0; i--) {
 		bit[i] = (g2 & 0x01U) == 0x01U;
 		g2 >>= 1;
@@ -876,8 +879,8 @@ void YSFCodec::encode_imbe(unsigned char* data, const unsigned char* imbe)
 	bit += 23U;
 
 	// c1
-	unsigned int c1 = 0U;
-	for (unsigned int i = 12U; i < 24U; i++) {
+	uint32_t c1 = 0U;
+	for (uint32_t i = 12U; i < 24U; i++) {
 		bool b = READ_BIT(imbe, i);
 		c1 = (c1 << 1) | (b ? 0x01U : 0x00U);
 	}
@@ -889,8 +892,8 @@ void YSFCodec::encode_imbe(unsigned char* data, const unsigned char* imbe)
 	bit += 23U;
 
 	// c2
-	unsigned int c2 = 0;
-	for (unsigned int i = 24U; i < 36U; i++) {
+	uint32_t c2 = 0;
+	for (uint32_t i = 24U; i < 36U; i++) {
 		bool b = READ_BIT(imbe, i);
 		c2 = (c2 << 1) | (b ? 0x01U : 0x00U);
 	}
@@ -902,8 +905,8 @@ void YSFCodec::encode_imbe(unsigned char* data, const unsigned char* imbe)
 	bit += 23U;
 
 	// c3
-	unsigned int c3 = 0U;
-	for (unsigned int i = 36U; i < 48U; i++) {
+	uint32_t c3 = 0U;
+	for (uint32_t i = 36U; i < 48U; i++) {
 		bool b = READ_BIT(imbe, i);
 		c3 = (c3 << 1) | (b ? 0x01U : 0x00U);
 	}
@@ -915,50 +918,50 @@ void YSFCodec::encode_imbe(unsigned char* data, const unsigned char* imbe)
 	bit += 23U;
 
 	// c4
-	for (unsigned int i = 0U; i < 11U; i++)
+	for (uint32_t i = 0U; i < 11U; i++)
 		bit[i] = READ_BIT(imbe, i + 48U);
 	CHamming::encode15113_1(bit);
 	bit += 15U;
 
 	// c5
-	for (unsigned int i = 0U; i < 11U; i++)
+	for (uint32_t i = 0U; i < 11U; i++)
 		bit[i] = READ_BIT(imbe, i + 59U);
 	CHamming::encode15113_1(bit);
 	bit += 15U;
 
 	// c6
-	for (unsigned int i = 0U; i < 11U; i++)
+	for (uint32_t i = 0U; i < 11U; i++)
 		bit[i] = READ_BIT(imbe, i + 70U);
 	CHamming::encode15113_1(bit);
 	bit += 15U;
 
 	// c7
-	for (unsigned int i = 0U; i < 7U; i++)
+	for (uint32_t i = 0U; i < 7U; i++)
 		bit[i] = READ_BIT(imbe, i + 81U);
 
 	bool prn[114U];
 
 	// Create the whitening vector and save it for future use
-	unsigned int p = 16U * c0;
-	for (unsigned int i = 0U; i < 114U; i++) {
+	uint32_t p = 16U * c0;
+	for (uint32_t i = 0U; i < 114U; i++) {
 		p = (173U * p + 13849U) % 65536U;
 		prn[i] = p >= 32768U;
 	}
 
 	// Whiten some bits
-	for (unsigned int i = 0U; i < 114U; i++)
+	for (uint32_t i = 0U; i < 114U; i++)
 		bTemp[i + 23U] ^= prn[i];
 
 	// Interleave
-	for (unsigned int i = 0U; i < 144U; i++) {
-		unsigned int n = IMBE_INTERLEAVE[i];
+	for (uint32_t i = 0U; i < 144U; i++) {
+		uint32_t n = IMBE_INTERLEAVE[i];
 		WRITE_BIT(data, n, bTemp[i]);
 	}
 }
 
 void YSFCodec::encode_dv2()
 {
-	unsigned char callsign[12];
+	uint8_t callsign[12];
 	::memcpy(callsign, "          ", 10);
 	::memcpy(callsign, m_modeinfo.callsign.toStdString().c_str(), ::strlen(m_modeinfo.callsign.toStdString().c_str()));
 	uint8_t *p_frame = m_ysfFrame;
@@ -1148,7 +1151,7 @@ void YSFCodec::generate_vch_vd2(const uint8_t *a)
 {
 	uint8_t buf[104];
 	uint8_t result[104];
-	//unsigned char a[56];
+	//uint8_t a[56];
 	uint8_t vch[13];
 	memset(vch, 0, 13);
 /*
@@ -1300,57 +1303,48 @@ void YSFCodec::process_rx_data()
 		cnt = 0;
 	}
 
-	if(m_modeinfo.type == 3){
-		if(m_rxcodecq.size() > 10){
-			for(int i = 0; i < 11; ++i){
-				imbe[i] = m_rxcodecq.dequeue();
-			}
-			vocoder.decode_4400(pcm, imbe);
-			m_audio->write(pcm, 160);
-			emit update_output_level(m_audio->level());
+	if((!m_tx) && (m_rximbecodecq.size() > 10)){
+		for(int i = 0; i < 11; ++i){
+			imbe[i] = m_rximbecodecq.dequeue();
 		}
-		else if ( (m_modeinfo.stream_state == STREAM_END) || (m_modeinfo.stream_state == STREAM_LOST) ){
-			m_rxtimer->stop();
-			m_audio->stop_playback();
-			m_rxwatchdog = 0;
-			m_modeinfo.streamid = 0;
-			m_rxcodecq.clear();
-			qDebug() << "YSF FR playback stopped";
-		}
+		vocoder.decode_4400(pcm, imbe);
+		m_audio->write(pcm, 160);
+		emit update_output_level(m_audio->level());
 	}
-	else{
-		if((!m_tx) && (m_rxcodecq.size() > 6) ){
-			for(int i = 0; i < 7; ++i){
-				ambe[i] = m_rxcodecq.dequeue();
-			}
-			if(m_hwrx){
-				m_ambedev->decode(ambe);
 
-				if(m_ambedev->get_audio(pcm)){
-					m_audio->write(pcm, 160);
-					emit update_output_level(m_audio->level());
-				}
-			}
-			else{
-				if(m_modeinfo.sw_vocoder_loaded){
-					m_mbevocoder->decode_2450(pcm, ambe);
-				}
-				else{
-					memset(pcm, 0, 160 * sizeof(int16_t));
-				}
+	else if((!m_tx) && (m_rxcodecq.size() > 6) ){
+		for(int i = 0; i < 7; ++i){
+			ambe[i] = m_rxcodecq.dequeue();
+		}
+		if(m_hwrx){
+			m_ambedev->decode(ambe);
+
+			if(m_ambedev->get_audio(pcm)){
 				m_audio->write(pcm, 160);
 				emit update_output_level(m_audio->level());
 			}
 		}
-		else if ( (m_modeinfo.stream_state == STREAM_END) || (m_modeinfo.stream_state == STREAM_LOST) ){
-			m_rxtimer->stop();
-			m_audio->stop_playback();
-			m_rxwatchdog = 0;
-			m_modeinfo.streamid = 0;
-			m_rxcodecq.clear();
-			//m_ambedev->clear_queue();
-			qDebug() << "YSF VD playback stopped";
-			return;
+		else{
+			if(m_modeinfo.sw_vocoder_loaded){
+				m_mbevocoder->decode_2450(pcm, ambe);
+			}
+			else{
+				memset(pcm, 0, 160 * sizeof(int16_t));
+			}
+			m_audio->write(pcm, 160);
+			emit update_output_level(m_audio->level());
 		}
+	}
+
+	else if ( ((m_modeinfo.stream_state == STREAM_END) || (m_modeinfo.stream_state == STREAM_LOST)) && (m_rxmodemq.size() < 100) ){
+		m_rxtimer->stop();
+		m_audio->stop_playback();
+		m_rxwatchdog = 0;
+		m_modeinfo.streamid = 0;
+		m_rxcodecq.clear();
+		m_rximbecodecq.clear();
+		//m_ambedev->clear_queue();
+		qDebug() << "YSF playback stopped";
+		return;
 	}
 }

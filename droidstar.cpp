@@ -31,6 +31,8 @@
 #include <QFile>
 #include <QFileInfo>
 #include <QDir>
+#include <QFont>
+#include <QFontDatabase>
 #include <stdio.h>
 #include <fcntl.h>
 #include <iostream>
@@ -327,11 +329,13 @@ void DroidStar::process_connect()
 			connect(this, SIGNAL(urcall_changed(QString)), m_ref, SLOT(urcall_changed(QString)));
 			connect(this, SIGNAL(rptr1_changed(QString)), m_ref, SLOT(rptr1_changed(QString)));
 			connect(this, SIGNAL(rptr2_changed(QString)), m_ref, SLOT(rptr2_changed(QString)));
+			connect(this, SIGNAL(usrtxt_changed(QString)), m_ref, SLOT(usrtxt_changed(QString)));
 			emit module_changed(m_module);
 			emit mycall_changed(m_mycall);
 			emit urcall_changed(m_urcall);
 			emit rptr1_changed(m_rptr1);
 			emit rptr2_changed(m_rptr2);
+			emit usrtxt_changed(m_dstarusertxt);
 			m_modethread->start();
 		}
 		if(m_protocol == "DCS"){
@@ -355,10 +359,12 @@ void DroidStar::process_connect()
 			connect(this, SIGNAL(urcall_changed(QString)), m_dcs, SLOT(urcall_changed(QString)));
 			connect(this, SIGNAL(rptr1_changed(QString)), m_dcs, SLOT(rptr1_changed(QString)));
 			connect(this, SIGNAL(rptr2_changed(QString)), m_dcs, SLOT(rptr2_changed(QString)));
+			connect(this, SIGNAL(usrtxt_changed(QString)), m_dcs, SLOT(usrtxt_changed(QString)));
 			emit mycall_changed(m_mycall);
 			emit urcall_changed(m_urcall);
 			emit rptr1_changed(m_rptr1);
 			emit rptr2_changed(m_rptr2);
+			emit usrtxt_changed(m_dstarusertxt);
 			m_modethread->start();
 		}
 		if( (m_protocol == "XRF") && (m_xrf2ref == false) ){
@@ -382,10 +388,12 @@ void DroidStar::process_connect()
 			connect(this, SIGNAL(urcall_changed(QString)), m_xrf, SLOT(urcall_changed(QString)));
 			connect(this, SIGNAL(rptr1_changed(QString)), m_xrf, SLOT(rptr1_changed(QString)));
 			connect(this, SIGNAL(rptr2_changed(QString)), m_xrf, SLOT(rptr2_changed(QString)));
+			connect(this, SIGNAL(usrtxt_changed(QString)), m_xrf, SLOT(usrtxt_changed(QString)));
 			emit mycall_changed(m_mycall);
 			emit urcall_changed(m_urcall);
 			emit rptr1_changed(m_rptr1);
 			emit rptr2_changed(m_rptr2);
+			emit usrtxt_changed(m_dstarusertxt);
 			m_modethread->start();
 		}
 		if(m_protocol == "DMR"){
@@ -406,7 +414,6 @@ void DroidStar::process_connect()
 			m_dmr = new DMRCodec(m_callsign, m_dmrid, m_essid, dmrpass, m_latitude, m_longitude, m_location, m_description, m_freq, m_url, m_swid, m_pkgid, m_dmropts, m_dmr_destid, m_hostname, m_port, false, vocoder, modem, m_playback, m_capture);
 			m_dmr->set_modem_flags(rxInvert, txInvert, pttInvert, useCOSAsLockout, duplex);
 			m_dmr->set_modem_params(m_modemRxFreq.toInt(), m_modemTxFreq.toInt(), m_modemTxDelay.toInt(), m_modemRxLevel.toFloat(), m_modemRFLevel.toFloat(), ysfTXHang, m_modemCWIdTxLevel.toFloat(), m_modemDstarTxLevel.toFloat(), m_modemDMRTxLevel.toFloat(), m_modemYSFTxLevel.toFloat(), m_modemP25TxLevel.toFloat(), m_modemNXDNTxLevel.toFloat(), pocsagTXLevel, m17TXLevel);
-			m_dmr->set_cc(1);
 			m_modethread = new QThread;
 			m_dmr->moveToThread(m_modethread);
 			connect(m_dmr, SIGNAL(update(Codec::MODEINFO)), this, SLOT(update_dmr_data(Codec::MODEINFO)));
@@ -421,6 +428,8 @@ void DroidStar::process_connect()
 			connect(this, SIGNAL(tx_released()), m_dmr, SLOT(stop_tx()));
 			connect(this, SIGNAL(dmr_tgid_changed(unsigned int)), m_dmr, SLOT(dmr_tgid_changed(unsigned int)));
 			connect(this, SIGNAL(dmrpc_state_changed(int)), m_dmr, SLOT(dmrpc_state_changed(int)));
+			connect(this, SIGNAL(slot_changed(int)), m_dmr, SLOT(slot_changed(int)));
+			connect(this, SIGNAL(cc_changed(int)), m_dmr, SLOT(cc_changed(int)));
 			connect(this, SIGNAL(in_audio_vol_changed(qreal)), m_dmr, SLOT(in_audio_vol_changed(qreal)));
 			m_modethread->start();
 		}
@@ -616,7 +625,7 @@ void DroidStar::process_mode_change(const QString &m)
 		m_label2 = "SrcID";
 		m_label3 = "DestID";
 		m_label4 = "GWID";
-		m_label5 = "Seq#";
+		m_label5 = "Info";
 		m_label6 = "";
 	}
 	if(m == "P25"){
@@ -1378,13 +1387,31 @@ void DroidStar::update_ref_data(Codec::MODEINFO info)
 			emit update_log("No vocoder plugin found");
 		}
 	}
-	m_statustxt = "Host: " + m_hostname + ":" + QString::number(m_port) + " Cnt: " + QString::number(info.count);
+
+	m_netstatustxt = "Host: " + m_hostname + ":" + QString::number(m_port) + " Cnt: " + QString::number(info.count);
+	m_ambestatustxt = "AMBE: " + (info.ambeprodid.isEmpty() ? "No device" : info.ambeprodid);
+	m_mmdvmstatustxt = "MMDVM: ";
+
+	if(info.mmdvm.isEmpty()){
+		m_mmdvmstatustxt += "No device";
+	}
+
+	QStringList verlist = info.ambeverstr.split('.');
+	if(verlist.size() > 7){
+		m_ambestatustxt += " " + verlist.at(0) + " " + verlist.at(5);
+	}
+
+	verlist = info.mmdvm.split(' ');
+	if(verlist.size() > 3){
+		m_mmdvmstatustxt += verlist.at(0) + " " + verlist.at(1);
+	}
+
 	if(info.streamid){
 		m_data1 = info.src;
 		m_data2 = info.dst;
 		m_data3 = info.gw;
 		m_data4 = info.gw2;
-		m_data5 = QString::number(info.streamid, 16) + " " + QString::number(info.frame_number, 16);
+		m_data5 = QString::number(info.streamid, 16) + " " + QString("%1").arg(info.frame_number, 2, 16, QChar('0'));
 		m_data6 = info.usertxt;
 	}
 	else{
@@ -1433,13 +1460,31 @@ void DroidStar::update_dcs_data(Codec::MODEINFO info)
 			emit update_log("No vocoder plugin found");
 		}
 	}
-	m_statustxt = "Host: " + m_hostname + ":" + QString::number(m_port) + " Cnt: " + QString::number(info.status);
+
+	m_netstatustxt = "Host: " + m_hostname + ":" + QString::number(m_port) + " Cnt: " + QString::number(info.count);
+	m_ambestatustxt = "AMBE: " + (info.ambeprodid.isEmpty() ? "No device" : info.ambeprodid);
+	m_mmdvmstatustxt = "MMDVM: ";
+
+	if(info.mmdvm.isEmpty()){
+		m_mmdvmstatustxt += "No device";
+	}
+
+	QStringList verlist = info.ambeverstr.split('.');
+	if(verlist.size() > 7){
+		m_ambestatustxt += " " + verlist.at(0) + " " + verlist.at(5);
+	}
+
+	verlist = info.mmdvm.split(' ');
+	if(verlist.size() > 3){
+		m_mmdvmstatustxt += verlist.at(0) + " " + verlist.at(1);
+	}
+
 	if(info.streamid){
 		m_data1 = info.src;
 		m_data2 = info.dst;
 		m_data3 = info.gw;
 		m_data4 = info.gw2;
-		m_data5 = QString::number(info.streamid, 16) + " " + QString::number(info.frame_number, 16);
+		m_data5 = QString::number(info.streamid, 16) + " " + QString("%1").arg(info.frame_number, 2, 16, QChar('0'));
 		m_data6 = info.usertxt;
 	}
 	else{
@@ -1489,13 +1534,31 @@ void DroidStar::update_xrf_data(Codec::MODEINFO info)
 			emit update_log("No vocoder plugin found");
 		}
 	}
-	m_statustxt = "Host: " + m_hostname + ":" + QString::number(m_port) + " Cnt: " + QString::number(info.count);
+
+	m_netstatustxt = "Host: " + m_hostname + ":" + QString::number(m_port) + " Cnt: " + QString::number(info.count);
+	m_ambestatustxt = "AMBE: " + (info.ambeprodid.isEmpty() ? "No device" : info.ambeprodid);
+	m_mmdvmstatustxt = "MMDVM: ";
+
+	if(info.mmdvm.isEmpty()){
+		m_mmdvmstatustxt += "No device";
+	}
+
+	QStringList verlist = info.ambeverstr.split('.');
+	if(verlist.size() > 7){
+		m_ambestatustxt += " " + verlist.at(0) + " " + verlist.at(5);
+	}
+
+	verlist = info.mmdvm.split(' ');
+	if(verlist.size() > 3){
+		m_mmdvmstatustxt += verlist.at(0) + " " + verlist.at(1);
+	}
+
 	if(info.streamid){
 		m_data1 = info.src;
 		m_data2 = info.dst;
 		m_data3 = info.gw;
 		m_data4 = info.gw2;
-		m_data5 = QString::number(info.streamid, 16) + " " + QString::number(info.frame_number, 16);
+		m_data5 = QString::number(info.streamid, 16) + " " + QString("%1").arg(info.frame_number, 2, 16, QChar('0'));
 		m_data6 = info.usertxt;
 	}
 	else{
@@ -1536,7 +1599,25 @@ void DroidStar::update_nxdn_data(Codec::MODEINFO info)
 			emit update_log("No vocoder plugin found");
 		}
 	}
-	m_statustxt = "Host: " + m_hostname + ":" + QString::number(m_port) + " Cnt: " + QString::number(info.count);
+
+	m_netstatustxt = "Host: " + m_hostname + ":" + QString::number(m_port) + " Cnt: " + QString::number(info.count);
+	m_ambestatustxt = "AMBE: " + (info.ambeprodid.isEmpty() ? "No device" : info.ambeprodid);
+	m_mmdvmstatustxt = "MMDVM: ";
+
+	if(info.mmdvm.isEmpty()){
+		m_mmdvmstatustxt += "No device";
+	}
+
+	QStringList verlist = info.ambeverstr.split('.');
+	if(verlist.size() > 7){
+		m_ambestatustxt += " " + verlist.at(0) + " " + verlist.at(5);
+	}
+
+	verlist = info.mmdvm.split(' ');
+	if(verlist.size() > 3){
+		m_mmdvmstatustxt += verlist.at(0) + " " + verlist.at(1);
+	}
+
 	if(info.stream_state == Codec::STREAM_IDLE){
 		m_data1.clear();
 		m_data2.clear();
@@ -1599,7 +1680,25 @@ void DroidStar::update_dmr_data(Codec::MODEINFO info)
 			emit update_log("No vocoder plugin found");
 		}
 	}
-	m_statustxt = "Host: " + m_host + " Cnt: " + QString::number(info.count);
+
+	m_netstatustxt = "Host: " + m_hostname + ":" + QString::number(m_port) + " Cnt: " + QString::number(info.count);
+	m_ambestatustxt = "AMBE: " + (info.ambeprodid.isEmpty() ? "No device" : info.ambeprodid);
+	m_mmdvmstatustxt = "MMDVM: ";
+
+	if(info.mmdvm.isEmpty()){
+		m_mmdvmstatustxt += "No device";
+	}
+
+	QStringList verlist = info.ambeverstr.split('.');
+	if(verlist.size() > 7){
+		m_ambestatustxt += " " + verlist.at(0) + " " + verlist.at(5);
+	}
+
+	verlist = info.mmdvm.split(' ');
+	if(verlist.size() > 3){
+		m_mmdvmstatustxt += verlist.at(0) + " " + verlist.at(1);
+	}
+
 	if(info.stream_state == Codec::STREAM_IDLE){
 		m_data1.clear();
 		m_data2.clear();
@@ -1613,9 +1712,26 @@ void DroidStar::update_dmr_data(Codec::MODEINFO info)
 		m_data2 = info.srcid ? QString::number(info.srcid) : "";
 		m_data3 = info.dstid ? QString::number(info.dstid) : "";
 		m_data4 = info.gwid ? QString::number(info.gwid) : "";
+		QString s = "Slot" + QString::number(info.slot);
+		QString flco;
+
+		switch( (info.slot & 0x40) >> 6){
+		case 0:
+			flco = "Group";
+			break;
+		case 3:
+			flco = "Private";
+			break;
+		case 8:
+			flco = "GPS";
+			break;
+		default:
+			flco = "Unknown";
+			break;
+		}
 
 		if(info.frame_number){
-			QString n = QString("%1").arg(info.frame_number, 4, 16, QChar('0'));
+			QString n = s + " " + flco + " " + QString("%1").arg(info.frame_number, 2, 16, QChar('0'));
 			m_data5 = n;
 		}
 	}
@@ -1652,7 +1768,25 @@ void DroidStar::update_ysf_data(Codec::MODEINFO info)
 			}
 		}
 	}
-	m_statustxt = "Host: " + m_hostname + ":" + QString::number(m_port) + " Cnt: " + QString::number(info.count);
+
+	m_netstatustxt = "Host: " + m_hostname + ":" + QString::number(m_port) + " Cnt: " + QString::number(info.count);
+	m_ambestatustxt = "AMBE: " + (info.ambeprodid.isEmpty() ? "No device" : info.ambeprodid);
+	m_mmdvmstatustxt = "MMDVM: ";
+
+	if(info.mmdvm.isEmpty()){
+		m_mmdvmstatustxt += "No device";
+	}
+
+	QStringList verlist = info.ambeverstr.split('.');
+	if(verlist.size() > 7){
+		m_ambestatustxt += " " + verlist.at(0) + " " + verlist.at(5);
+	}
+
+	verlist = info.mmdvm.split(' ');
+	if(verlist.size() > 3){
+		m_mmdvmstatustxt += verlist.at(0) + " " + verlist.at(1);
+	}
+
 	if(info.stream_state == Codec::STREAM_IDLE){
 		m_data1.clear();
 		m_data2.clear();
@@ -1708,9 +1842,29 @@ void DroidStar::update_p25_data(Codec::MODEINFO info)
 		connect_status = Codec::CONNECTED_RW;
 		emit connect_status_changed(2);
 		emit in_audio_vol_changed(0.3);
+		emit swtx_state(!m_p25->get_hwtx());
+		emit swrx_state(!m_p25->get_hwrx());
 		emit update_log("Connected to " + m_protocol + " " + m_host + " " + m_hostname + ":" + QString::number(m_port));
 	}
-	m_statustxt = "Host: " + m_hostname + ":" + QString::number(m_port) + " Cnt: " + QString::number(info.count);
+
+	m_netstatustxt = "Host: " + m_hostname + ":" + QString::number(m_port) + " Cnt: " + QString::number(info.count);
+	m_ambestatustxt = "AMBE: " + (info.ambeprodid.isEmpty() ? "No device" : info.ambeprodid);
+	m_mmdvmstatustxt = "MMDVM: ";
+
+	if(info.mmdvm.isEmpty()){
+		m_mmdvmstatustxt += "No device";
+	}
+
+	QStringList verlist = info.ambeverstr.split('.');
+	if(verlist.size() > 7){
+		m_ambestatustxt += " " + verlist.at(0) + " " + verlist.at(5);
+	}
+
+	verlist = info.mmdvm.split(' ');
+	if(verlist.size() > 3){
+		m_mmdvmstatustxt += verlist.at(0) + " " + verlist.at(1);
+	}
+
 	if(info.stream_state == Codec::STREAM_IDLE){
 		m_data1.clear();
 		m_data2.clear();
@@ -1725,7 +1879,7 @@ void DroidStar::update_p25_data(Codec::MODEINFO info)
 		m_data3 = info.dstid ? QString::number(info.dstid) : "";
 		m_data4 = info.srcid ? QString::number(info.srcid) : "";
 		if(info.frame_number){
-			QString n = QString("%1").arg(info.frame_number, 4, 16, QChar('0'));
+			QString n = QString("%1").arg(info.frame_number, 2, 16, QChar('0'));
 			m_data5 = n;
 		}
 	}
@@ -1748,9 +1902,28 @@ void DroidStar::update_m17_data(M17Codec::MODEINFO info)
 		connect_status = Codec::CONNECTED_RW;
 		emit connect_status_changed(2);
 		emit in_audio_vol_changed(0.5);
+		emit swtx_state(!m_m17->get_hwtx());
+		emit swrx_state(!m_m17->get_hwrx());
 		emit update_log("Connected to " + m_protocol + " " + m_host + " " + m_hostname + ":" + QString::number(m_port));
 	}
-	m_statustxt = "Host: " + m_hostname + ":" + QString::number(m_port) + " Cnt: " + QString::number(info.count);
+
+	m_netstatustxt = "Host: " + m_hostname + ":" + QString::number(m_port) + " Cnt: " + QString::number(info.count);
+	m_ambestatustxt = "AMBE: " + (info.ambeprodid.isEmpty() ? "No device" : info.ambeprodid);
+	m_mmdvmstatustxt = "MMDVM: ";
+
+	if(info.mmdvm.isEmpty()){
+		m_mmdvmstatustxt += "No device";
+	}
+
+	QStringList verlist = info.ambeverstr.split('.');
+	if(verlist.size() > 7){
+		m_ambestatustxt += " " + verlist.at(0) + " " + verlist.at(5) + " " + verlist.at(6);
+	}
+
+	verlist = info.mmdvm.split(' ');
+	if(verlist.size() > 3){
+		m_mmdvmstatustxt += verlist.at(0) + " " + verlist.at(1);
+	}
 
 	if(info.streamid){
 		m_data1 = info.src;
@@ -1795,8 +1968,8 @@ void DroidStar::update_iax_data()
 		emit in_audio_vol_changed(0.5);
 		emit update_log("Connected to " + m_protocol + " " + m_iaxhost + ":" + QString::number(m_iaxport));
 	}
-	m_statustxt = "Host: " + m_iaxhost + ":" + QString::number(m_iaxport) + " Cnt: " + QString::number(m_iax->get_cnt());
 
+	m_netstatustxt = "Host: " + m_iaxhost + ":" + QString::number(m_iaxport) + " Cnt: " + QString::number(m_iax->get_cnt());
 	emit update_data();
 }
 

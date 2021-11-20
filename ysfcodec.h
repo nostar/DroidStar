@@ -18,34 +18,36 @@
 #ifndef YSFCODEC_H
 #define YSFCODEC_H
 
-const unsigned int YSF_FRAME_LENGTH_BYTES = 120U;
+#include <cstdint>
 
-const unsigned char YSF_SYNC_BYTES[] = {0xD4U, 0x71U, 0xC9U, 0x63U, 0x4DU};
-const unsigned int YSF_SYNC_LENGTH_BYTES = 5U;
+const uint32_t YSF_FRAME_LENGTH_BYTES = 120U;
 
-const unsigned int YSF_FICH_LENGTH_BYTES = 25U;
+const uint8_t YSF_SYNC_BYTES[] = {0xD4U, 0x71U, 0xC9U, 0x63U, 0x4DU};
+const uint32_t YSF_SYNC_LENGTH_BYTES = 5U;
 
-const unsigned char YSF_SYNC_OK = 0x01U;
+const uint32_t YSF_FICH_LENGTH_BYTES = 25U;
 
-const unsigned int  YSF_CALLSIGN_LENGTH   = 10U;
+const uint8_t YSF_SYNC_OK = 0x01U;
 
-const unsigned char YSF_FI_HEADER         = 0x00U;
-const unsigned char YSF_FI_COMMUNICATIONS = 0x01U;
-const unsigned char YSF_FI_TERMINATOR     = 0x02U;
-const unsigned char YSF_FI_TEST           = 0x03U;
+const uint32_t  YSF_CALLSIGN_LENGTH   = 10U;
 
-const unsigned char YSF_DT_VD_MODE1      = 0x00U;
-const unsigned char YSF_DT_DATA_FR_MODE  = 0x01U;
-const unsigned char YSF_DT_VD_MODE2      = 0x02U;
-const unsigned char YSF_DT_VOICE_FR_MODE = 0x03U;
+const uint8_t YSF_FI_HEADER         = 0x00U;
+const uint8_t YSF_FI_COMMUNICATIONS = 0x01U;
+const uint8_t YSF_FI_TERMINATOR     = 0x02U;
+const uint8_t YSF_FI_TEST           = 0x03U;
 
-const unsigned char YSF_CM_GROUP1     = 0x00U;
-const unsigned char YSF_CM_GROUP2     = 0x01U;
-const unsigned char YSF_CM_INDIVIDUAL = 0x03U;
+const uint8_t YSF_DT_VD_MODE1      = 0x00U;
+const uint8_t YSF_DT_DATA_FR_MODE  = 0x01U;
+const uint8_t YSF_DT_VD_MODE2      = 0x02U;
+const uint8_t YSF_DT_VOICE_FR_MODE = 0x03U;
 
-const unsigned char YSF_MR_DIRECT   = 0x00U;
-const unsigned char YSF_MR_NOT_BUSY = 0x01U;
-const unsigned char YSF_MR_BUSY     = 0x02U;
+const uint8_t YSF_CM_GROUP1     = 0x00U;
+const uint8_t YSF_CM_GROUP2     = 0x01U;
+const uint8_t YSF_CM_INDIVIDUAL = 0x03U;
+
+const uint8_t YSF_MR_DIRECT   = 0x00U;
+const uint8_t YSF_MR_NOT_BUSY = 0x01U;
+const uint8_t YSF_MR_BUSY     = 0x02U;
 
 #include <string>
 #include "codec.h"
@@ -74,32 +76,33 @@ private:
 	void decode_vw(uint8_t* data);
 	void encode_header(bool eot = 0);
 	void encode_vw();
-	void encode_imbe(unsigned char* data, const unsigned char* imbe);
+	void encode_imbe(uint8_t* data, const uint8_t* imbe);
 	void encode_dv2();
 	void decode_vd2(uint8_t* data, uint8_t *dt);
 	void decode_vd1(uint8_t* data, uint8_t *dt);
-	void generate_vch_vd2(const unsigned char*);
-	void ysf_scramble(unsigned char *buf, const int len);
-	void writeDataFRModeData1(const unsigned char* dt, unsigned char* data);
-	void writeDataFRModeData2(const unsigned char* dt, unsigned char* data);
-	void writeVDMode2Data(unsigned char* data, const unsigned char* dt);
+	void generate_vch_vd2(const uint8_t*);
+	void ysf_scramble(uint8_t *buf, const int len);
+	void writeDataFRModeData1(const uint8_t* dt, uint8_t* data);
+	void writeDataFRModeData2(const uint8_t* dt, uint8_t* data);
+	void writeVDMode2Data(uint8_t* data, const uint8_t* dt);
 	void interleave(uint8_t *ambe);
 
 	uint8_t m_fi;
 	uint8_t packet_size;
-	unsigned char gateway[12];
-	unsigned char m_ysfFrame[200];
-	unsigned char m_vch[13U];
-	unsigned char m_ambe[55];
-	//unsigned char m_imbe[55];
+	uint8_t gateway[12];
+	uint8_t m_ysfFrame[200];
+	uint8_t m_vch[13U];
+	uint8_t m_ambe[55];
+	//uint8_t m_imbe[55];
 	CYSFFICH fich;
-	unsigned char ambe_fr[4][24];
-	unsigned int ambe_a;
-	unsigned int ambe_b;
-	unsigned int ambe_c;
+	uint8_t ambe_fr[4][24];
+	uint32_t ambe_a;
+	uint32_t ambe_b;
+	uint32_t ambe_c;
 	bool m_fcs;
 	std::string m_fcsname;
 	bool m_txfullrate;
+	QQueue<uint8_t> m_rximbecodecq;
 };
 
 #endif

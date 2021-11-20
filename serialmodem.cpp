@@ -118,7 +118,7 @@ void SerialModem::connect_to_serial(QString p)
 		//connect(m_serial, &AndroidSerialPort::readyRead, this, &SerialModem::process_serial);
 		connect(m_serial, SIGNAL(data_received(QByteArray)), this, SLOT(receive_serial(QByteArray)));
 #endif
-		m_serial->setFlowControl(QSerialPort::HardwareControl);
+		//m_serial->setFlowControl(QSerialPort::HardwareControl);
 		m_serial->setRequestToSend(true);
 		QByteArray a;
 		a.clear();
@@ -185,16 +185,30 @@ void SerialModem::process_modem()
 			for(int i = 0; i < s; ++i){
 				m_serialdata.dequeue();
 			}
+			if(m_serialdata[3] == 2){
+
+			}
 		}
 
 		else if(r == MMDVM_ACK){
 			qDebug() << "Received MMDVM_ACK";
+			if(m_serialdata[3] == 2){
+				emit connected(true);
+			}
 			for(int i = 0; i < s; ++i){
 				m_serialdata.dequeue();
 			}
 		}
 
 		else if(r == MMDVM_GET_VERSION){
+			if(m_serialdata.size() >= s){
+				m_protocol = m_serialdata[3];
+				m_version.clear();
+				for(int i = 0; i < (s-4); ++i){
+					m_version.append(m_serialdata[4+i]);
+				}
+				qDebug() << "MMDVM: " << m_version;
+			}
 			QThread::msleep(100);
 			set_freq();
 			QThread::msleep(100);

@@ -113,7 +113,7 @@ void P25Codec::process_udp()
 		}
 		m_rxwatchdog = 0;
 		int offset = 0;
-		m_modeinfo.frame_number = buf.data()[0U];
+		m_modeinfo.frame_number = (uint8_t)buf.data()[0U];
 		switch ((uint8_t)buf.data()[0U]) {
 		case 0x62U:
 			offset = 10U;

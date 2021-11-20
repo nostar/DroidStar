@@ -65,21 +65,15 @@ Port: UDP port of node, usually 4569.
 Add DTMF commands like \*3node, \*1node, \*70, etc in the IAX DTMF box and hit send to send the DTMF string.  The asterisk (*) character is already added on the Droidstar app, so only input the numeric portion of the command (70 instead of *70, etc). Details on various commands can be found at the AllStar wiki and others.
 
 # General building instructions
-This software is written primarily in C++ on Linux and requires Qt5 >= Qt5.15, and natually the devel packages to build.  Java, QML (Javascript based), and C# code is also used where necessary.  
+This software is written primarily in C++ on Linux and requires Qt5 >= Qt5.15, and natually the devel packages to build.  Java, QML (Javascript based), and C# code is also used where necessary.  The preffered way to obtain Qt 5.15 is to use the Qt open source online installer from the Qt website.  Run this installer as a user (not root) to keep the Qt installation separate from your system libs.  Select the option as shown in this pic https://imgur.com/i0WuFCY which will install everything under ~/Qt.
 
-Qt5 and Qt5-Quick development packages are required to build this software from source.  With these requirements met, run the following:
-```
-qmake
-make
-```
-qmake may have a different name on your distribution i.e. on Fedora it's called qmake-qt5
-
-# Building on Raspbian/RaspiOS
-DroidStar requires >= Qt 5.15 and RaspiOS currently packages Qt 5.11.  Fortunately there is a great Qt 5.15.2 installer for RaspiOS:
+## Note for building on Raspbian/RaspiOS
+The Qt online installer does not support RPi, but fortunately there is a great Qt 5.15.2 installer for RaspiOS:
 
 https://github.com/koendv/qt5-opengl-raspberrypi
 
-with this version of Qt installed, simply run the qmake from that version:
+This installer puts everything in the same place as the Qt installer, so build instructions are the same for all:
+
 ```
 cd DroidStar
 mkdir build

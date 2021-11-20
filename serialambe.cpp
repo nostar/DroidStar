@@ -29,15 +29,26 @@
 
 //#define DEBUG
 
-const uint8_t AMBEP251_4400_2800[17] = {0x61, 0x00, 0x0d, 0x00, 0x0a, 0x05U, 0x58U, 0x08U, 0x6BU, 0x10U, 0x30U, 0x00U, 0x00U, 0x00U, 0x00U, 0x01U, 0x90U};		//DVSI P25 USB Dongle FEC
-//const uint8_t AMBEP251_4400_0000[17] = {0x61, 0x00, 0x0d, 0x00, 0x0a, 0x05U, 0x58U, 0x08U, 0x6BU, 0x00U, 0x00U, 0x00U, 0x00U, 0x00U, 0x00U, 0x01U, 0x58U};	//DVSI P25 USB Dongle No-FEC
-//const uint8_t AMBE1000_4400_2800[17] = {0x61, 0x00, 0x0d, 0x00, 0x0a, 0x00U, 0x58U, 0x08U, 0x87U, 0x30U, 0x00U, 0x00U, 0x00U, 0x00U, 0x00U, 0x44U, 0x90U};
-//const uint8_t AMBE2000_4400_2800[17] = {0x61, 0x00, 0x0d, 0x00, 0x0a, 0x02U, 0x58U, 0x07U, 0x65U, 0x00U, 0x09U, 0x1eU, 0x0cU, 0x41U, 0x27U, 0x73U, 0x90U};
-//const uint8_t AMBE3000_4400_2800[17] = {0x61, 0x00, 0x0d, 0x00, 0x0a, 0x04U, 0x58U, 0x09U, 0x86U, 0x80U, 0x20U, 0x00U, 0x00U, 0x00U, 0x00U, 0x73U, 0x90U};
-const uint8_t AMBE2000_2400_1200[17] = {0x61, 0x00, 0x0d, 0x00, 0x0a, 0x01U, 0x30U, 0x07U, 0x63U, 0x40U, 0x00U, 0x00U, 0x00U, 0x00U, 0x00U, 0x00U, 0x48U};
-const uint8_t AMBE3000_2450_1150[17] = {0x61, 0x00, 0x0d, 0x00, 0x0a, 0x04U, 0x31U, 0x07U, 0x54U, 0x24U, 0x00U, 0x00U, 0x00U, 0x00U, 0x00U, 0x6fU, 0x48U};
-const uint8_t AMBE3000_2450_0000[17] = {0x61, 0x00, 0x0d, 0x00, 0x0a, 0x04U, 0x31U, 0x07U, 0x54U, 0x00U, 0x00U, 0x00U, 0x00U, 0x00U, 0x00U, 0x70U, 0x31U};
-const uint8_t AMBE3000_PARITY_DISABLE[8] = {0x61, 0x00, 0x04, 0x00, 0x3f, 0x00, 0x2f, 0x14};
+#define AMBE3000_START_BYTE		0x61
+#define AMBE3000_TYPE_CONFIG	0x00
+#define AMBE3000_TYPE_CHANNEL	0x01
+#define AMBE3000_TYPE_SPEECH	0x02
+#define AMBE3000_PKT_RATEP		0x0a
+#define AMBE3000_PKT_INIT		0x0b
+#define AMBE3000_PKT_RATEP		0x0a
+#define AMBE3000_PKT_PRODID		0x30
+#define AMBE3000_PKT_VERSTRING	0x31
+#define AMBE3000_PKT_READY		0x39
+#define AMBE3000_PKT_RESET		0x33
+#define AMBE3000_PKT_PARITYMODE	0x3f
+
+const uint8_t AMBEP251_4400_2800[17] = {AMBE3000_START_BYTE, 0x00, 0x0d, AMBE3000_TYPE_CONFIG, AMBE3000_PKT_RATEP, 0x05U, 0x58U, 0x08U, 0x6BU, 0x10U, 0x30U, 0x00U, 0x00U, 0x00U, 0x00U, 0x01U, 0x90U};		//DVSI P25 USB Dongle FEC
+const uint8_t AMBE2000_2400_1200[17] = {AMBE3000_START_BYTE, 0x00, 0x0d, AMBE3000_TYPE_CONFIG, AMBE3000_PKT_RATEP, 0x01U, 0x30U, 0x07U, 0x63U, 0x40U, 0x00U, 0x00U, 0x00U, 0x00U, 0x00U, 0x00U, 0x48U};
+const uint8_t AMBE3000_2450_1150[17] = {AMBE3000_START_BYTE, 0x00, 0x0d, AMBE3000_TYPE_CONFIG, AMBE3000_PKT_RATEP, 0x04U, 0x31U, 0x07U, 0x54U, 0x24U, 0x00U, 0x00U, 0x00U, 0x00U, 0x00U, 0x6fU, 0x48U};
+const uint8_t AMBE3000_2450_0000[17] = {AMBE3000_START_BYTE, 0x00, 0x0d, AMBE3000_TYPE_CONFIG, AMBE3000_PKT_RATEP, 0x04U, 0x31U, 0x07U, 0x54U, 0x00U, 0x00U, 0x00U, 0x00U, 0x00U, 0x00U, 0x70U, 0x31U};
+const uint8_t AMBE3000_PARITY_DISABLE[8] = {AMBE3000_START_BYTE, 0x00, 0x04, AMBE3000_TYPE_CONFIG, AMBE3000_PKT_PARITYMODE, 0x00, 0x2f, 0x14};
+const uint8_t AMBE3000_PRODID[5] = {AMBE3000_START_BYTE, 0x00, 0x01, AMBE3000_TYPE_CONFIG, AMBE3000_PKT_PRODID};
+const uint8_t AMBE3000_VERSION[5] = {AMBE3000_START_BYTE, 0x00, 0x01, AMBE3000_TYPE_CONFIG, AMBE3000_PKT_VERSTRING};
 
 //const uint8_t AMBE2020[48] = {0x13, 0xec, 0x00, 0x00, 0x10, 0x30, 0x00, 0x01, 0x00, 0x00, 0x42, 0x30, 0x00, 0x48, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xff, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
 //const uint8_t AMBE2020[4] = {0x04, 0x20, 0x01, 0x00};
@@ -136,6 +147,14 @@ void SerialAMBE::connect_to_serial(QString p)
 				m_serial->write(a);
 				QThread::msleep(100);
 				a.clear();
+				a.append(reinterpret_cast<const char*>(AMBE3000_PRODID), sizeof(AMBE3000_PRODID));
+				m_serial->write(a);
+				QThread::msleep(100);
+				a.clear();
+				a.append(reinterpret_cast<const char*>(AMBE3000_VERSION), sizeof(AMBE3000_VERSION));
+				m_serial->write(a);
+				QThread::msleep(100);
+				a.clear();
 			}
 
 			if(m_protocol == "DMR"){
@@ -228,7 +247,7 @@ void SerialAMBE::decode(uint8_t *ambe)
 
 void SerialAMBE::encode(int16_t *audio)
 {
-	uint8_t packet[327] = {0x61, 0x01, 0x43, 0x02, 0x40, 0x00, 0xa0};
+	uint8_t packet[327] = {AMBE3000_START_BYTE, 0x01, 0x43, AMBE3000_TYPE_SPEECH, 0x40, 0x00, 0xa0};
 	for(int i = 0; i < 160; ++i){
 		packet [(i*2)+7] = (audio[i] >> 8) & 0xff;
 		packet [(i*2)+8] = audio[i] & 0xff;
@@ -261,7 +280,7 @@ void SerialAMBE::decode_2020(uint8_t *ambe)
 
 void SerialAMBE::decode_3000(uint8_t *ambe)
 {
-	uint8_t packet[15] = {0x61, 0x00, 0x0b, 0x01, 0x01, 0x48};
+	uint8_t packet[15] = {AMBE3000_START_BYTE, 0x00, 0x0b, AMBE3000_TYPE_CHANNEL, 0x01, 0x48};
 	if( packet_size == 7 ){
 		packet[2] = 0x09;
 		packet[5] = 0x31;
@@ -293,19 +312,66 @@ void SerialAMBE::process_serial_2020()
 
 void SerialAMBE::process_serial_3000()
 {
-	if( (m_serialdata.size() > 3) &&
-		(m_serialdata[0] == 0x61) &&
-		(m_serialdata[3] == 0x00)
+	if(m_serialdata.size() < 3){
+		return;
+	}
+
+	while( (m_serialdata.size() > 3) &&
+		   (m_serialdata[0] == AMBE3000_START_BYTE) &&
+		   (m_serialdata[3] == 0x00) &&
+		   (m_serialdata.size() >= m_serialdata[2])
 		)
 	{
+		switch(m_serialdata[4]){
+		case AMBE3000_PKT_PARITYMODE:
+			if(!m_serialdata[5]){
+				qDebug() << "AMBE3000 Parity disabled";
+			}
+			else{
+				qDebug() << "ERROR: AMBE3000 Parity not disabled";
+			}
+			break;
+		case AMBE3000_PKT_PRODID:
+			m_ambeprodid.clear();
+
+			for(int i = 0; i < (m_serialdata[2] - 2); ++i){
+				m_ambeprodid.append(m_serialdata[5+i]);
+			}
+
+			qDebug() << "PRODID == " << m_ambeprodid;
+			break;
+		case AMBE3000_PKT_VERSTRING:
+			m_ambeverstring.clear();
+
+			for(int i = 0; i < (m_serialdata[2] - 2); ++i){
+				m_ambeverstring.append(m_serialdata[5+i]);
+			}
+
+			qDebug() << "VERSTRING == " << m_ambeverstring;
+			break;
+		case AMBE3000_PKT_RATEP:
+			if(!m_serialdata[5]){
+				qDebug() << "AMBE3000 Rate set";
+				emit connected(true);
+			}
+			else{
+				qDebug() << "ERROR: AMBE3000 Rate not set";
+				emit connected(false);
+			}
+			break;
+		default:
+			break;
+		}
+
 		do {
 			m_serialdata.dequeue();
 		}
-		while(m_serialdata.size() && m_serialdata[0] != 0x61);
+		while(m_serialdata.size() && m_serialdata[0] != AMBE3000_START_BYTE);
 	}
+
 	if( (m_serialdata.size() >= (6 + packet_size)) &&
-		(m_serialdata[0] == 0x61) &&
-		(m_serialdata[3] == 0x01)
+		(m_serialdata[0] == AMBE3000_START_BYTE) &&
+		(m_serialdata[3] == AMBE3000_TYPE_CHANNEL)
 		)
 	{
 		emit data_ready();
@@ -320,19 +386,19 @@ bool SerialAMBE::get_ambe(uint8_t *ambe)
 	}
 
 	if( (m_serialdata.size() > 3) &&
-		(m_serialdata[0] == 0x61) &&
-		(m_serialdata[3] != 0x01)
+		(m_serialdata[0] == AMBE3000_START_BYTE) &&
+		(m_serialdata[3] != AMBE3000_TYPE_CHANNEL)
 		)
 	{
 		do {
 			m_serialdata.dequeue();
 		}
-		while(m_serialdata.size() && m_serialdata[0] != 0x61);
+		while(m_serialdata.size() && m_serialdata[0] != AMBE3000_START_BYTE);
 	}
 
 	if( (m_serialdata.size() >= (6 + packet_size)) &&
-		(m_serialdata[0] == 0x61) &&
-		(m_serialdata[3] == 0x01)
+		(m_serialdata[0] == AMBE3000_START_BYTE) &&
+		(m_serialdata[3] == AMBE3000_TYPE_CHANNEL)
 		)
 	{
 		for(int i = 0; i < 6; ++i){
@@ -352,7 +418,7 @@ bool SerialAMBE::get_audio(int16_t *audio)
 	if(m_serialdata.isEmpty()){
 		return r;
 	}
-	uint8_t header[] = {0x61, 0x01, 0x42, 0x02, 0x00, 0xA0};
+	uint8_t header[] = {AMBE3000_START_BYTE, 0x01, 0x42, AMBE3000_TYPE_SPEECH, 0x00, 0xA0};
 /*
 	if( (m_serialdata.size() > 3) &&
 		(m_serialdata[0] == 0x61) &&
