@@ -316,7 +316,6 @@ void SerialModem::set_config()
 		c |= 0x40U;
 
 	out.append(c);
-
 	out.append(m_txDelay / 10U);		// In 10ms units
 	out.append(MODE_IDLE);
 	out.append((uint8_t)(m_rxLevel * 2.55F + 0.5F));

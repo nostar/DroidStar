@@ -23,7 +23,25 @@ import QtQuick.Controls 2.3
 
 Item {
 	id: mainTab
-	property int rows: 18;
+	//property int rows: 18;
+	//property bool tts: false;
+	property int rows: {
+		if(USE_FLITE){
+			rows = 20;
+		}
+		else{
+			rows = 18;
+		}
+	}
+	property bool tts: {
+		if(USE_FLITE){
+			tts = true;
+		}
+		else{
+			tts = false;
+		}
+	}
+
 	onWidthChanged:{
 		if(_comboMode.currentText == "DMR"){
 			_comboMode.width = (mainTab.width / 5) - 5;
@@ -616,7 +634,69 @@ Item {
 		border.width: 1
 		radius: 5
 	}
-
+	ButtonGroup {
+		id: ttsvoicegroup
+		onClicked: {
+			droidstar.tts_changed(button.text);
+		}
+	}
+	CheckBox {
+		id: mic
+		visible: tts ? true : false;
+		x: 5
+		y: (parent.height / rows + 1) * 15;
+		height: 25
+		spacing: 1
+		text: qsTr("Mic")
+		checked: true
+		ButtonGroup.group: ttsvoicegroup
+	}
+	CheckBox {
+		id: tts1
+		visible: tts ? true : false;
+		x: parent.width / 4
+		y: (parent.height / rows + 1) * 15;
+		height: 25
+		spacing: 1
+		text: qsTr("TTS1")
+		ButtonGroup.group: ttsvoicegroup
+	}
+	CheckBox {
+		id: tts2
+		visible: tts ? true : false;
+		x: parent.width * 2 / 4
+		y: (parent.height / rows + 1) * 15;
+		height: 25
+		spacing: 1
+		text: qsTr("TTS2")
+		checked: true
+		ButtonGroup.group: ttsvoicegroup
+	}
+	CheckBox {
+		id: tts3
+		visible: tts ? true : false;
+		x: parent.width * 3 / 4
+		y: (parent.height / rows + 1) * 15;
+		height: 25
+		spacing: 1
+		text: qsTr("TTS3")
+		ButtonGroup.group: ttsvoicegroup
+	}
+	TextField {
+		id: _ttstxtedit
+		visible: tts ? true : false;
+		x: 5
+		y: (parent.height / rows + 1) * 16;
+		width: parent.width - 10
+		height: parent.height / rows
+		font.pixelSize: parent.height / 35
+		selectByMouse: true
+		inputMethodHints: "ImhPreferNumbers"
+		text: qsTr("")
+		onEditingFinished: {
+			droidstar.tts_text_changed(_ttstxtedit.text)
+		}
+	}
 	Button {
 		Timer {
 			id: _txtimer
@@ -649,7 +729,7 @@ Item {
 			}
 		}
 		x: 10
-		y: (parent.height / rows + 1) * 15;
+		y: (parent.height / rows + 1) * ( tts ? 17 : 15);
 		//y: parent.height - ((parent.height / 5) + 5);
 		width: parent.width - 20
 		height: parent.height - y - 10

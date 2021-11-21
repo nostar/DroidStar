@@ -250,7 +250,7 @@ void P25Codec::transmit()
 				m_ttscnt++;
 			}
 		}
-		encode_4400(pcm, imbe);
+		vocoder.encode_4400(pcm, imbe);
 	}
 #endif
 	if(m_ttsid == 0){

@@ -200,7 +200,6 @@ void REFCodec::process_udp()
 	}
 	if((buf.size() == 0x1d) && (!memcmp(buf.data()+1, header, 5)) ){ //29
 		const uint16_t streamid = (buf.data()[14] << 8) | (buf.data()[15] & 0xff);
-		//qDebug() << "streamid:s == " << m_streamid << ":" << s;
 		if(streamid != m_modeinfo.streamid){
 			return;
 		}
@@ -267,7 +266,6 @@ void REFCodec::process_udp()
 		   sd_sync = 0;
 		   sd_seq = 0;
 		   m_modeinfo.usertxt = QString(user_data);
-		   //ui->usertxt->setText(QString::fromUtf8(user_data.data()));
 		}
 		for(int i = 0; i < 9; ++i){
 			m_rxcodecq.append(buf.data()[17+i]);

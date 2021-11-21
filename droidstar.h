@@ -39,6 +39,7 @@ public:
 	~DroidStar();
 
 signals:
+	void input_source_changed(int, QString);
 	void mode_changed();
 	void module_changed(char);
 	void slot_changed(int);
@@ -255,6 +256,8 @@ public slots:
 	void url_downloaded(QString);
 	unsigned short get_output_level(){ return m_outlevel; }
 	void set_output_level(unsigned short l){ m_outlevel = l; }
+	void tts_changed(QString); // { m_tts = tts; };
+	void tts_text_changed(QString); // { m_ttstxt = ttstxt; };
 private:
 	int connect_status;
 	bool m_update_host_files;
@@ -351,6 +354,9 @@ private:
 	QStringList m_modems;
 	QStringList m_playbacks;
 	QStringList m_captures;
+
+	int m_tts;
+	QString m_ttstxt;
 
 	QString m_modemRxFreq;
 	QString m_modemTxFreq;

@@ -17,6 +17,7 @@
 
 #include <QGuiApplication>
 #include <QQmlApplicationEngine>
+#include <QQmlContext>
 #include <QQuickStyle>
 #include <QIcon>
 #include <fcntl.h>
@@ -31,6 +32,11 @@ int main(int argc, char *argv[])
 	app.setWindowIcon(QIcon(":/images/droidstar.png"));
 	qmlRegisterType<DroidStar>("org.dudetronics.droidstar", 1, 0, "DroidStar");
 	QQmlApplicationEngine engine;
+#ifdef USE_FLITE
+	engine.rootContext()->setContextProperty("USE_FLITE", QVariant(true));
+#else
+	engine.rootContext()->setContextProperty("USE_FLITE", QVariant(false));
+#endif
 	const QUrl url(QStringLiteral("qrc:/main.qml"));
 	QObject::connect(&engine, &QQmlApplicationEngine::objectCreated,
 					 &app, [url](QObject *obj, const QUrl &objUrl) {

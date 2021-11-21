@@ -41,7 +41,6 @@ private slots:
 	void transmit();
 	void format_callsign(QString &s);
 	void hostname_lookup(QHostInfo i);
-	void input_src_changed(int id, QString t) { m_ttsid = id; m_ttstext = t; }
 	void module_changed(int m) { m_module = 0x41 + m; m_modeinfo.streamid = 0; }
 	void send_frame(uint8_t *);
 };

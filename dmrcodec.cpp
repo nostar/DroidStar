@@ -965,7 +965,7 @@ void DMRCodec::process_rx_data()
 			emit update_output_level(m_audio->level());
 		}
 	}
-	else if ( (m_modeinfo.stream_state == STREAM_END) || (m_modeinfo.stream_state == STREAM_LOST) ){
+	else if ( ((m_modeinfo.stream_state == STREAM_END) || (m_modeinfo.stream_state == STREAM_LOST)) && (m_rxmodemq.size() > 50) ){
 		m_rxtimer->stop();
 		m_audio->stop_playback();
 		m_rxwatchdog = 0;

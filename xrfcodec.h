@@ -42,7 +42,6 @@ private slots:
 	void send_disconnect();
 	void transmit();
 	void hostname_lookup(QHostInfo i);
-	void input_src_changed(int id, QString t) { m_ttsid = id; m_ttstext = t; }
 	void usrtxt_changed(QString t) { m_txusrtxt = t; }
 	void send_frame(uint8_t *);
 };

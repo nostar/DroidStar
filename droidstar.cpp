@@ -204,6 +204,29 @@ void DroidStar::dtmf_send_clicked(QString dtmf)
 	emit send_dtmf(tx);
 }
 
+void DroidStar::tts_changed(QString tts)
+{
+	if(tts == "Mic"){
+		m_tts = 0;
+	}
+	else if(tts == "TTS1"){
+		m_tts = 1;
+	}
+	else if(tts == "TTS2"){
+		m_tts = 2;
+	}
+	else if(tts == "TTS3"){
+		m_tts = 3;
+	}
+	emit input_source_changed(m_tts, m_ttstxt);
+}
+
+void DroidStar::tts_text_changed(QString ttstxt)
+{
+	m_ttstxt = ttstxt;
+	emit input_source_changed(m_tts, m_ttstxt);
+}
+
 void DroidStar::process_connect()
 {
 	if(connect_status != Codec::DISCONNECTED){
@@ -318,6 +341,7 @@ void DroidStar::process_connect()
 			connect(m_ref, SIGNAL(update_output_level(unsigned short)), this, SLOT(update_output_level(unsigned short)));
 			connect(m_modethread, SIGNAL(started()), m_ref, SLOT(send_connect()));
 			connect(m_modethread, SIGNAL(finished()), m_ref, SLOT(deleteLater()));
+			connect(this, SIGNAL(input_source_changed(int, QString)), m_ref, SLOT(input_src_changed(int, QString)));
 			connect(this, SIGNAL(swrx_state_changed(int)), m_ref, SLOT(swrx_state_changed(int)));
 			connect(this, SIGNAL(swtx_state_changed(int)), m_ref, SLOT(swtx_state_changed(int)));
 			connect(this, SIGNAL(agc_state_changed(int)), m_ref, SLOT(agc_state_changed(int)));
@@ -348,6 +372,7 @@ void DroidStar::process_connect()
 			connect(m_dcs, SIGNAL(update_output_level(unsigned short)), this, SLOT(update_output_level(unsigned short)));
 			connect(m_modethread, SIGNAL(started()), m_dcs, SLOT(send_connect()));
 			connect(m_modethread, SIGNAL(finished()), m_dcs, SLOT(deleteLater()));
+			connect(this, SIGNAL(input_source_changed(int, QString)), m_dcs, SLOT(input_src_changed(int, QString)));
 			connect(this, SIGNAL(swrx_state_changed(int)), m_dcs, SLOT(swrx_state_changed(int)));
 			connect(this, SIGNAL(swtx_state_changed(int)), m_dcs, SLOT(swtx_state_changed(int)));
 			connect(this, SIGNAL(agc_state_changed(int)), m_dcs, SLOT(agc_state_changed(int)));
@@ -377,6 +402,7 @@ void DroidStar::process_connect()
 			connect(m_xrf, SIGNAL(update_output_level(unsigned short)), this, SLOT(update_output_level(unsigned short)));
 			connect(m_modethread, SIGNAL(started()), m_xrf, SLOT(send_connect()));
 			connect(m_modethread, SIGNAL(finished()), m_xrf, SLOT(deleteLater()));
+			connect(this, SIGNAL(input_source_changed(int, QString)), m_xrf, SLOT(input_src_changed(int, QString)));
 			connect(this, SIGNAL(swrx_state_changed(int)), m_xrf, SLOT(swrx_state_changed(int)));
 			connect(this, SIGNAL(swtx_state_changed(int)), m_xrf, SLOT(swtx_state_changed(int)));
 			connect(this, SIGNAL(agc_state_changed(int)), m_xrf, SLOT(agc_state_changed(int)));
@@ -420,6 +446,7 @@ void DroidStar::process_connect()
 			connect(m_dmr, SIGNAL(update_output_level(unsigned short)), this, SLOT(update_output_level(unsigned short)));
 			connect(m_modethread, SIGNAL(started()), m_dmr, SLOT(send_connect()));
 			connect(m_modethread, SIGNAL(finished()), m_dmr, SLOT(deleteLater()));
+			connect(this, SIGNAL(input_source_changed(int, QString)), m_dmr, SLOT(input_src_changed(int, QString)));
 			connect(this, SIGNAL(swrx_state_changed(int)), m_dmr, SLOT(swrx_state_changed(int)));
 			connect(this, SIGNAL(swtx_state_changed(int)), m_dmr, SLOT(swtx_state_changed(int)));
 			connect(this, SIGNAL(agc_state_changed(int)), m_dmr, SLOT(agc_state_changed(int)));
@@ -444,6 +471,7 @@ void DroidStar::process_connect()
 			connect(this, SIGNAL(m17_rate_changed(int)), m_ysf, SLOT(rate_changed(int)));
 			connect(m_modethread, SIGNAL(started()), m_ysf, SLOT(send_connect()));
 			connect(m_modethread, SIGNAL(finished()), m_ysf, SLOT(deleteLater()));
+			connect(this, SIGNAL(input_source_changed(int, QString)), m_ysf, SLOT(input_src_changed(int, QString)));
 			connect(this, SIGNAL(swrx_state_changed(int)), m_ysf, SLOT(swrx_state_changed(int)));
 			connect(this, SIGNAL(swtx_state_changed(int)), m_ysf, SLOT(swtx_state_changed(int)));
 			connect(this, SIGNAL(agc_state_changed(int)), m_ysf, SLOT(agc_state_changed(int)));
@@ -463,6 +491,7 @@ void DroidStar::process_connect()
 			connect(m_p25, SIGNAL(update_output_level(unsigned short)), this, SLOT(update_output_level(unsigned short)));
 			connect(m_modethread, SIGNAL(started()), m_p25, SLOT(send_connect()));
 			connect(m_modethread, SIGNAL(finished()), m_p25, SLOT(deleteLater()));
+			connect(this, SIGNAL(input_source_changed(int, QString)), m_p25, SLOT(input_src_changed(int, QString)));
 			connect(this, SIGNAL(agc_state_changed(int)), m_p25, SLOT(agc_state_changed(int)));
 			connect(this, SIGNAL(tx_clicked(bool)), m_p25, SLOT(toggle_tx(bool)));
 			connect(this, SIGNAL(tx_pressed()), m_p25, SLOT(start_tx()));
@@ -479,6 +508,7 @@ void DroidStar::process_connect()
 			connect(m_nxdn, SIGNAL(update_output_level(unsigned short)), this, SLOT(update_output_level(unsigned short)));
 			connect(m_modethread, SIGNAL(started()), m_nxdn, SLOT(send_connect()));
 			connect(m_modethread, SIGNAL(finished()), m_nxdn, SLOT(deleteLater()));
+			connect(this, SIGNAL(input_source_changed(int, QString)), m_nxdn, SLOT(input_src_changed(int, QString)));
 			connect(this, SIGNAL(swrx_state_changed(int)), m_nxdn, SLOT(swrx_state_changed(int)));
 			connect(this, SIGNAL(swtx_state_changed(int)), m_nxdn, SLOT(swtx_state_changed(int)));
 			connect(this, SIGNAL(agc_state_changed(int)), m_nxdn, SLOT(agc_state_changed(int)));
@@ -497,6 +527,7 @@ void DroidStar::process_connect()
 			connect(m_m17, SIGNAL(update(Codec::MODEINFO)), this, SLOT(update_m17_data(Codec::MODEINFO)));
 			connect(m_m17, SIGNAL(update_output_level(unsigned short)), this, SLOT(update_output_level(unsigned short)));
 			connect(this, SIGNAL(m17_rate_changed(int)), m_m17, SLOT(rate_changed(int)));
+			connect(this, SIGNAL(input_source_changed(int, QString)), m_m17, SLOT(input_src_changed(int, QString)));
 			connect(m_modethread, SIGNAL(started()), m_m17, SLOT(send_connect()));
 			connect(m_modethread, SIGNAL(finished()), m_m17, SLOT(deleteLater()));
 			connect(this, SIGNAL(agc_state_changed(int)), m_m17, SLOT(agc_state_changed(int)));
@@ -514,6 +545,7 @@ void DroidStar::process_connect()
 			connect(m_iax, SIGNAL(update_output_level(unsigned short)), this, SLOT(update_output_level(unsigned short)));
 			connect(m_modethread, SIGNAL(started()), m_iax, SLOT(send_connect()));
 			connect(m_modethread, SIGNAL(finished()), m_iax, SLOT(deleteLater()));
+			connect(this, SIGNAL(input_source_changed(int, QString)), m_iax, SLOT(input_src_changed(int, QString)));
 			//connect(this, SIGNAL(agc_state_changed(int)), m_xrf, SLOT(agc_state_changed(int)));
 			connect(this, SIGNAL(tx_clicked(bool)), m_iax, SLOT(toggle_tx(bool)));
 			connect(this, SIGNAL(tx_pressed()), m_iax, SLOT(start_tx()));

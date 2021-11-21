@@ -41,7 +41,6 @@ private slots:
 	void transmit();
 	void hostname_lookup(QHostInfo i);
 	void dmr_tgid_changed(unsigned int id) { m_txdstid = id; }
-	void input_src_changed(int id, QString t) { m_ttsid = id; m_ttstext = t; }
 };
 
 #endif // P25CODEC_H
