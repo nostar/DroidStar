@@ -218,7 +218,7 @@ void SerialModem::process_modem()
 			}
 		}
 
-		else if(m_serialdata.size() >= m_serialdata[1]){
+		else if(m_serialdata.size() >= s){
 			for(int i = 0; i < s; ++i){
 				out.append(m_serialdata.dequeue());
 			}

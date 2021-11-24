@@ -26,7 +26,7 @@
 
 #define M17CHARACTERS " ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-/."
 
-//#define DEBUG
+#define DEBUG
 
 const uint8_t SCRAMBLER[] = {
 	0x00U, 0x00U, 0xD6U, 0xB5U, 0xE2U, 0x30U, 0x82U, 0xFFU, 0x84U, 0x62U, 0xBAU, 0x4EU, 0x96U, 0x90U, 0xD8U, 0x98U, 0xDDU,
@@ -409,6 +409,7 @@ void M17Codec::send_modem_data(QByteArray d)
 
 	if(m_modeinfo.stream_state == STREAM_NEW){
 		::memcpy(lsf, &d.data()[6], M17_LSF_LENGTH_BYTES);
+		encodeCRC16(lsf, M17_LSF_LENGTH_BYTES);
 		::memcpy(txframe, M17_LINK_SETUP_SYNC_BYTES, 2);
 		conv.encodeLinkSetup(lsf, txframe + M17_SYNC_LENGTH_BYTES);
 		interleave(txframe, tmp);
@@ -464,13 +465,28 @@ void M17Codec::process_modem_data(QByteArray d)
 {
 	QByteArray txframe;
 	static uint16_t txstreamid = 0;
-	static uint8_t lsf[M17_LSF_LENGTH_BYTES];
+	static uint8_t lsf[M17_LSF_LENGTH_BYTES] = {0};
+	static uint8_t lsfchunks[M17_LSF_LENGTH_BYTES] = {0};
+	static bool validlsf = false;
 	CM17Convolution conv;
 	uint8_t tmp[M17_FRAME_LENGTH_BYTES];
 
 	if(d.size() < 3){
 		return;
 	}
+
+	if( (d.data()[2] == MMDVM_M17_LINK_SETUP) &&
+		(((uint8_t)d.data()[4] != M17_LINK_SETUP_SYNC_BYTES[0]) || ((uint8_t)d.data()[5] != M17_LINK_SETUP_SYNC_BYTES[1]))){
+		qDebug() << "LSF with no sync bytes" << (d.data()[2] == MMDVM_M17_LINK_SETUP) << ((uint8_t)d.data()[4] != M17_LINK_SETUP_SYNC_BYTES[0]) << ((uint8_t)d.data()[5] != M17_LINK_SETUP_SYNC_BYTES[1]);
+		return;
+	}
+
+	if( (d.data()[2] == MMDVM_M17_STREAM) &&
+		(((uint8_t)d.data()[4] != M17_STREAM_SYNC_BYTES[0]) || ((uint8_t)d.data()[5] != M17_STREAM_SYNC_BYTES[1]))){
+		qDebug() << "stream frame with no sync bytes" << (d.data()[2] == MMDVM_M17_STREAM) << ((uint8_t)d.data()[4] != M17_STREAM_SYNC_BYTES[0]) << ((uint8_t)d.data()[5] != M17_STREAM_SYNC_BYTES[1]);
+		return;
+	}
+
 	uint8_t *p = (uint8_t *)d.data();
 
 	if((d.data()[2] == MMDVM_M17_LINK_SETUP) || (d.data()[2] == MMDVM_M17_STREAM)){
@@ -483,18 +499,23 @@ void M17Codec::process_modem_data(QByteArray d)
 		txstreamid = 0;
 		if(m_modeinfo.host == "MMDVM_DIRECT"){
 			m_modeinfo.streamid = 0;
+			m_modeinfo.dst.clear();
+			m_modeinfo.src.clear();
 			m_modeinfo.stream_state = STREAM_END;
+			::memset(lsf, 0, M17_LSF_LENGTH_BYTES);
+			::memset(lsfchunks, 0, M17_LSF_LENGTH_BYTES);
+			validlsf = false;
 		}
+		qDebug() << "End of M17 stream";
 	}
-
 	else if(d.data()[2] == MMDVM_M17_LINK_SETUP){
 		::memset(lsf, 0x00U, M17_LSF_LENGTH_BYTES);
-		conv.decodeLinkSetup(p + M17_SYNC_LENGTH_BYTES, lsf);
-		bool valid = checkCRC16(lsf, M17_LSF_LENGTH_BYTES);
+		uint32_t  ber = conv.decodeLinkSetup(p + M17_SYNC_LENGTH_BYTES, lsf);
+		validlsf = checkCRC16(lsf, M17_LSF_LENGTH_BYTES);
 		txstreamid = static_cast<uint16_t>((::rand() & 0xFFFF));
-		qDebug() << "LSF valid == " << valid;
+		qDebug() << "M17 LSF received valid == " << validlsf << "ber: " << ber;
 
-		if(m_modeinfo.host == "MMDVM_DIRECT"){
+		if(validlsf && (m_modeinfo.host == "MMDVM_DIRECT")){
 			uint8_t cs[10];
 			::memcpy(cs, lsf, 6);
 			decode_callsign(cs);
@@ -506,49 +527,90 @@ void M17Codec::process_modem_data(QByteArray d)
 	}
 	else if(d.data()[2] == MMDVM_M17_STREAM){
 		uint8_t frame[M17_FN_LENGTH_BYTES + M17_PAYLOAD_LENGTH_BYTES];
-		conv.decodeData(p + M17_SYNC_LENGTH_BYTES + M17_LICH_FRAGMENT_FEC_LENGTH_BYTES, frame);
-		//uint16_t fn = (frame[0U] << 8) + (frame[1U] << 0);
+		uint32_t ber = conv.decodeData(p + M17_SYNC_LENGTH_BYTES + M17_LICH_FRAGMENT_FEC_LENGTH_BYTES, frame);
+		uint16_t fn = (frame[0U] << 8) + (frame[1U] << 0);
 
 		uint8_t netframe[M17_LSF_LENGTH_BYTES + M17_FN_LENGTH_BYTES + M17_PAYLOAD_LENGTH_BYTES + M17_CRC_LENGTH_BYTES];
 		::memcpy(netframe, lsf, M17_LSF_LENGTH_BYTES);
 		::memcpy(netframe + M17_LSF_LENGTH_BYTES - M17_CRC_LENGTH_BYTES, frame, M17_FN_LENGTH_BYTES + M17_PAYLOAD_LENGTH_BYTES);
 		netframe[M17_LSF_LENGTH_BYTES - M17_CRC_LENGTH_BYTES + 0U] &= 0x7FU;
 
+		uint32_t lich1, lich2, lich3, lich4;
+		bool valid1 = CGolay24128::decode24128(p + M17_SYNC_LENGTH_BYTES + 0U, lich1);
+		bool valid2 = CGolay24128::decode24128(p + M17_SYNC_LENGTH_BYTES + 3U, lich2);
+		bool valid3 = CGolay24128::decode24128(p + M17_SYNC_LENGTH_BYTES + 6U, lich3);
+		bool valid4 = CGolay24128::decode24128(p + M17_SYNC_LENGTH_BYTES + 9U, lich4);
+
+		if (valid1 && valid2 && valid3 && valid4) {
+			uint8_t lich[M17_LICH_FRAGMENT_LENGTH_BYTES];
+			combineFragmentLICH(lich1, lich2, lich3, lich4, lich);
+
+			uint32_t n = (lich4 >> 5) & 0x07U;
+			::memcpy(lsfchunks + (n * M17_LSF_FRAGMENT_LENGTH_BYTES), lich, M17_LSF_FRAGMENT_LENGTH_BYTES);
+
+			bool valid = checkCRC16(lsfchunks, M17_LSF_LENGTH_BYTES);
+			qDebug() << "lich valid == " << valid << " lich n == " << n;
+			if (valid) {
+				::memcpy(lsf, lsfchunks, M17_LSF_LENGTH_BYTES);
+				::memset(lsfchunks, 0, M17_LSF_LENGTH_BYTES);
+				validlsf = valid;
+			}
+
+			if(!validlsf){
+				qDebug() << "No LSF yet...";
+				return;
+			}
+		}
+
 		if(m_modeinfo.host == "MMDVM_DIRECT"){
 			if( !m_tx && (m_modeinfo.streamid == 0) ){
 				if(txstreamid == 0){
 					qDebug() << "No header, late entry...";
+					uint8_t cs[10];
+					::memcpy(cs, lsf, 6);
+					decode_callsign(cs);
+					m_modeinfo.dst = QString((char *)cs);
+					::memcpy(cs, lsf+6, 6);
+					decode_callsign(cs);
+					m_modeinfo.src = QString((char *)cs);
 					txstreamid = static_cast<uint16_t>((::rand() & 0xFFFF));
-				}
-				m_modeinfo.streamid = txstreamid;
-				m_audio->start_playback();
-
-				if((netframe[13] & 0x06U) == 0x04U){
-					m_modeinfo.type = 1;//"3200 Voice";
-					set_mode(true);
-				}
-				else{
-					m_modeinfo.type = 0;//"1600 V/D";
-					set_mode(false);
-				}
-
-				if(!m_rxtimer->isActive()){
-	#ifdef Q_OS_WIN
-					m_rxtimer->start(m_modeinfo.type ? m_rxtimerint : 32);
-	#else
-					m_rxtimer->start(m_modeinfo.type ? m_rxtimerint : m_rxtimerint*2);
-	#endif
 				}
 
 				m_modeinfo.stream_state = STREAM_NEW;
+				m_modeinfo.streamid = txstreamid;
 				m_modeinfo.ts = QDateTime::currentMSecsSinceEpoch();
-				qDebug() << "New RF stream from " << m_modeinfo.src << " to " << m_modeinfo.dst << " id == " << QString::number(m_modeinfo.streamid, 16);
+				qDebug() << "New RF stream from " << m_modeinfo.src << " to " << m_modeinfo.dst << " id == " << QString::number(m_modeinfo.streamid, 16) << "FN == " << fn << " ber == " << ber;
+
+				m_audio->start_playback();
+
+				if(!m_rxtimer->isActive()){
+	#ifdef Q_OS_WIN
+					m_rxtimer->start(m_rxtimerint);
+	#else
+					m_rxtimer->start(m_rxtimerint);
+	#endif
+				}
+
+
 			}
 			else{
 				m_modeinfo.stream_state = STREAMING;
 			}
+
+			qDebug() << "RF streaming from " << m_modeinfo.src << " to " << m_modeinfo.dst << " id == " << QString::number(m_modeinfo.streamid, 16) << "FN == " << fn << " ber == " << ber << " type == " << netframe[13];
+
+			if((netframe[13] & 0x06U) == 0x04U){
+				m_modeinfo.type = 1;//"3200 Voice";
+				set_mode(true);
+			}
+			else{
+				m_modeinfo.type = 0;//"1600 V/D";
+				set_mode(false);
+			}
+
 			m_modeinfo.frame_number = (netframe[28] << 8) | (netframe[29] & 0xff);
 			m_rxwatchdog = 0;
+
 			int s = 8;
 			if(get_mode()){
 				s = 16;
@@ -557,9 +619,15 @@ void M17Codec::process_modem_data(QByteArray d)
 			for(int i = 0; i < s; ++i){
 				m_rxcodecq.append(netframe[30+i]);
 			}
+
 			emit update(m_modeinfo);
 		}
 		else{
+			if(txstreamid == 0){
+				qDebug() << "No header for netframe";
+				txstreamid = static_cast<uint16_t>((::rand() & 0xFFFF));
+			}
+
 			uint8_t dst[10];
 			memset(dst, ' ', 9);
 			memcpy(dst, m_hostname.toLocal8Bit(), m_hostname.size());
@@ -649,11 +717,13 @@ void M17Codec::transmit()
 	txframe.clear();
 	emit update_output_level(m_audio->level());
 	int r = get_mode() ? 0x05 : 0x07;
+
 	if(m_tx){
 		if(txstreamid == 0){
 		   txstreamid = static_cast<uint16_t>((::rand() & 0xFFFF));
 		   //std::cerr << "txstreamid == " << txstreamid << std::endl;
 		   if(!m_rxtimer->isActive() && (m_modeinfo.host == "MMDVM_DIRECT")){
+			   m_rxmodemq.clear();
 			   m_modeinfo.stream_state = STREAM_NEW;
 #ifdef Q_OS_WIN
 			   m_rxtimer->start(m_modeinfo.type ? m_rxtimerint : 32);
@@ -671,6 +741,7 @@ void M17Codec::transmit()
 
 		uint8_t src[10];
 		uint8_t dst[10];
+		uint8_t lsf[30];
 		memset(dst, ' ', 9);
 		memcpy(dst, m_hostname.toLocal8Bit(), m_hostname.size());
 		dst[8] =  m_module;
@@ -691,13 +762,20 @@ void M17Codec::transmit()
 		txframe.append((char *)dst, 6);
 		txframe.append((char *)src, 6);
 		txframe.append('\x00');
-		txframe.append(r); // Frame type voice only
+		txframe.append(r);
 		txframe.append(14, 0x00); //Blank nonce
 		txframe.append((char)(tx_cnt >> 8));
 		txframe.append((char)tx_cnt & 0xff);
 		txframe.append((char *)c2, 16);
-		txframe.append(2, 0x00);
+		//txframe.append(2, 0x00);
 
+		for(int i = 0; i < 28; ++i){
+			lsf[i] = txframe.data()[6+i];
+		}
+
+		encodeCRC16(lsf, M17_LSF_LENGTH_BYTES);
+		txframe.append(lsf[28]);
+		txframe.append(lsf[29]);
 		//QString ss = QString("%1").arg(txstreamid, 4, 16, QChar('0'));
 		//QString n = QString("TX %1").arg(tx_cnt, 4, 16, QChar('0'));
 
@@ -716,13 +794,14 @@ void M17Codec::transmit()
 		m_modeinfo.frame_number = tx_cnt;
 		m_modeinfo.streamid = txstreamid;
 		emit update(m_modeinfo);
-
+#ifdef DEBUG
 		fprintf(stderr, "SEND:%d: ", txframe.size());
 		for(int i = 0; i < txframe.size(); ++i){
 			fprintf(stderr, "%02x ", (uint8_t)txframe.data()[i]);
 		}
 		fprintf(stderr, "\n");
 		fflush(stderr);
+#endif
 	}
 	else{
 		const uint8_t quiet3200[] = { 0x00, 0x01, 0x43, 0x09, 0xe4, 0x9c, 0x08, 0x21 };
@@ -782,12 +861,14 @@ void M17Codec::transmit()
 		m_modeinfo.frame_number = tx_cnt;
 		m_modeinfo.streamid = txstreamid;
 		emit update(m_modeinfo);
+#ifdef DEBUG
 		fprintf(stderr, "LAST:%d: ", txframe.size());
 		for(int i = 0; i < txframe.size(); ++i){
 			fprintf(stderr, "%02x ", (uint8_t)txframe.data()[i]);
 		}
 		fprintf(stderr, "\n");
 		fflush(stderr);
+#endif
 	}
 }
 
@@ -827,12 +908,13 @@ void M17Codec::process_rx_data()
 		m_audio->write(pcm, s);
 		emit update_output_level(m_audio->level());
 	}
-	else if ( (m_modeinfo.stream_state == STREAM_END) || (m_modeinfo.stream_state == STREAM_LOST) ){
+	else if ( ((m_modeinfo.stream_state == STREAM_END) || (m_modeinfo.stream_state == STREAM_LOST)) && (m_rxmodemq.size() < 50) ){
 		m_rxtimer->stop();
 		m_audio->stop_playback();
 		m_rxwatchdog = 0;
 		m_modeinfo.streamid = 0;
 		m_rxcodecq.clear();
+		m_rxmodemq.clear();
 		qDebug() << "M17 playback stopped";
 		return;
 	}
