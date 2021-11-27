@@ -23,8 +23,6 @@ import QtQuick.Controls 2.3
 
 Item {
 	id: mainTab
-	//property int rows: 18;
-	//property bool tts: false;
 	property int rows: {
 		if(USE_FLITE){
 			rows = 20;
@@ -75,6 +73,7 @@ Item {
 	property alias comboSlot: _comboSlot
 	property alias comboCC: _comboCC
 	property alias dmrtgidEdit: _dmrtgidEdit
+	property alias comboM17CAN: _comboM17CAN
 	property alias privateBox: _privateBox
 	property alias connectbutton: _connectbutton
 	property alias sliderMicGain: _slidermicGain
@@ -128,7 +127,6 @@ Item {
 			}
 		}
 	}
-
 	ComboBox {
 		id: _comboMode
 		property bool loaded: false
@@ -184,7 +182,6 @@ Item {
 
 		}
 	}
-
 	ComboBox {
 		id: _comboCC
 		x: (parent.width * 2 / 5 )
@@ -261,7 +258,7 @@ Item {
 			droidstar.set_modemYSFTxLevel(settingsTab.modemYSFTXLevelEdit.text);
 			droidstar.set_modemP25TxLevel(settingsTab.modemYSFTXLevelEdit.text);
 			droidstar.set_modemNXDNTxLevel(settingsTab.modemNXDNTXLevelEdit.text);
-
+			droidstar.set_modemBaud(settingsTab.modemBaudEdit.text);
 			droidstar.process_connect();
 		}
 	}
@@ -322,7 +319,6 @@ Item {
 			//console.log("screen size ", parent.width, " x ", parent.height);
 		}
 	}
-
 	TextField {
 		id: _editIAXDTMF
 		x: (parent.width / 4)
@@ -360,7 +356,7 @@ Item {
 		id: _dmrtgidEdit
 		x: parent.width / 5
 		y: (parent.height / rows + 1) * 2
-		width: parent.width /5
+		width: parent.width / 5
 		height: parent.height / rows
 		font.pixelSize: parent.height / 35
 		selectByMouse: true
@@ -368,6 +364,27 @@ Item {
 		text: qsTr("")
 		onEditingFinished: {
 			droidstar.tgid_text_changed(dmrtgidEdit.text)
+		}
+	}
+	ComboBox {
+		visible: false
+		id: _comboM17CAN
+		x: parent.width / 5
+		y:  (parent.height / rows + 1) * 2
+		width: parent.width / 5
+		height: parent.height / rows;
+		font.pixelSize: parent.height / 35
+		currentIndex: 0
+		model: ["0", "1", "2", "3", "4", "5", "6", "7"]
+		contentItem: Text {
+			text: _comboM17CAN.displayText
+			font: _comboM17CAN.font
+			leftPadding: 10
+			verticalAlignment: Text.AlignVCenter
+			color: _comboM17CAN.enabled ? "white" : "darkgrey"
+		}
+		onCurrentTextChanged: {
+			droidstar.set_modemM17CAN(_comboM17CAN.currentText);
 		}
 	}
 
@@ -383,7 +400,6 @@ Item {
 			droidstar.set_swtx(_swtxBox.checked)
 		}
 	}
-
 	CheckBox {
 		id: _swrxBox
 		x: (parent.width * 3 / 5) + 5
@@ -423,9 +439,9 @@ Item {
 	Slider {
 		visible: true
 		id: _slidermicGain
-		x: parent.width / 4
+		x: (parent.width / 4) + 10
 		y: (parent.height / rows + 1) * 3;
-		width: (parent.width * 3 / 4) - 10
+		width: (parent.width * 3 / 4) - 20
 		height: parent.height / rows;
 		value: 0.5
 		onValueChanged: {
@@ -442,7 +458,6 @@ Item {
 		color: "white"
 		font.pixelSize: parent.height / 30;
 	}
-
 	Text {
 		id: _label2
 		x: 10

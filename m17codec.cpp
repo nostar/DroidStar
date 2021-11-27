@@ -26,7 +26,7 @@
 
 #define M17CHARACTERS " ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-/."
 
-#define DEBUG
+//#define DEBUG
 
 const uint8_t SCRAMBLER[] = {
 	0x00U, 0x00U, 0xD6U, 0xB5U, 0xE2U, 0x30U, 0x82U, 0xFFU, 0x84U, 0x62U, 0xBAU, 0x4EU, 0x96U, 0x90U, 0xD8U, 0x98U, 0xDDU,
@@ -98,6 +98,7 @@ M17Codec::M17Codec(QString callsign, char module, QString hostname, QString host
 
 #else
 	m_txtimerint = 36;
+	m_txcan = 0;
 #endif
 }
 
@@ -183,7 +184,7 @@ void M17Codec::process_udp()
 			if(m_modemport != ""){
 				m_modem = new SerialModem("M17");
 				m_modem->set_modem_flags(m_rxInvert, m_txInvert, m_pttInvert, m_useCOSAsLockout, m_duplex);
-				m_modem->set_modem_params(m_rxfreq, m_txfreq, m_txDelay, m_rxLevel, m_rfLevel, m_ysfTXHang, m_cwIdTXLevel, m_dstarTXLevel, m_dmrTXLevel, m_ysfTXLevel, m_p25TXLevel, m_nxdnTXLevel, m_pocsagTXLevel, m_m17TXLevel);
+				m_modem->set_modem_params(m_baud, m_rxfreq, m_txfreq, m_txDelay, m_rxLevel, m_rfLevel, m_ysfTXHang, m_cwIdTXLevel, m_dstarTXLevel, m_dmrTXLevel, m_ysfTXLevel, m_p25TXLevel, m_nxdnTXLevel, m_pocsagTXLevel, m_m17TXLevel);
 				m_modem->connect_to_serial(m_modemport);
 				connect(m_modem, SIGNAL(connected(bool)), this, SLOT(mmdvm_connect_status(bool)));
 				connect(m_modem, SIGNAL(modem_data_ready(QByteArray)), this, SLOT(process_modem_data(QByteArray)));
@@ -317,7 +318,7 @@ void M17Codec::mmdvm_direct_connect()
 	if(m_modemport != ""){
 		m_modem = new SerialModem("M17");
 		m_modem->set_modem_flags(m_rxInvert, m_txInvert, m_pttInvert, m_useCOSAsLockout, m_duplex);
-		m_modem->set_modem_params(m_rxfreq, m_txfreq, m_txDelay, m_rxLevel, m_rfLevel, m_ysfTXHang, m_cwIdTXLevel, m_dstarTXLevel, m_dmrTXLevel, m_ysfTXLevel, m_p25TXLevel, m_nxdnTXLevel, m_pocsagTXLevel, m_m17TXLevel);
+		m_modem->set_modem_params(m_baud, m_rxfreq, m_txfreq, m_txDelay, m_rxLevel, m_rfLevel, m_ysfTXHang, m_cwIdTXLevel, m_dstarTXLevel, m_dmrTXLevel, m_ysfTXLevel, m_p25TXLevel, m_nxdnTXLevel, m_pocsagTXLevel, m_m17TXLevel);
 		m_modem->connect_to_serial(m_modemport);
 		connect(m_modem, SIGNAL(connected(bool)), this, SLOT(mmdvm_connect_status(bool)));
 		connect(m_modem, SIGNAL(modem_data_ready(QByteArray)), this, SLOT(process_modem_data(QByteArray)));
@@ -420,9 +421,11 @@ void M17Codec::send_modem_data(QByteArray d)
 		m_rxmodemq.append(MMDVM_M17_LINK_SETUP);
 		m_rxmodemq.append('\x00');
 
-		for(uint32_t i = 0; i < M17_FRAME_LENGTH_BYTES; ++i){
-			m_rxmodemq.append(txframe[i]);
-		}
+		//for(int j = 0; j < 3; j++){
+			for(uint32_t i = 0; i < M17_FRAME_LENGTH_BYTES; ++i){
+				m_rxmodemq.append(txframe[i]);
+			}
+		//}
 	}
 
 	if(lsfcnt == 0){
@@ -644,8 +647,8 @@ void M17Codec::process_modem_data(QByteArray d)
 			txframe.append((char *)dst, 6);
 			//txframe.append((char *)src, 6);
 			txframe.append((char *)&netframe[6], 6);
-			txframe.append('\x00');
-			txframe.append(netframe[13]); // Frame type voice only
+			txframe.append(netframe[12]);
+			txframe.append(netframe[13]);
 			txframe.append(14, 0x00); //Blank nonce
 			txframe.append((char)(netframe[28] >> 8));
 			txframe.append((char)netframe[29] & 0xff);
@@ -653,9 +656,9 @@ void M17Codec::process_modem_data(QByteArray d)
 			txframe.append(2, 0x00);
 			m_udp->writeDatagram(txframe, m_address, m_modeinfo.port);
 #ifdef DEBUG
-			fprintf(stderr, "NETFRAME:%02x:", (uint8_t)d.data()[2]);
-			for(int i = 0; i < 50; ++i){
-				fprintf(stderr, "%02x ", netframe[i]);
+			fprintf(stderr, "SEND:%02x:", (uint8_t)txframe.size());
+			for(int i = 0; i < txframe.size(); ++i){
+				fprintf(stderr, "%02x ", (uint8_t)txframe.data()[i]);
 			}
 			fprintf(stderr, "\n");
 			fflush(stderr);
@@ -761,8 +764,8 @@ void M17Codec::transmit()
 		txframe.append(txstreamid & 0xff);
 		txframe.append((char *)dst, 6);
 		txframe.append((char *)src, 6);
-		txframe.append('\x00');
-		txframe.append(r);
+		txframe.append(m_txcan >> 1);
+		txframe.append(((m_txcan << 7) & 0x80U) | r);
 		txframe.append(14, 0x00); //Blank nonce
 		txframe.append((char)(tx_cnt >> 8));
 		txframe.append((char)tx_cnt & 0xff);

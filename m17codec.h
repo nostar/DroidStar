@@ -47,6 +47,7 @@ private slots:
 	void hostname_lookup(QHostInfo i);
 	void mmdvm_direct_connect();
 	void rate_changed(int r) { m_txrate = r; }
+	void can_changed(int c) { m_txcan = c; }
 	void process_rx_data();
 	void splitFragmentLICH(const uint8_t*, uint32_t&, uint32_t&, uint32_t&, uint32_t&);
 	void combineFragmentLICH(uint32_t, uint32_t, uint32_t, uint32_t, uint8_t*);
@@ -58,6 +59,7 @@ private slots:
 	uint16_t createCRC16(const uint8_t* in, uint32_t nBytes);
 private:
 	int m_txrate;
+	uint8_t m_txcan;
 };
 
 #endif // M17CODEC_H

@@ -202,6 +202,7 @@ ApplicationWindow {
 				mainTab.comboCC.visible = false;
 				mainTab.element3.visible = false;
 				mainTab.dmrtgidEdit.visible = false;
+				mainTab.comboM17CAN.visible = false;
 				mainTab.privateBox.visible = false;
 				mainTab.sliderMicGain.value = 0.0;
             }
@@ -216,6 +217,7 @@ ApplicationWindow {
 				mainTab.comboCC.visible = false;
 				mainTab.element3.visible = false;
 				mainTab.dmrtgidEdit.visible = false;
+				mainTab.comboM17CAN.visible = false;
 				mainTab.privateBox.visible = false;
 				mainTab.sliderMicGain.value = 0.0;
             }
@@ -230,6 +232,7 @@ ApplicationWindow {
 				mainTab.comboCC.visible = false;
 				mainTab.element3.visible = false;
 				mainTab.dmrtgidEdit.visible = false;
+				mainTab.comboM17CAN.visible = false;
 				mainTab.privateBox.visible = false;
 				mainTab.sliderMicGain.value = 0.0;
             }
@@ -244,6 +247,7 @@ ApplicationWindow {
 				mainTab.comboCC.visible = false;
 				mainTab.element3.visible = false;
 				mainTab.dmrtgidEdit.visible = false;
+				mainTab.comboM17CAN.visible = false;
 				mainTab.privateBox.visible = false;
 				mainTab.sliderMicGain.value = 0.2;
             }
@@ -258,6 +262,7 @@ ApplicationWindow {
 				mainTab.comboCC.visible = false;
 				mainTab.element3.visible = false;
 				mainTab.dmrtgidEdit.visible = false;
+				mainTab.comboM17CAN.visible = false;
 				mainTab.privateBox.visible = false;
 				mainTab.sliderMicGain.value = 0.2;
 			}
@@ -270,8 +275,10 @@ ApplicationWindow {
 				mainTab.comboModule.visible = false;
 				mainTab.comboSlot.visible = true;
 				mainTab.comboCC.visible = true;
+				mainTab.element3.text = "TGID";
 				mainTab.element3.visible = true;
 				mainTab.dmrtgidEdit.visible = true;
+				mainTab.comboM17CAN.visible = false;
 				mainTab.privateBox.visible = true;
 				mainTab.sliderMicGain.value = 0.3;
             }
@@ -284,8 +291,10 @@ ApplicationWindow {
 				mainTab.comboModule.visible = false;
 				mainTab.comboSlot.visible = false;
 				mainTab.comboCC.visible = false;
+				mainTab.element3.text = "TGID";
 				mainTab.element3.visible = true;
 				mainTab.dmrtgidEdit.visible = true;
+				mainTab.comboM17CAN.visible = false;
 				mainTab.privateBox.visible = false;
 				mainTab.sliderMicGain.value = 0.3;
             }
@@ -300,6 +309,7 @@ ApplicationWindow {
 				mainTab.comboCC.visible = false;
 				mainTab.element3.visible = false;
 				mainTab.dmrtgidEdit.visible = false;
+				mainTab.comboM17CAN.visible = false;
 				mainTab.privateBox.visible = false;
 				mainTab.sliderMicGain.value = 0.3;
             }
@@ -313,8 +323,10 @@ ApplicationWindow {
 				mainTab.comboModule.visible = true;
 				mainTab.comboSlot.visible = false;
 				mainTab.comboCC.visible = false;
-				mainTab.element3.visible = false;
+				mainTab.element3.text = "CAN";
+				mainTab.element3.visible = true;
 				mainTab.dmrtgidEdit.visible = false;
+				mainTab.comboM17CAN.visible = true;
 				mainTab.privateBox.visible = false;
 				mainTab.sliderMicGain.value = 0.5;
 			}
@@ -328,6 +340,7 @@ ApplicationWindow {
 				mainTab.comboCC.visible = false;
 				mainTab.element3.visible = false;
 				mainTab.dmrtgidEdit.visible = false;
+				mainTab.comboM17CAN.visible = false;
 				mainTab.privateBox.visible = false;
 				mainTab.sliderMicGain.value = 0.5;
 			}
@@ -419,6 +432,7 @@ ApplicationWindow {
 			settingsTab.modemYSFTXLevelEdit.text = droidstar.get_modemYSFTxLevel();
 			settingsTab.modemP25TXLevelEdit.text = droidstar.get_modemP25TxLevel()
 			settingsTab.modemNXDNTXLevelEdit.text = droidstar.get_modemNXDNTxLevel();
+			settingsTab.modemBaudEdit.text = droidstar.get_modemBaud();
 
 			hostsTab.hostsTextEdit.text = droidstar.get_local_hosts();
         }

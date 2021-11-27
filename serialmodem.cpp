@@ -23,14 +23,14 @@
 
 //#define DEBUGHW
 
-SerialModem::SerialModem(QString protocol)
+SerialModem::SerialModem(QString mode)
 {
-	set_mode(protocol);
+	set_mode(mode);
 	m_dmrDelay = 0;
 	m_debug = false;
 	m_dmrColorCode = 1;
-	m_m17support = 1;
 	m_m17TXHang = 5;
+	m_ax25Enabled = false;
 }
 
 SerialModem::~SerialModem()
@@ -46,6 +46,7 @@ void SerialModem::set_mode(QString m)
 	m_p25Enabled = 0;
 	m_nxdnEnabled = 0;
 	m_pocsagEnabled = 0;
+	m_m17Enabled = 0;
 
 	if((m == "REF") || (m == "DCS") || (m == "XRF")){
 		m_dstarEnabled = 1;
@@ -77,8 +78,9 @@ void SerialModem::set_modem_flags(bool rxInvert, bool txInvert, bool pttInvert, 
 	m_ysfLoDev = 0;
 }
 
-void SerialModem::set_modem_params(uint32_t rxfreq, uint32_t txfreq, uint32_t txDelay, float rxLevel, float rfLevel, uint32_t ysfTXHang, float cwIdTXLevel, float dstarTXLevel, float dmrTXLevel, float ysfTXLevel, float p25TXLevel, float nxdnTXLevel, float pocsagTXLevel, float m17TXLevel)
+void SerialModem::set_modem_params(uint32_t baudrate, uint32_t rxfreq, uint32_t txfreq, uint32_t txDelay, float rxLevel, float rfLevel, uint32_t ysfTXHang, float cwIdTXLevel, float dstarTXLevel, float dmrTXLevel, float ysfTXLevel, float p25TXLevel, float nxdnTXLevel, float pocsagTXLevel, float m17TXLevel)
 {
+	m_baudrate = baudrate;
 	m_rxfreq = rxfreq;
 	m_txfreq = txfreq;
 	m_txDelay = txDelay;
@@ -103,7 +105,7 @@ void SerialModem::connect_to_serial(QString p)
 		m_serial = &AndroidSerialPort::GetInstance();
 #endif
 	m_serial->setPortName(p);
-	m_serial->setBaudRate(115200);
+	m_serial->setBaudRate(m_baudrate);
 	m_serial->setDataBits(QSerialPort::Data8);
 	m_serial->setStopBits(QSerialPort::OneStop);
 	m_serial->setParity(QSerialPort::NoParity);
@@ -207,7 +209,7 @@ void SerialModem::process_modem()
 				for(int i = 0; i < (s-4); ++i){
 					m_version.append(m_serialdata[4+i]);
 				}
-				qDebug() << "MMDVM: " << m_version;
+				qDebug() << "MMDVM Protocol " << m_protocol << ": " << m_version;
 			}
 			QThread::msleep(100);
 			set_freq();
@@ -272,11 +274,11 @@ void SerialModem::set_config()
 
 	out.append(MMDVM_FRAME_START);
 
-	if(m_m17support){
+	if(m_protocol == 1){
 		out.append(26U);
 	}
-	else{
-		out.append(24U);
+	else if(m_protocol == 2){
+		out.append(40U);
 	}
 
 	out.append(MMDVM_SET_CONFIG);
@@ -316,29 +318,72 @@ void SerialModem::set_config()
 		c |= 0x40U;
 
 	out.append(c);
-	out.append(m_txDelay / 10U);		// In 10ms units
-	out.append(MODE_IDLE);
-	out.append((uint8_t)(m_rxLevel * 2.55F + 0.5F));
-	out.append((uint8_t)(m_cwIdTXLevel * 2.55F + 0.5F));
-	out.append(m_dmrColorCode);
-	out.append(m_dmrDelay);
-	out.append(128U);           // Was OscOffset
-	out.append((uint8_t)(m_dstarTXLevel * 2.55F + 0.5F));
-	out.append((uint8_t)(m_dmrTXLevel * 2.55F + 0.5F));
-	out.append((uint8_t)(m_ysfTXLevel * 2.55F + 0.5F));
-	out.append((uint8_t)(m_p25TXLevel * 2.55F + 0.5F));
-	out.append((uint8_t)(m_txDCOffset + 128));
-	out.append((uint8_t)(m_rxDCOffset + 128));
-	out.append((uint8_t)(m_nxdnTXLevel * 2.55F + 0.5F));
-	out.append((uint8_t)m_ysfTXHang);
-	out.append((uint8_t)(m_pocsagTXLevel * 2.55F + 0.5F));
-	out.append((uint8_t)(m_fmTXLevel * 2.55F + 0.5F));
-	out.append((uint8_t)m_p25TXHang);
-	out.append((uint8_t)m_nxdnTXHang);
 
-	if(m_m17support){
+
+	if(m_protocol == 1){
+		out.append(m_txDelay / 10U);		// In 10ms units
+		out.append(MODE_IDLE);
+		out.append((uint8_t)(m_rxLevel * 2.55F + 0.5F));
+		out.append((uint8_t)(m_cwIdTXLevel * 2.55F + 0.5F));
+		out.append(m_dmrColorCode);
+		out.append(m_dmrDelay);
+		out.append(128U);           // Was OscOffset
+		out.append((uint8_t)(m_dstarTXLevel * 2.55F + 0.5F));
+		out.append((uint8_t)(m_dmrTXLevel * 2.55F + 0.5F));
+		out.append((uint8_t)(m_ysfTXLevel * 2.55F + 0.5F));
+		out.append((uint8_t)(m_p25TXLevel * 2.55F + 0.5F));
+		out.append((uint8_t)(m_txDCOffset + 128));
+		out.append((uint8_t)(m_rxDCOffset + 128));
+		out.append((uint8_t)(m_nxdnTXLevel * 2.55F + 0.5F));
+		out.append((uint8_t)m_ysfTXHang);
+		out.append((uint8_t)(m_pocsagTXLevel * 2.55F + 0.5F));
+		out.append((uint8_t)(m_fmTXLevel * 2.55F + 0.5F));
+		out.append((uint8_t)m_p25TXHang);
+		out.append((uint8_t)m_nxdnTXHang);
 		out.append((uint8_t)(m_m17TXLevel * 2.55F + 0.5F));
 		out.append((uint8_t)m_m17TXHang);
+	}
+	else if(m_protocol == 2){
+		c = 0x00U;
+		if (m_pocsagEnabled)
+			c |= 0x01U;
+		if (m_ax25Enabled)
+			c |= 0x02U;
+		out.append(c);
+		out.append(m_txDelay / 10U);
+		out.append(MODE_IDLE);
+		out.append((uint8_t)(m_txDCOffset + 128));
+		out.append((uint8_t)(m_rxDCOffset + 128));
+		out.append((uint8_t)(m_rxLevel * 2.55F + 0.5F));
+		out.append((uint8_t)(m_cwIdTXLevel * 2.55F + 0.5F));
+		out.append((uint8_t)(m_dstarTXLevel * 2.55F + 0.5F));
+		out.append((uint8_t)(m_dmrTXLevel * 2.55F + 0.5F));
+		out.append((uint8_t)(m_ysfTXLevel * 2.55F + 0.5F));
+		out.append((uint8_t)(m_p25TXLevel * 2.55F + 0.5F));
+		out.append((uint8_t)(m_nxdnTXLevel * 2.55F + 0.5F));
+		out.append((uint8_t)(m_m17TXLevel * 2.55F + 0.5F));
+		out.append((uint8_t)(m_pocsagTXLevel * 2.55F + 0.5F));
+		out.append((uint8_t)(m_fmTXLevel * 2.55F + 0.5F));
+		out.append((uint8_t)(m_ax25TXLevel * 2.55F + 0.5F));
+		out.append('\00');
+		out.append('\00');
+		out.append((uint8_t)m_ysfTXHang);
+		out.append((uint8_t)m_p25TXHang);
+		out.append((uint8_t)m_nxdnTXHang);
+		out.append((uint8_t)m_m17TXHang);
+		out.append('\00');
+		out.append('\00');
+		out.append(m_dmrColorCode);
+		out.append(m_dmrDelay);
+		out.append((uint8_t)(m_ax25RXTwist + 128));
+		out.append(m_ax25TXDelay / 10U);
+		out.append(m_ax25SlotTime / 10U);
+		out.append(m_ax25PPersist);
+		out.append('\00');
+		out.append('\00');
+		out.append('\00');
+		out.append('\00');
+		out.append('\00');
 	}
 
 	m_serial->write(out);

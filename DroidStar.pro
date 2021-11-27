@@ -9,6 +9,7 @@ LIBS += -limbe_vocoder
 win32:QT += serialport
 win32:INCLUDEPATH += /mnt/data/src/mxe/usr/include
 win32:LIBS += -L/mnt/data/src/mxe/usr/lib64
+#win32:LIBS += -L/mnt/data/src/mxe/usr/lib -lws2_32
 win32:QMAKE_LFLAGS += -static
 QMAKE_LFLAGS_WINDOWS += --enable-stdcall-fixup
 RC_ICONS = images/droidstar.ico
@@ -24,6 +25,7 @@ VERSION_BUILD='$(shell cd $$PWD;git rev-parse --short HEAD)'
 DEFINES += VERSION_NUMBER=\"\\\"$${VERSION_BUILD}\\\"\"
 DEFINES += QT_DEPRECATED_WARNINGS
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
+DEFINES += VOCODER_PLUGIN
 #DEFINES += USE_FLITE
 
 HEADERS += \

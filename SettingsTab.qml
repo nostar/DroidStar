@@ -69,13 +69,14 @@ Item {
 	property alias modemYSFTXLevelEdit: _modemYSFTXLevelEdit
 	property alias modemP25TXLevelEdit: _modemP25TXLevelEdit
 	property alias modemNXDNTXLevelEdit: _modemNXDNTXLevelEdit
+	property alias modemBaudEdit: _modemBaudEdit
 
 	Flickable {
 		id: flickable
 		anchors.fill: parent
 		contentWidth: parent.width
-		contentHeight: _modemNXDNTXLevelLabel.y +
-					   _modemNXDNTXLevelLabel.height + 10
+		contentHeight: _modemBaudLabel.y +
+					   _modemBaudLabel.height + 10
 		flickableDirection: Flickable.VerticalFlick
 		clip: true
 		ScrollBar.vertical: ScrollBar {}
@@ -1047,6 +1048,24 @@ Item {
 			selectByMouse: true
 			inputMethodHints: "ImhPreferNumbers"
 		}
-
+		Text {
+			id: _modemBaudLabel
+			x: 10
+			y: 1330
+			width: 100
+			height: 25
+			text: qsTr("Baud")
+			color: "white"
+			verticalAlignment: Text.AlignVCenter
+		}
+		TextField {
+			id: _modemBaudEdit
+			x: _modemBaudLabel.x + _modemBaudLabel.width
+			y: _modemBaudLabel.y
+			width: 60
+			height: 25
+			selectByMouse: true
+			inputMethodHints: "ImhPreferNumbers"
+		}
 	}
 }

@@ -56,6 +56,7 @@ signals:
 	void dmrpc_state_changed(int);
 	void dmr_tgid_changed(unsigned int);
 	void m17_rate_changed(int);
+	void m17_can_changed(int);
 	void send_dtmf(QByteArray);
 	void swtx_state_changed(int);
 	void swrx_state_changed(int);
@@ -140,6 +141,8 @@ public slots:
 	void set_modemYSFTxLevel(QString m) { m_modemYSFTxLevel = m; save_settings(); }
 	void set_modemP25TxLevel(QString m) { m_modemP25TxLevel = m; save_settings(); }
 	void set_modemNXDNTxLevel(QString m) { m_modemNXDNTxLevel = m; save_settings(); }
+	void set_modemBaud(QString m) { m_modemBaud = m; save_settings(); }
+	void set_modemM17CAN(QString m) { emit m17_can_changed(m.toInt()); }
 
 	void m17_rate_changed(bool r) { emit m17_rate_changed((int)r); }
 	void process_connect();
@@ -234,6 +237,8 @@ public slots:
 	QString get_modemYSFTxLevel() { return m_modemYSFTxLevel; }
 	QString get_modemP25TxLevel() { return m_modemP25TxLevel; }
 	QString get_modemNXDNTxLevel() { return m_modemNXDNTxLevel; }
+	QString get_modemBaud() { return m_modemBaud; }
+	QString get_modemM17CAN() { return m_modemM17CAN; }
 #if defined(Q_OS_ANDROID)
 	QString get_platform() { return QSysInfo::productType(); }
 	void reset_connect_status();
@@ -374,6 +379,8 @@ private:
 	QString m_modemYSFTxLevel;
 	QString m_modemP25TxLevel;
 	QString m_modemNXDNTxLevel;
+	QString m_modemBaud;
+	QString m_modemM17CAN;
 	bool m_modemTxInvert;
 	bool m_modemRxInvert;
 	bool m_modemPTTInvert;

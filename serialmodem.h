@@ -34,7 +34,7 @@ public:
 	~SerialModem();
 	void set_mode(QString);
 	void set_modem_flags(bool, bool, bool, bool, bool);
-	void set_modem_params(uint32_t, uint32_t, uint32_t, float, float, uint32_t, float, float, float, float, float, float, float, float);
+	void set_modem_params(uint32_t, uint32_t, uint32_t, uint32_t, float, float, uint32_t, float, float, float, float, float, float, float, float);
 	static QMap<QString, QString>  discover_devices();
 	void connect_to_serial(QString);
 	QString get_mmdvm_version(){ return m_version; }
@@ -54,6 +54,7 @@ private:
 #endif
 	QString m_version;
 	uint8_t m_protocol;
+	uint32_t m_baudrate;
 	QTimer *m_modemtimer;
 	uint8_t packet_size;
 	QQueue<char> m_serialdata;
@@ -82,6 +83,11 @@ private:
 	float m_pocsagTXLevel;
 	float m_m17TXLevel;
 	float m_fmTXLevel;
+	float m_ax25TXLevel;
+	int   m_ax25RXTwist;
+	uint32_t m_ax25TXDelay;
+	uint32_t m_ax25SlotTime;
+	uint32_t m_ax25PPersist;
 	bool m_debug;
 	bool m_useCOSAsLockout;
 	bool m_dstarEnabled;
@@ -90,9 +96,9 @@ private:
 	bool m_p25Enabled;
 	bool m_nxdnEnabled;
 	bool m_pocsagEnabled;
+	bool m_ax25Enabled;
 	bool m_m17Enabled;
 	bool m_fmEnabled;
-	bool m_m17support;
 	int m_rxDCOffset;
 	int m_txDCOffset;	
 signals:
