@@ -185,6 +185,7 @@ void Codec::stop_tx()
 
 bool Codec::load_vocoder_plugin()
 {
+#ifdef VOCODER_PLUGIN
 	QString config_path = QStandardPaths::writableLocation(QStandardPaths::ConfigLocation);
 #if !defined(Q_OS_ANDROID) && !defined(Q_OS_WIN)
 	config_path += "/dudetronics";
@@ -233,6 +234,10 @@ bool Codec::load_vocoder_plugin()
 	else{
 		return false;
 	}
+#endif
+#else
+	m_mbevocoder = new VocoderPlugin();
+	return true;
 #endif
 }
 

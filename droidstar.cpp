@@ -1368,6 +1368,7 @@ void DroidStar::check_host_files()
 	}
 	m_update_host_files = false;
 	//process_mode_change(ui->modeCombo->currentText().simplified());
+/*
 #if defined(Q_OS_ANDROID)
 	QString vocname = "/vocoder_plugin." + QSysInfo::productType() + "." + QSysInfo::currentCpuArchitecture();
 #else
@@ -1399,6 +1400,7 @@ void DroidStar::check_host_files()
 	else{
 		qDebug() << newvoc << " not found";
 	}
+*/
 }
 
 void DroidStar::update_ref_data(Codec::MODEINFO info)

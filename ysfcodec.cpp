@@ -138,9 +138,8 @@ void YSFCodec::process_udp()
 			connect(m_ping_timer, SIGNAL(timeout()), this, SLOT(send_ping()));
 			set_fcs_mode(false);
 			//m_mbeenc->set_gain_adjust(2.5);
-#ifdef VOCODER_PLUGIN
 			m_modeinfo.sw_vocoder_loaded = load_vocoder_plugin();
-#endif
+
 			m_rxtimer = new QTimer();
 			connect(m_rxtimer, SIGNAL(timeout()), this, SLOT(process_rx_data()));
 
