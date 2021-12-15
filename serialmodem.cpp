@@ -174,9 +174,11 @@ void SerialModem::process_serial()
 void SerialModem::process_modem()
 {
 	QByteArray out;
+
 	if(m_serialdata.size() < 3){
 		return;
 	}
+
 	//qDebug() << "process_modem() " << (uint8_t)m_serialdata[0] << ":" << (uint8_t)m_serialdata[1] << ":" << m_serialdata.size();
 	if(((uint8_t)m_serialdata[0] == MMDVM_FRAME_START) && (m_serialdata.size() >= m_serialdata[1])){
 		const uint8_t r = (uint8_t)m_serialdata[2];
@@ -187,14 +189,14 @@ void SerialModem::process_modem()
 			for(int i = 0; i < s; ++i){
 				m_serialdata.dequeue();
 			}
-			if(m_serialdata[3] == 2){
+			if( (m_serialdata.size() > 3) && (m_serialdata[3] == 2) ){
 
 			}
 		}
 
 		else if(r == MMDVM_ACK){
 			qDebug() << "Received MMDVM_ACK";
-			if(m_serialdata[3] == 2){
+			if( (m_serialdata.size() > 3) && (m_serialdata[3] == 2) ){
 				emit connected(true);
 			}
 			for(int i = 0; i < s; ++i){

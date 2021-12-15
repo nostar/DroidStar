@@ -17,6 +17,7 @@
 
 #include "audioengine.h"
 #include <QDebug>
+#include <QTimer>
 #include <cmath>
 
 #ifdef Q_OS_MACOS
@@ -110,7 +111,7 @@ void AudioEngine::init()
 		fprintf(stderr, "Using playback device %s\n", info.deviceName().toStdString().c_str());fflush(stderr);
 
 		m_out = new QAudioOutput(info, tempformat, this);
-		m_out->setBufferSize(19200);
+		m_out->setBufferSize(2560);
 		connect(m_out, SIGNAL(stateChanged(QAudio::State)), this, SLOT(handleStateChanged(QAudio::State)));
 		//m_outdev = m_out->start();
 	}
@@ -176,12 +177,13 @@ void AudioEngine::stop_capture()
 
 void AudioEngine::start_playback()
 {
-	//m_out->reset();
 	m_outdev = m_out->start();
 }
 
 void AudioEngine::stop_playback()
 {
+	//m_outdev->reset();
+	m_out->reset();
 	m_out->stop();
 }
 
@@ -233,7 +235,12 @@ void AudioEngine::write(int16_t *pcm, size_t s)
 		process_audio(pcm, s);
 	}
 
-	m_outdev->write((const char *) pcm, sizeof(int16_t) * s);
+	size_t l = m_outdev->write((const char *) pcm, sizeof(int16_t) * s);
+
+	if (l*2 < s){
+		qDebug() << "AudioEngine::write() " << s << ":" << l << ":" << (int)m_out->bytesFree() << ":" << m_out->bufferSize() << ":" << m_out->error();
+	}
+
 	for(uint32_t i = 0; i < s; ++i){
 		if(pcm[i] > m_maxlevel){
 			m_maxlevel = pcm[i];

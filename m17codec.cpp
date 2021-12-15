@@ -474,19 +474,19 @@ void M17Codec::process_modem_data(QByteArray d)
 	CM17Convolution conv;
 	uint8_t tmp[M17_FRAME_LENGTH_BYTES];
 
-	if(d.size() < 3){
+	if( (d.size() < 3) || m_tx ){
 		return;
 	}
 
 	if( (d.data()[2] == MMDVM_M17_LINK_SETUP) &&
 		(((uint8_t)d.data()[4] != M17_LINK_SETUP_SYNC_BYTES[0]) || ((uint8_t)d.data()[5] != M17_LINK_SETUP_SYNC_BYTES[1]))){
-		qDebug() << "LSF with no sync bytes" << (d.data()[2] == MMDVM_M17_LINK_SETUP) << ((uint8_t)d.data()[4] != M17_LINK_SETUP_SYNC_BYTES[0]) << ((uint8_t)d.data()[5] != M17_LINK_SETUP_SYNC_BYTES[1]);
+		qDebug() << "M17 LSF with no sync bytes" << (d.data()[2] == MMDVM_M17_LINK_SETUP) << ((uint8_t)d.data()[4] != M17_LINK_SETUP_SYNC_BYTES[0]) << ((uint8_t)d.data()[5] != M17_LINK_SETUP_SYNC_BYTES[1]);
 		return;
 	}
 
 	if( (d.data()[2] == MMDVM_M17_STREAM) &&
 		(((uint8_t)d.data()[4] != M17_STREAM_SYNC_BYTES[0]) || ((uint8_t)d.data()[5] != M17_STREAM_SYNC_BYTES[1]))){
-		qDebug() << "stream frame with no sync bytes" << (d.data()[2] == MMDVM_M17_STREAM) << ((uint8_t)d.data()[4] != M17_STREAM_SYNC_BYTES[0]) << ((uint8_t)d.data()[5] != M17_STREAM_SYNC_BYTES[1]);
+		qDebug() << "M17 stream frame with no sync bytes" << (d.data()[2] == MMDVM_M17_STREAM) << ((uint8_t)d.data()[4] != M17_STREAM_SYNC_BYTES[0]) << ((uint8_t)d.data()[5] != M17_STREAM_SYNC_BYTES[1]);
 		return;
 	}
 

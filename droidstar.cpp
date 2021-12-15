@@ -1429,7 +1429,7 @@ void DroidStar::update_ref_data(Codec::MODEINFO info)
 		}
 	}
 
-	m_netstatustxt = "Host: " + m_hostname + ":" + QString::number(m_port) + " Cnt: " + QString::number(info.count);
+	m_netstatustxt = "Connected ping cnt: " + QString::number(info.count);
 	m_ambestatustxt = "AMBE: " + (info.ambeprodid.isEmpty() ? "No device" : info.ambeprodid);
 	m_mmdvmstatustxt = "MMDVM: ";
 
@@ -1502,7 +1502,7 @@ void DroidStar::update_dcs_data(Codec::MODEINFO info)
 		}
 	}
 
-	m_netstatustxt = "Host: " + m_hostname + ":" + QString::number(m_port) + " Cnt: " + QString::number(info.count);
+	m_netstatustxt = "Connected ping cnt: " + QString::number(info.count);
 	m_ambestatustxt = "AMBE: " + (info.ambeprodid.isEmpty() ? "No device" : info.ambeprodid);
 	m_mmdvmstatustxt = "MMDVM: ";
 
@@ -1576,7 +1576,7 @@ void DroidStar::update_xrf_data(Codec::MODEINFO info)
 		}
 	}
 
-	m_netstatustxt = "Host: " + m_hostname + ":" + QString::number(m_port) + " Cnt: " + QString::number(info.count);
+	m_netstatustxt = "Connected ping cnt: " + QString::number(info.count);
 	m_ambestatustxt = "AMBE: " + (info.ambeprodid.isEmpty() ? "No device" : info.ambeprodid);
 	m_mmdvmstatustxt = "MMDVM: ";
 
@@ -1641,7 +1641,7 @@ void DroidStar::update_nxdn_data(Codec::MODEINFO info)
 		}
 	}
 
-	m_netstatustxt = "Host: " + m_hostname + ":" + QString::number(m_port) + " Cnt: " + QString::number(info.count);
+	m_netstatustxt = "Connected ping cnt: " + QString::number(info.count);
 	m_ambestatustxt = "AMBE: " + (info.ambeprodid.isEmpty() ? "No device" : info.ambeprodid);
 	m_mmdvmstatustxt = "MMDVM: ";
 
@@ -1722,7 +1722,7 @@ void DroidStar::update_dmr_data(Codec::MODEINFO info)
 		}
 	}
 
-	m_netstatustxt = "Host: " + m_hostname + ":" + QString::number(m_port) + " Cnt: " + QString::number(info.count);
+	m_netstatustxt = "Connected ping cnt: " + QString::number(info.count);
 	m_ambestatustxt = "AMBE: " + (info.ambeprodid.isEmpty() ? "No device" : info.ambeprodid);
 	m_mmdvmstatustxt = "MMDVM: ";
 
@@ -1810,7 +1810,7 @@ void DroidStar::update_ysf_data(Codec::MODEINFO info)
 		}
 	}
 
-	m_netstatustxt = "Host: " + m_hostname + ":" + QString::number(m_port) + " Cnt: " + QString::number(info.count);
+	m_netstatustxt = "Connected ping cnt: " + QString::number(info.count);
 	m_ambestatustxt = "AMBE: " + (info.ambeprodid.isEmpty() ? "No device" : info.ambeprodid);
 	m_mmdvmstatustxt = "MMDVM: ";
 
@@ -1948,7 +1948,7 @@ void DroidStar::update_m17_data(M17Codec::MODEINFO info)
 		emit update_log("Connected to " + m_protocol + " " + m_host + " " + m_hostname + ":" + QString::number(m_port));
 	}
 
-	m_netstatustxt = "Host: " + m_hostname + ":" + QString::number(m_port) + " Cnt: " + QString::number(info.count);
+	m_netstatustxt = "Connected ping cnt: " + QString::number(info.count);
 	m_ambestatustxt = "AMBE: " + (info.ambeprodid.isEmpty() ? "No device" : info.ambeprodid);
 	m_mmdvmstatustxt = "MMDVM: ";
 
@@ -2010,7 +2010,7 @@ void DroidStar::update_iax_data()
 		emit update_log("Connected to " + m_protocol + " " + m_iaxhost + ":" + QString::number(m_iaxport));
 	}
 
-	m_netstatustxt = "Host: " + m_iaxhost + ":" + QString::number(m_iaxport) + " Cnt: " + QString::number(m_iax->get_cnt());
+	m_netstatustxt = "Connected ping cnt: " + QString::number(m_iax->get_cnt());
 	emit update_data();
 }
 
