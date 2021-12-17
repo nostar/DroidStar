@@ -85,6 +85,7 @@ void AudioEngine::init()
 	}
 	else{
 		QAudioDeviceInfo info(QAudioDeviceInfo::defaultOutputDevice());
+
 		for (QList<QAudioDeviceInfo>::ConstIterator it = devices.constBegin(); it != devices.constEnd(); ++it ) {
 			if(MACHAK){
 				qDebug() << "Playback device name = " << (*it).deviceName();
@@ -96,10 +97,12 @@ void AudioEngine::init()
 				qDebug() << (*it).supportedSampleTypes();
 				qDebug() << (*it).preferredFormat();
 			}
+
 			if((*it).deviceName() == m_outputdevice){
 				info = *it;
 			}
 		}
+
 		if (!info.isFormatSupported(format)) {
 			qWarning() << "Raw audio format not supported by backend, trying nearest format.";
 			tempformat = info.nearestFormat(format);
@@ -108,7 +111,7 @@ void AudioEngine::init()
 		else{
 			tempformat = format;
 		}
-		fprintf(stderr, "Using playback device %s\n", info.deviceName().toStdString().c_str());fflush(stderr);
+		fprintf(stderr, "Playback device: %s\n", info.deviceName().toStdString().c_str());fflush(stderr);
 
 		m_out = new QAudioOutput(info, tempformat, this);
 		m_out->setBufferSize(2560);

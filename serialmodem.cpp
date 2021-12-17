@@ -208,8 +208,10 @@ void SerialModem::process_modem()
 			if(m_serialdata.size() >= s){
 				m_protocol = m_serialdata[3];
 				m_version.clear();
-				for(int i = 0; i < (s-4); ++i){
-					m_version.append(m_serialdata[4+i]);
+				uint8_t desc_offset = (m_protocol == 2) ? 23 : 4;
+
+				for(int i = 0; i < (s-desc_offset); ++i){
+					m_version.append(m_serialdata[desc_offset+i]);
 				}
 				qDebug() << "MMDVM Protocol " << m_protocol << ": " << m_version;
 			}
