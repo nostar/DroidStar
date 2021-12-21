@@ -24,7 +24,7 @@
 #include <iostream>
 #include <cstring>
 
-//#define DEBUG
+#define DEBUG
 
 const uint32_t IMBE_INTERLEAVE[] = {
 	0,  7, 12, 19, 24, 31, 36, 43, 48, 55, 60, 67, 72, 79, 84, 91,  96, 103, 108, 115, 120, 127, 132, 139,
@@ -212,6 +212,17 @@ void YSFCodec::process_udp()
 		memcpy(ysftag, buf.data() + 0x79, 8);ysftag[8] = '\0';
 		m_modeinfo.gw = QString(ysftag);
 		p_data = (uint8_t *)buf.data();
+		if(m_modem){
+			m_rxmodemq.append(MMDVM_FRAME_START);
+			m_rxmodemq.append(124);
+			m_rxmodemq.append(MMDVM_YSF_DATA);
+			m_rxmodemq.append('\x00');
+
+			for(int i = 0; i < 120; ++i){
+				m_rxmodemq.append(buf.data()[i]);
+			}
+			//m_rxmodemq.append(buf.mid(35));
+		}
 	}
 
 	if(p_data != nullptr){
@@ -612,30 +623,37 @@ void YSFCodec::interleave(uint8_t *ambe)
 
 void YSFCodec::process_modem_data(QByteArray d)
 {
-	QByteArray txdata;
-	uint8_t *p_frame = (uint8_t *)(d.data());
+	if(d.size() < 126){
+		return;
+	}
 
-	if(m_fcs && d.size() >= 130){
-		::memset(p_frame + 120U, 0, 10U);
-		::memcpy(p_frame + 121U, m_fcsname.c_str(), 8);
+	char callsign[YSF_CALLSIGN_LENGTH+1];
+	::memcpy(callsign, "          ", YSF_CALLSIGN_LENGTH);
+	::memcpy(callsign, m_modeinfo.callsign.toStdString().c_str(), ::strlen(m_modeinfo.callsign.toStdString().c_str()));
+
+	d.remove(0, 4);
+
+	if(m_fcs){
+		d.insert(120, 10, 0);
+		d.insert(121, m_fcsname.c_str(), 8);
+		d.resize(130);
 	}
 	else{
-		::memcpy(m_ysfFrame + 0U, "YSFD", 4U);
-		::memcpy(m_ysfFrame + 4U, m_modeinfo.callsign.toStdString().c_str(), YSF_CALLSIGN_LENGTH);
-		::memcpy(m_ysfFrame + 14U, m_modeinfo.callsign.toStdString().c_str(), YSF_CALLSIGN_LENGTH);
-		::memcpy(m_ysfFrame + 24U, "ALL       ", YSF_CALLSIGN_LENGTH);
-		m_ysfFrame[34U] = (m_txcnt & 0x7f) << 1;
-		::memcpy(m_ysfFrame + 35U, p_frame + 4U, 120);
+		d.insert(0U, "YSFD", 4U);
+		d.insert(4U, callsign, YSF_CALLSIGN_LENGTH);
+		d.insert(14U, callsign, YSF_CALLSIGN_LENGTH);
+		d.insert(24U, "ALL       ", YSF_CALLSIGN_LENGTH);
+		d.insert(34U, (m_txcnt & 0x7f) << 1);
+		d.resize(155);
 	}
 
 	++m_txcnt;
-	txdata.append((char *)m_ysfFrame, 155);
-	m_udp->writeDatagram(txdata, m_address, m_modeinfo.port);
+	m_udp->writeDatagram(d, m_address, m_modeinfo.port);
 	qDebug() << "Sending modem to network.....................................................";
 #ifdef DEBUG
-		fprintf(stderr, "SEND:%d: ", txdata.size());
-		for(int i = 0; i < txdata.size(); ++i){
-			fprintf(stderr, "%02x ", (uint8_t)txdata.data()[i]);
+		fprintf(stderr, "SEND:%d: ", d.size());
+		for(int i = 0; i < d.size(); ++i){
+			fprintf(stderr, "%02x ", (uint8_t)d.data()[i]);
 		}
 		fprintf(stderr, "\n");
 		fflush(stderr);
@@ -776,20 +794,20 @@ void YSFCodec::encode_header(bool eot)
 	}
 	::memcpy(p_frame, YSF_SYNC_BYTES, 5);
 	
-	fich.setFI(eot ? YSF_FI_TERMINATOR : YSF_FI_HEADER);
-	fich.setCS(2U);
-	fich.setCM(0U);
-	fich.setBN(0U);
-	fich.setBT(0U);
-	fich.setFN(0U);
-	fich.setFT(6U);
-	fich.setDev(0U);
-	fich.setMR(0U);
-	fich.setVoIP(false);
-	fich.setDT(m_txfullrate ? YSF_DT_VOICE_FR_MODE : YSF_DT_VD_MODE2);
-	fich.setSQL(false);
-	fich.setSQ(0U);
-	fich.encode(p_frame);
+	m_fich.setFI(eot ? YSF_FI_TERMINATOR : YSF_FI_HEADER);
+	m_fich.setCS(2U);
+	m_fich.setCM(0U);
+	m_fich.setBN(0U);
+	m_fich.setBT(0U);
+	m_fich.setFN(0U);
+	m_fich.setFT(6U);
+	m_fich.setDev(0U);
+	m_fich.setMR(0U);
+	m_fich.setVoIP(false);
+	m_fich.setDT(m_txfullrate ? YSF_DT_VOICE_FR_MODE : YSF_DT_VD_MODE2);
+	m_fich.setSQL(false);
+	m_fich.setSQ(0U);
+	m_fich.encode(p_frame);
 
 	uint8_t csd1[20U], csd2[20U];
 	memset(csd1, '*', YSF_CALLSIGN_LENGTH);
@@ -825,20 +843,20 @@ void YSFCodec::encode_vw()
 	::memcpy(p_frame, YSF_SYNC_BYTES, 5);
 	uint32_t fn = (m_txcnt - 1U) % 7U;
 
-	fich.setFI(YSF_FI_COMMUNICATIONS);
-	fich.setCS(2U);
-	fich.setCM(0U);
-	fich.setBN(0U);
-	fich.setBT(0U);
-	fich.setFN(fn);
-	fich.setFT(6U);
-	fich.setDev(0U);
-	fich.setMR(0U);
-	fich.setVoIP(false);
-	fich.setDT(YSF_DT_VOICE_FR_MODE);
-	fich.setSQL(false);
-	fich.setSQ(0U);
-	fich.encode(p_frame);
+	m_fich.setFI(YSF_FI_COMMUNICATIONS);
+	m_fich.setCS(2U);
+	m_fich.setCM(0U);
+	m_fich.setBN(0U);
+	m_fich.setBT(0U);
+	m_fich.setFN(fn);
+	m_fich.setFT(6U);
+	m_fich.setDev(0U);
+	m_fich.setMR(0U);
+	m_fich.setVoIP(false);
+	m_fich.setDT(YSF_DT_VOICE_FR_MODE);
+	m_fich.setSQL(false);
+	m_fich.setSQ(0U);
+	m_fich.encode(p_frame);
 
 	m_modeinfo.gw = m_modeinfo.callsign;
 	m_modeinfo.src = m_modeinfo.callsign;
@@ -981,20 +999,20 @@ void YSFCodec::encode_dv2()
 	::memcpy(p_frame, YSF_SYNC_BYTES, 5);
 	uint32_t fn = (m_txcnt - 1U) % 7U;
 
-	fich.setFI(YSF_FI_COMMUNICATIONS);
-	fich.setCS(2U);
-	fich.setCM(0U);
-	fich.setBN(0U);
-	fich.setBT(0U);
-	fich.setFN(fn);
-	fich.setFT(6U);
-	fich.setDev(0U);
-	fich.setMR(0U);
-	fich.setVoIP(false);
-	fich.setDT(YSF_DT_VD_MODE2);
-	fich.setSQL(false);
-	fich.setSQ(0U);
-	fich.encode(p_frame);
+	m_fich.setFI(YSF_FI_COMMUNICATIONS);
+	m_fich.setCS(2U);
+	m_fich.setCM(0U);
+	m_fich.setBN(0U);
+	m_fich.setBT(0U);
+	m_fich.setFN(fn);
+	m_fich.setFT(6U);
+	m_fich.setDev(0U);
+	m_fich.setMR(0U);
+	m_fich.setVoIP(false);
+	m_fich.setDT(YSF_DT_VD_MODE2);
+	m_fich.setSQL(false);
+	m_fich.setSQ(0U);
+	m_fich.encode(p_frame);
 
 	m_modeinfo.gw = m_modeinfo.callsign;
 	m_modeinfo.src = m_modeinfo.callsign;

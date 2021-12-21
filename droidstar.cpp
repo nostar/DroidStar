@@ -50,8 +50,6 @@ DroidStar::DroidStar(QObject *parent) :
 	connect_status = Codec::DISCONNECTED;
 	m_settings = new QSettings(QSettings::IniFormat, QSettings::UserScope, "dudetronics", "droidstar", this);
 	config_path = QStandardPaths::writableLocation(QStandardPaths::ConfigLocation);
-	qDebug() << "Config path == " << config_path;
-	qDebug() << "Download path == " << QStandardPaths::writableLocation(QStandardPaths::DownloadLocation);
 #if !defined(Q_OS_ANDROID) && !defined(Q_OS_WIN)
 	config_path += "/dudetronics";
 #endif
@@ -135,7 +133,6 @@ void DroidStar::discover_devices()
 
 void DroidStar::download_file(QString f, bool u)
 {
-	qDebug() << "download_file() " << f << ":" << u;
 	HttpManager *http = new HttpManager(f, u);
 	QThread *httpThread = new QThread;
 	http->moveToThread(httpThread);
@@ -152,13 +149,11 @@ void DroidStar::download_file(QString f, bool u)
 
 void DroidStar::url_downloaded(QString url)
 {
-	qDebug() << "DudeStar::url_downloaded() " << url;
 	emit update_log("Downloaded " + url);
 }
 
 void DroidStar::file_downloaded(QString filename)
 {
-	qDebug() << "DudeStar::file_downloaded() " << filename;
 	emit update_log("Updated " + filename);
 	{
 		if(filename == "dplus.txt" && m_protocol == "REF"){
@@ -343,7 +338,7 @@ void DroidStar::process_connect()
 			connect(m_ref, SIGNAL(update_output_level(unsigned short)), this, SLOT(update_output_level(unsigned short)));
 			connect(m_modethread, SIGNAL(started()), m_ref, SLOT(send_connect()));
 			connect(m_modethread, SIGNAL(finished()), m_ref, SLOT(deleteLater()));
-			connect(this, SIGNAL(input_source_changed(int, QString)), m_ref, SLOT(input_src_changed(int, QString)));
+			connect(this, SIGNAL(input_source_changed(int,QString)), m_ref, SLOT(input_src_changed(int,QString)));
 			connect(this, SIGNAL(swrx_state_changed(int)), m_ref, SLOT(swrx_state_changed(int)));
 			connect(this, SIGNAL(swtx_state_changed(int)), m_ref, SLOT(swtx_state_changed(int)));
 			connect(this, SIGNAL(agc_state_changed(int)), m_ref, SLOT(agc_state_changed(int)));
@@ -374,7 +369,7 @@ void DroidStar::process_connect()
 			connect(m_dcs, SIGNAL(update_output_level(unsigned short)), this, SLOT(update_output_level(unsigned short)));
 			connect(m_modethread, SIGNAL(started()), m_dcs, SLOT(send_connect()));
 			connect(m_modethread, SIGNAL(finished()), m_dcs, SLOT(deleteLater()));
-			connect(this, SIGNAL(input_source_changed(int, QString)), m_dcs, SLOT(input_src_changed(int, QString)));
+			connect(this, SIGNAL(input_source_changed(int,QString)), m_dcs, SLOT(input_src_changed(int,QString)));
 			connect(this, SIGNAL(swrx_state_changed(int)), m_dcs, SLOT(swrx_state_changed(int)));
 			connect(this, SIGNAL(swtx_state_changed(int)), m_dcs, SLOT(swtx_state_changed(int)));
 			connect(this, SIGNAL(agc_state_changed(int)), m_dcs, SLOT(agc_state_changed(int)));
@@ -404,7 +399,7 @@ void DroidStar::process_connect()
 			connect(m_xrf, SIGNAL(update_output_level(unsigned short)), this, SLOT(update_output_level(unsigned short)));
 			connect(m_modethread, SIGNAL(started()), m_xrf, SLOT(send_connect()));
 			connect(m_modethread, SIGNAL(finished()), m_xrf, SLOT(deleteLater()));
-			connect(this, SIGNAL(input_source_changed(int, QString)), m_xrf, SLOT(input_src_changed(int, QString)));
+			connect(this, SIGNAL(input_source_changed(int,QString)), m_xrf, SLOT(input_src_changed(int,QString)));
 			connect(this, SIGNAL(swrx_state_changed(int)), m_xrf, SLOT(swrx_state_changed(int)));
 			connect(this, SIGNAL(swtx_state_changed(int)), m_xrf, SLOT(swtx_state_changed(int)));
 			connect(this, SIGNAL(agc_state_changed(int)), m_xrf, SLOT(agc_state_changed(int)));
@@ -448,14 +443,14 @@ void DroidStar::process_connect()
 			connect(m_dmr, SIGNAL(update_output_level(unsigned short)), this, SLOT(update_output_level(unsigned short)));
 			connect(m_modethread, SIGNAL(started()), m_dmr, SLOT(send_connect()));
 			connect(m_modethread, SIGNAL(finished()), m_dmr, SLOT(deleteLater()));
-			connect(this, SIGNAL(input_source_changed(int, QString)), m_dmr, SLOT(input_src_changed(int, QString)));
+			connect(this, SIGNAL(input_source_changed(int,QString)), m_dmr, SLOT(input_src_changed(int,QString)));
 			connect(this, SIGNAL(swrx_state_changed(int)), m_dmr, SLOT(swrx_state_changed(int)));
 			connect(this, SIGNAL(swtx_state_changed(int)), m_dmr, SLOT(swtx_state_changed(int)));
 			connect(this, SIGNAL(agc_state_changed(int)), m_dmr, SLOT(agc_state_changed(int)));
 			connect(this, SIGNAL(tx_clicked(bool)), m_dmr, SLOT(toggle_tx(bool)));
 			connect(this, SIGNAL(tx_pressed()), m_dmr, SLOT(start_tx()));
 			connect(this, SIGNAL(tx_released()), m_dmr, SLOT(stop_tx()));
-			connect(this, SIGNAL(dmr_tgid_changed(unsigned int)), m_dmr, SLOT(dmr_tgid_changed(unsigned int)));
+			connect(this, SIGNAL(dmr_tgid_changed(uint)), m_dmr, SLOT(dmr_tgid_changed(uint)));
 			connect(this, SIGNAL(dmrpc_state_changed(int)), m_dmr, SLOT(dmrpc_state_changed(int)));
 			connect(this, SIGNAL(slot_changed(int)), m_dmr, SLOT(slot_changed(int)));
 			connect(this, SIGNAL(cc_changed(int)), m_dmr, SLOT(cc_changed(int)));
@@ -473,7 +468,7 @@ void DroidStar::process_connect()
 			connect(this, SIGNAL(m17_rate_changed(int)), m_ysf, SLOT(rate_changed(int)));
 			connect(m_modethread, SIGNAL(started()), m_ysf, SLOT(send_connect()));
 			connect(m_modethread, SIGNAL(finished()), m_ysf, SLOT(deleteLater()));
-			connect(this, SIGNAL(input_source_changed(int, QString)), m_ysf, SLOT(input_src_changed(int, QString)));
+			connect(this, SIGNAL(input_source_changed(int,QString)), m_ysf, SLOT(input_src_changed(int,QString)));
 			connect(this, SIGNAL(swrx_state_changed(int)), m_ysf, SLOT(swrx_state_changed(int)));
 			connect(this, SIGNAL(swtx_state_changed(int)), m_ysf, SLOT(swtx_state_changed(int)));
 			connect(this, SIGNAL(agc_state_changed(int)), m_ysf, SLOT(agc_state_changed(int)));
@@ -493,7 +488,7 @@ void DroidStar::process_connect()
 			connect(m_p25, SIGNAL(update_output_level(unsigned short)), this, SLOT(update_output_level(unsigned short)));
 			connect(m_modethread, SIGNAL(started()), m_p25, SLOT(send_connect()));
 			connect(m_modethread, SIGNAL(finished()), m_p25, SLOT(deleteLater()));
-			connect(this, SIGNAL(input_source_changed(int, QString)), m_p25, SLOT(input_src_changed(int, QString)));
+			connect(this, SIGNAL(input_source_changed(int,QString)), m_p25, SLOT(input_src_changed(int,QString)));
 			connect(this, SIGNAL(agc_state_changed(int)), m_p25, SLOT(agc_state_changed(int)));
 			connect(this, SIGNAL(tx_clicked(bool)), m_p25, SLOT(toggle_tx(bool)));
 			connect(this, SIGNAL(tx_pressed()), m_p25, SLOT(start_tx()));
@@ -510,7 +505,7 @@ void DroidStar::process_connect()
 			connect(m_nxdn, SIGNAL(update_output_level(unsigned short)), this, SLOT(update_output_level(unsigned short)));
 			connect(m_modethread, SIGNAL(started()), m_nxdn, SLOT(send_connect()));
 			connect(m_modethread, SIGNAL(finished()), m_nxdn, SLOT(deleteLater()));
-			connect(this, SIGNAL(input_source_changed(int, QString)), m_nxdn, SLOT(input_src_changed(int, QString)));
+			connect(this, SIGNAL(input_source_changed(int,QString)), m_nxdn, SLOT(input_src_changed(int,QString)));
 			connect(this, SIGNAL(swrx_state_changed(int)), m_nxdn, SLOT(swrx_state_changed(int)));
 			connect(this, SIGNAL(swtx_state_changed(int)), m_nxdn, SLOT(swtx_state_changed(int)));
 			connect(this, SIGNAL(agc_state_changed(int)), m_nxdn, SLOT(agc_state_changed(int)));
@@ -530,7 +525,7 @@ void DroidStar::process_connect()
 			connect(m_m17, SIGNAL(update_output_level(unsigned short)), this, SLOT(update_output_level(unsigned short)));
 			connect(this, SIGNAL(m17_rate_changed(int)), m_m17, SLOT(rate_changed(int)));
 			connect(this, SIGNAL(m17_can_changed(int)), m_m17, SLOT(can_changed(int)));
-			connect(this, SIGNAL(input_source_changed(int, QString)), m_m17, SLOT(input_src_changed(int, QString)));
+			connect(this, SIGNAL(input_source_changed(int,QString)), m_m17, SLOT(input_src_changed(int,QString)));
 			connect(m_modethread, SIGNAL(started()), m_m17, SLOT(send_connect()));
 			connect(m_modethread, SIGNAL(finished()), m_m17, SLOT(deleteLater()));
 			connect(this, SIGNAL(agc_state_changed(int)), m_m17, SLOT(agc_state_changed(int)));
@@ -548,7 +543,7 @@ void DroidStar::process_connect()
 			connect(m_iax, SIGNAL(update_output_level(unsigned short)), this, SLOT(update_output_level(unsigned short)));
 			connect(m_modethread, SIGNAL(started()), m_iax, SLOT(send_connect()));
 			connect(m_modethread, SIGNAL(finished()), m_iax, SLOT(deleteLater()));
-			connect(this, SIGNAL(input_source_changed(int, QString)), m_iax, SLOT(input_src_changed(int, QString)));
+			connect(this, SIGNAL(input_source_changed(int,QString)), m_iax, SLOT(input_src_changed(int,QString)));
 			//connect(this, SIGNAL(agc_state_changed(int)), m_xrf, SLOT(agc_state_changed(int)));
 			connect(this, SIGNAL(tx_clicked(bool)), m_iax, SLOT(toggle_tx(bool)));
 			connect(this, SIGNAL(tx_pressed()), m_iax, SLOT(start_tx()));
@@ -1310,7 +1305,6 @@ void DroidStar::check_host_files()
 	if( (!check_file.exists() && !(check_file.isFile())) || m_update_host_files ){
 		download_file("/dplus.txt");
 	}
-	qDebug() << "dplus.txt time == " << check_file.birthTime();
 
 	check_file.setFile(config_path + "/dextra.txt");
 	if( (!check_file.exists() && !check_file.isFile() ) || m_update_host_files  ){

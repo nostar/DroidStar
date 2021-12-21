@@ -92,15 +92,9 @@ void DMRCodec::process_udp()
 	fflush(stderr);
 #endif
 	if((m_modeinfo.status != CONNECTED_RW) && (::memcmp(buf.data() + 3, "NAK", 3U) == 0)){
-		//m_udp->disconnect();
-		//m_udp->close();
-		//delete m_udp;
 		m_modeinfo.status = DISCONNECTED;
 	}
 	if((m_modeinfo.status != CONNECTED_RW) && (::memcmp(buf.data(), "MSTCL", 5U) == 0)){
-		//m_udp->disconnect();
-		//m_udp->close();
-		//delete m_udp;
 		m_modeinfo.status = CLOSED;
 	}
 	if((m_modeinfo.status != CONNECTED_RW) && (::memcmp(buf.data(), "RPTACK", 6U) == 0)){
@@ -168,7 +162,6 @@ void DMRCodec::process_udp()
 				out.append((m_essid >> 8) & 0xff);
 				out.append((m_essid >> 0) & 0xff);
 				out.append(m_options.toUtf8());
-				//m_status = DMR_OPTS;
 			}
 			break;
 		case DMR_OPTS:
@@ -224,8 +217,6 @@ void DMRCodec::process_udp()
 			for(int i = 0; i < 33; ++i){
 				m_rxmodemq.append(buf.data()[20+i]);
 			};
-			//m_rxmodemq.append('\x00');
-			//m_rxmodemq.append(0x2f);
 		}
 	}
 	if((buf.size() == 55) &&
@@ -417,7 +408,6 @@ void DMRCodec::process_modem_data(QByteArray d)
 	if ((p_frame[3U] & DMR_SYNC_DATA) == DMR_SYNC_DATA){
 		if((m_dataType == DT_VOICE_LC_HEADER) && (m_modeinfo.stream_state == STREAM_IDLE)){
 			m_modeinfo.stream_state = TRANSMITTING_MODEM;
-			//qDebug() << "ids == " <<  m_txsrcid << ":" << m_txdstid;
 		}
 		else if(m_dataType == DT_TERMINATOR_WITH_LC){
 			m_modeinfo.stream_state = STREAM_IDLE;

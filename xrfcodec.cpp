@@ -326,7 +326,6 @@ void XRFCodec::format_callsign(QString &s)
 
 void XRFCodec::process_modem_data(QByteArray d)
 {
-	QByteArray txdata;
 	char cs[9];
 	uint8_t ambe[9];
 

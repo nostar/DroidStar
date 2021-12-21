@@ -40,9 +40,6 @@ void DCSCodec::process_udp()
 	static int sd_seq = 0;
 	static char user_data[21];
 	buf.resize(200);
-	//qDebug() << "buf size before == " << buf.size();
-	//buf.resize(m_udp->pendingDatagramSize());
-	//qDebug() << "buf size after == " << buf.size();
 	int size = m_udp->readDatagram(buf.data(), buf.size(), &sender, &senderPort);
 #ifdef DEBUG
 	fprintf(stderr, "RECV: ");
@@ -94,7 +91,6 @@ void DCSCodec::process_udp()
 		m_ping_timer->start(2000);
 		m_audio = new AudioEngine(m_audioin, m_audioout);
 		m_audio->init();
-		//fprintf(stderr, "m_vocoder == %s m_hwtx:m_hwrx == %d:%d\n", m_vocoder.toStdString().c_str(), m_hwtx, m_hwrx);fflush(stderr);
 	}
 
 	if(m_modeinfo.status != CONNECTED_RW) return;
@@ -104,7 +100,6 @@ void DCSCodec::process_udp()
 	}
 	if((size == 100) && (!memcmp(buf.data(), "0001", 4)) ){
 		m_rxwatchdog = 0;
-		//qDebug() << "m_streamid == " << m_streamid << ":" << m_hwrx << ":" << m_tx;
 		uint16_t streamid = (buf.data()[43] << 8) | (buf.data()[44] & 0xff);
 
 		if(!m_tx && (m_modeinfo.streamid == 0)){
@@ -248,12 +243,6 @@ void DCSCodec::hostname_lookup(QHostInfo i)
 		out[9] = m_module;
 		out[10] = 11;
 
-		//out.append(m_modeinfo.callsign.toUtf8());
-		//out.append(8 - m_modeinfo.callsign.size(), ' ');
-		//out.append(m_module);
-		//out.append(m_module);
-		//out.append(11);
-		//out.append(508, 0);
 		m_address = i.addresses().first();
 		m_udp = new QUdpSocket(this);
 		connect(m_udp, SIGNAL(readyRead()), this, SLOT(process_udp()));

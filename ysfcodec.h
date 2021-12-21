@@ -94,7 +94,7 @@ private:
 	uint8_t m_vch[13U];
 	uint8_t m_ambe[55];
 	//uint8_t m_imbe[55];
-	CYSFFICH fich;
+	CYSFFICH m_fich;
 	uint8_t ambe_fr[4][24];
 	uint32_t ambe_a;
 	uint32_t ambe_b;

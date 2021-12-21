@@ -26,7 +26,6 @@
 #define MACHAK 0
 #endif
 
-//AudioEngine::AudioEngine(QObject *parent) : QObject(parent)
 AudioEngine::AudioEngine(QString in, QString out) :
 	m_outputdevice(out),
 	m_inputdevice(in),
@@ -44,12 +43,6 @@ AudioEngine::AudioEngine(QString in, QString out) :
 
 AudioEngine::~AudioEngine()
 {
-	//m_indev->disconnect();
-	//m_in->stop();
-	//m_outdev->disconnect();
-	//m_out->stop();
-	//delete m_in;
-	//delete m_out;
 }
 
 QStringList AudioEngine::discover_audio_devices(uint8_t d)
@@ -59,7 +52,6 @@ QStringList AudioEngine::discover_audio_devices(uint8_t d)
 	QList<QAudioDeviceInfo> devices = QAudioDeviceInfo::availableDevices(m);
 
 	for (QList<QAudioDeviceInfo>::ConstIterator it = devices.constBegin(); it != devices.constEnd(); ++it ) {
-		//fprintf(stderr, "Playback device name = %s\n", (*it).deviceName().toStdString().c_str());fflush(stderr);
 		list.append((*it).deviceName());
 	}
 	return list;
@@ -269,7 +261,6 @@ uint16_t AudioEngine::read(int16_t *pcm, int s)
 		return 1;
 	}
 	else{
-		//fprintf(stderr, "audio frame not avail size == %d\n", m_audioinq.size());
 		return 0;
 	}
 }
