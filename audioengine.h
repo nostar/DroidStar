@@ -65,7 +65,7 @@ private:
 	bool m_agc;
 	float m_srm; // sample rate multiplier for macOS HACK
 
-	float m_audio_out_temp_buf[160];   //!< output of decoder
+	float m_audio_out_temp_buf[320];   //!< output of decoder
 	float *m_audio_out_temp_buf_p;
 
 	//float m_audio_out_float_buf[1120]; //!< output of upsampler - 1 frame of 160 samples upampled up to 7 times

@@ -36,7 +36,7 @@
 #include "nlp.h"
 #include "lpc.h"
 #include "quantise.h"
-#include "codec2.h"
+#include "codec2_api.h"
 #include "codec2_internal.h"
 
 #define HPF_BETA 0.125

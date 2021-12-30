@@ -20,7 +20,11 @@
 
 #include <string>
 #include "codec.h"
-#include "codec2/codec2.h"
+#ifdef USE_EXTERNAL_CODEC2
+#include <codec2/codec2.h>
+#else
+#include "codec2/codec2_api.h"
+#endif
 
 class M17Codec : public Codec
 {
@@ -32,9 +36,13 @@ public:
 	static void decode_callsign(uint8_t *);
 	void decode_c2(int16_t *, uint8_t *);
 	void encode_c2(int16_t *, uint8_t *);
-	void set_mode(bool m){ m_c2->codec2_set_mode(m);}
-	bool get_mode(){ return m_c2->codec2_get_mode(); }
+	void set_mode(bool);
+	bool get_mode();
+#ifdef USE_EXTERNAL_CODEC2
+	CODEC2 *m_c2;
+#else
 	CCodec2 *m_c2;
+#endif
 private slots:
 	void process_udp();
 	void process_modem_data(QByteArray);

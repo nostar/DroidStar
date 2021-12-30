@@ -27,6 +27,7 @@ DEFINES += QT_DEPRECATED_WARNINGS
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 DEFINES += VOCODER_PLUGIN
 #DEFINES += USE_FLITE
+#DEFINES += USE_EXTERNAL_CODEC2
 
 HEADERS += \
 	CRCenc.h \
@@ -45,14 +46,6 @@ HEADERS += \
 	cgolay2087.h \
 	chamming.h \
 	codec.h \
-	codec2/codec2.h \
-	codec2/codec2_internal.h \
-	codec2/defines.h \
-	codec2/kiss_fft.h \
-	codec2/lpc.h \
-	codec2/nlp.h \
-	codec2/qbase.h \
-	codec2/quantise.h \
 	crs129.h \
 	dcscodec.h \
 	dmrcodec.h \
@@ -85,14 +78,6 @@ SOURCES += \
 	cgolay2087.cpp \
 	chamming.cpp \
 	codec.cpp \
-	codec2/codebooks.cpp \
-	codec2/codec2.cpp \
-	codec2/kiss_fft.cpp \
-	codec2/lpc.cpp \
-	codec2/nlp.cpp \
-	codec2/pack.cpp \
-	codec2/qbase.cpp \
-	codec2/quantise.cpp \
 	crs129.cpp \
 	dcscodec.cpp \
 	dmrcodec.cpp \
@@ -108,6 +93,29 @@ SOURCES += \
 	serialmodem.cpp \
 	xrfcodec.cpp \
 	ysfcodec.cpp
+!contains(DEFINES, USE_EXTERNAL_CODEC2){
+HEADERS += \
+	codec2/codec2_api.h \
+	codec2/codec2_internal.h \
+	codec2/defines.h \
+	codec2/kiss_fft.h \
+	codec2/lpc.h \
+	codec2/nlp.h \
+	codec2/qbase.h \
+	codec2/quantise.h
+SOURCES += \
+	codec2/codebooks.cpp \
+	codec2/codec2.cpp \
+	codec2/kiss_fft.cpp \
+	codec2/lpc.cpp \
+	codec2/nlp.cpp \
+	codec2/pack.cpp \
+	codec2/qbase.cpp \
+	codec2/quantise.cpp
+}
+contains(DEFINES, USE_EXTERNAL_CODEC2){
+LIBS += -lcodec2
+}
 
 macx:OBJECTIVE_SOURCES += micpermission.mm
 ios:OBJECTIVE_SOURCES += micpermission.mm

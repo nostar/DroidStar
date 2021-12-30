@@ -85,6 +85,7 @@ const uint8_t BIT_MASK_TABLE[] = {0x80U, 0x40U, 0x20U, 0x10U, 0x08U, 0x04U, 0x02
 
 M17Codec::M17Codec(QString callsign, char module, QString hostname, QString host, int port, bool ipv6, QString modem, QString audioin, QString audioout) :
 	Codec(callsign, module, hostname, host, port, ipv6, NULL, modem, audioin, audioout),
+	m_c2(NULL),
 	m_txrate(1)
 {
 	m_modeinfo.callsign = callsign;
@@ -148,14 +149,62 @@ void M17Codec::decode_callsign(uint8_t *callsign)
 	}
 }
 
+void M17Codec::set_mode(bool m)
+{
+#ifdef USE_EXTERNAL_CODEC2
+	if(m_c2){
+		codec2_destroy(m_c2);
+		m_c2 = NULL;
+	}
+
+	if(m){
+		m_c2 = codec2_create(CODEC2_MODE_3200);
+	}
+	else{
+		m_c2 = codec2_create(CODEC2_MODE_1600);
+	}
+#else
+	m_c2->codec2_set_mode(m);
+#endif
+}
+
+bool M17Codec::get_mode()
+{
+	bool m = true;
+#ifdef USE_EXTERNAL_CODEC2
+	if(m_c2){
+		if(codec2_samples_per_frame(m_c2) == 160){
+			m = true;
+		}
+		else{
+			m = false;
+		}
+	}
+#else
+	return m_c2->codec2_get_mode();
+#endif
+	return m;
+}
 void M17Codec::decode_c2(int16_t *audio, uint8_t *c)
 {
+#ifdef USE_EXTERNAL_CODEC2
+	if(m_c2){
+		codec2_decode(m_c2, audio, c);
+	}
+#else
 	m_c2->codec2_decode(audio, c);
+#endif
 }
 
 void M17Codec::encode_c2(int16_t *audio, uint8_t *c)
 {
+#ifdef USE_EXTERNAL_CODEC2
+	if(m_c2){
+		codec2_encode(m_c2, c, audio);
+	}
+#else
 	m_c2->codec2_encode(c, audio);
+#endif
 }
 
 void M17Codec::process_udp()
@@ -189,8 +238,9 @@ void M17Codec::process_udp()
 				connect(m_modem, SIGNAL(connected(bool)), this, SLOT(mmdvm_connect_status(bool)));
 				connect(m_modem, SIGNAL(modem_data_ready(QByteArray)), this, SLOT(process_modem_data(QByteArray)));
 			}
-
+#ifndef USE_EXTERNAL_CODEC2
 			m_c2 = new CCodec2(true);
+#endif
 			m_txtimer = new QTimer();
 			connect(m_txtimer, SIGNAL(timeout()), this, SLOT(transmit()));
 			m_rxtimer = new QTimer();
@@ -330,7 +380,9 @@ void M17Codec::mmdvm_direct_connect()
 		qDebug() << "No modem, cant do MMDVM_DIRECT";
 	}
 
+#ifndef USE_EXTERNAL_CODEC2
 	m_c2 = new CCodec2(true);
+#endif
 	m_txtimer = new QTimer();
 	connect(m_txtimer, SIGNAL(timeout()), this, SLOT(transmit()));
 	m_rxtimer = new QTimer();
@@ -675,7 +727,7 @@ void M17Codec::toggle_tx(bool tx)
 
 void M17Codec::start_tx()
 {
-	m_c2->codec2_set_mode(m_txrate);
+	set_mode(m_txrate);
 	Codec::start_tx();
 }
 
@@ -699,17 +751,19 @@ void M17Codec::transmit()
 				ttscnt++;
 			}
 		}
-		m_c2->codec2_encode(c2, pcm);
+
+		encode_c2(pcm, c2);
+
 		if(get_mode()){
-			m_c2->codec2_encode(c2+8, pcm+160);
+			encode_c2(pcm+160, c2+8);
 		}
 	}
 #endif
 	if(m_ttsid == 0){
 		if(m_audio->read(pcm, 320)){
-			m_c2->codec2_encode(c2, pcm);
+			encode_c2(pcm, c2);
 			if(get_mode()){
-				m_c2->codec2_encode(c2+8, pcm+160);
+				encode_c2(pcm+160, c2+8);
 			}
 		}
 		else{
@@ -724,7 +778,6 @@ void M17Codec::transmit()
 	if(m_tx){
 		if(txstreamid == 0){
 		   txstreamid = static_cast<uint16_t>((::rand() & 0xFFFF));
-		   //std::cerr << "txstreamid == " << txstreamid << std::endl;
 		   if(!m_rxtimer->isActive() && (m_modeinfo.host == "MMDVM_DIRECT")){
 			   m_rxmodemq.clear();
 			   m_modeinfo.stream_state = STREAM_NEW;
@@ -770,7 +823,6 @@ void M17Codec::transmit()
 		txframe.append((char)(tx_cnt >> 8));
 		txframe.append((char)tx_cnt & 0xff);
 		txframe.append((char *)c2, 16);
-		//txframe.append(2, 0x00);
 
 		for(int i = 0; i < 28; ++i){
 			lsf[i] = txframe.data()[6+i];
@@ -779,8 +831,6 @@ void M17Codec::transmit()
 		encodeCRC16(lsf, M17_LSF_LENGTH_BYTES);
 		txframe.append(lsf[28]);
 		txframe.append(lsf[29]);
-		//QString ss = QString("%1").arg(txstreamid, 4, 16, QChar('0'));
-		//QString n = QString("TX %1").arg(tx_cnt, 4, 16, QChar('0'));
 
 		if(m_modeinfo.host == "MMDVM_DIRECT"){
 			send_modem_data(txframe);
@@ -793,7 +843,7 @@ void M17Codec::transmit()
 		++tx_cnt;
 		m_modeinfo.src = m_modeinfo.callsign;
 		m_modeinfo.dst = m_hostname;
-		m_modeinfo.type = get_mode();// ? "3200 Voice" : "1600 V/D";
+		m_modeinfo.type = get_mode();
 		m_modeinfo.frame_number = tx_cnt;
 		m_modeinfo.streamid = txstreamid;
 		emit update(m_modeinfo);
@@ -841,7 +891,6 @@ void M17Codec::transmit()
 		txframe.append((char *)quiet, 8);
 		txframe.append(2, 0x00);
 
-		//QString n = QString("%1").arg(tx_cnt, 4, 16, QChar('0'));
 		if(m_modeinfo.host == "MMDVM_DIRECT"){
 			send_modem_data(txframe);
 			m_modeinfo.stream_state = STREAM_END;
@@ -860,7 +909,7 @@ void M17Codec::transmit()
 		}
 		m_modeinfo.src = m_modeinfo.callsign;
 		m_modeinfo.dst = m_hostname;
-		m_modeinfo.type = get_mode();// ? "3200 Voice" : "1600 V/D";
+		m_modeinfo.type = get_mode();
 		m_modeinfo.frame_number = tx_cnt;
 		m_modeinfo.streamid = txstreamid;
 		emit update(m_modeinfo);
@@ -906,7 +955,7 @@ void M17Codec::process_rx_data()
 		for(int i = 0; i < 8; ++i){
 			codec2[i] = m_rxcodecq.dequeue();
 		}
-		m_c2->codec2_decode(pcm, codec2);
+		decode_c2(pcm, codec2);
 		int s = get_mode() ? 160 : 320;
 		m_audio->write(pcm, s);
 		emit update_output_level(m_audio->level());

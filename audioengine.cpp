@@ -352,12 +352,12 @@ void AudioEngine::process_audio(int16_t *pcm, size_t s)
 		}
 	}
 
-	gaindelta /= static_cast<float>(160);
+	gaindelta /= static_cast<float>(s); //160
 
 	// adjust output gain
 	m_audio_out_temp_buf_p = m_audio_out_temp_buf;
 
-	for (size_t i = 0; i < 160; i++){
+	for (size_t i = 0; i < s; i++){
 		*m_audio_out_temp_buf_p = (m_aout_gain + (static_cast<float>(i) * gaindelta)) * (*m_audio_out_temp_buf_p);
 		m_audio_out_temp_buf_p++;
 	}
