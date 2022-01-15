@@ -363,7 +363,7 @@ void NXDNCodec::send_frame()
 	m_modeinfo.srcid = m_nxdnid;
 	m_modeinfo.frame_number = m_txcnt;
 	m_modeinfo.dstid = m_modeinfo.gwid;
-	emit update_output_level(m_audio->level());
+	emit update_output_level(m_audio->level() * 8);
 	emit update(m_modeinfo);
 }
 

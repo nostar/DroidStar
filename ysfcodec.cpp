@@ -763,7 +763,7 @@ void YSFCodec::send_frame()
 		m_udp->writeDatagram(txdata, m_address, m_modeinfo.port);
 		m_modeinfo.stream_state = STREAM_IDLE;
 	}
-	emit update_output_level(m_audio->level());
+	emit update_output_level(m_audio->level() * 8);
 	emit update(m_modeinfo);
 }
 

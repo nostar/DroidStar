@@ -431,12 +431,13 @@ Item {
 		y: (parent.height / rows + 1) * 3;
 		width: parent.width / 4;
 		height: parent.height / rows;
-		text: qsTr("Mic gain")
+		text: qsTr("TX")
 		color: "white"
 		font.pixelSize: parent.height / 30;
 		verticalAlignment: Text.AlignVCenter
 	}
 	Slider {
+		property double v;
 		visible: true
 		id: _slidermicGain
 		x: (parent.width / 4) + 10
@@ -445,7 +446,9 @@ Item {
 		height: parent.height / rows;
 		value: 0.5
 		onValueChanged: {
+			v = value * 100;
 			droidstar.set_input_volume(value);
+			micgain_label.text = "TX " + v.toFixed(1);
 		}
 	}
 	Text {

@@ -42,7 +42,8 @@ DroidStar::DroidStar(QObject *parent) :
 	m_dmrid(0),
 	m_essid(0),
 	m_dmr_destid(0),
-	m_outlevel(0)
+	m_outlevel(0),
+	m_tts(0)
 {
 	qRegisterMetaType<M17Codec::MODEINFO>("Codec::MODEINFO");
 	m_settings_processed = false;
@@ -212,6 +213,9 @@ void DroidStar::tts_changed(QString tts)
 	}
 	else if(tts == "TTS3"){
 		m_tts = 3;
+	}
+	else{
+		m_tts = 0;
 	}
 	emit input_source_changed(m_tts, m_ttstxt);
 }
@@ -1623,7 +1627,7 @@ void DroidStar::update_nxdn_data(Codec::MODEINFO info)
 	if( (connect_status == Codec::CONNECTING) && ( info.status == Codec::CONNECTED_RW)){
 		connect_status = Codec::CONNECTED_RW;
 		emit connect_status_changed(2);
-		emit in_audio_vol_changed(0.3);
+		emit in_audio_vol_changed(0.1);
 		emit swtx_state(!m_nxdn->get_hwtx());
 		emit swrx_state(!m_nxdn->get_hwrx());
 		emit update_log("Connected to " + m_protocol + " " + m_host + " " + m_hostname + ":" + QString::number(m_port));
@@ -1704,7 +1708,7 @@ void DroidStar::update_dmr_data(Codec::MODEINFO info)
 	if( (connect_status == Codec::CONNECTING) && ( info.status == Codec::CONNECTED_RW)){
 		connect_status = Codec::CONNECTED_RW;
 		emit connect_status_changed(2);
-		emit in_audio_vol_changed(0.3);
+		emit in_audio_vol_changed(0.1);
 		emit swtx_state(!m_dmr->get_hwtx());
 		emit swrx_state(!m_dmr->get_hwrx());
 		emit update_log("Connected to " + m_protocol + " " + m_host + " " + m_hostname + ":" + QString::number(m_port));
@@ -1789,7 +1793,7 @@ void DroidStar::update_ysf_data(Codec::MODEINFO info)
 	if( (connect_status == Codec::CONNECTING) && (info.status == Codec::CONNECTED_RW)){
 		connect_status = Codec::CONNECTED_RW;
 		emit connect_status_changed(2);
-		emit in_audio_vol_changed(0.2);
+		emit in_audio_vol_changed(0.1);
 		emit swtx_state(!m_ysf->get_hwtx());
 		emit swrx_state(!m_ysf->get_hwrx());
 		emit update_log("Connected to " + m_protocol + " " + m_host + " " + m_hostname + ":" + QString::number(m_port));
@@ -1877,7 +1881,7 @@ void DroidStar::update_p25_data(Codec::MODEINFO info)
 	if( (connect_status == Codec::CONNECTING) && (info.status == Codec::CONNECTED_RW)){
 		connect_status = Codec::CONNECTED_RW;
 		emit connect_status_changed(2);
-		emit in_audio_vol_changed(0.3);
+		emit in_audio_vol_changed(0.2);
 		emit swtx_state(!m_p25->get_hwtx());
 		emit swrx_state(!m_p25->get_hwrx());
 		emit update_log("Connected to " + m_protocol + " " + m_host + " " + m_hostname + ":" + QString::number(m_port));

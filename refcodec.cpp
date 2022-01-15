@@ -619,7 +619,7 @@ void REFCodec::send_frame(uint8_t *ambe)
 	}
 
 	m_udp->writeDatagram(txdata, m_address, m_modeinfo.port);
-	emit update_output_level(m_audio->level());
+	emit update_output_level(m_audio->level() * 2);
 	emit update(m_modeinfo);
 #ifdef DEBUG
 	fprintf(stderr, "SEND:%d: ", txdata.size());

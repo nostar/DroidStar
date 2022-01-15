@@ -261,8 +261,8 @@ public slots:
 	void url_downloaded(QString);
 	unsigned short get_output_level(){ return m_outlevel; }
 	void set_output_level(unsigned short l){ m_outlevel = l; }
-	void tts_changed(QString); // { m_tts = tts; };
-	void tts_text_changed(QString); // { m_ttstxt = ttstxt; };
+	void tts_changed(QString);
+	void tts_text_changed(QString);
 private:
 	int connect_status;
 	bool m_update_host_files;

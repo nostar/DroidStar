@@ -35,7 +35,6 @@ public:
 	QString get_host() { return m_host; }
 	int get_port() { return m_port; }
 	int get_cnt() { return m_cnt; }
-	void set_input_src(uint8_t s, QString t) { m_ttsid = s; m_ttstext = t; }
 signals:
 	void update();
 	void update_output_level(unsigned short);

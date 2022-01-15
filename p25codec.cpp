@@ -402,7 +402,7 @@ void P25Codec::transmit()
 		m_modeinfo.frame_number = 0;
 		m_txcodecq.clear();
 	}
-	emit update_output_level(m_audio->level());
+	emit update_output_level(m_audio->level() * 6);
 	emit update(m_modeinfo);
 #ifdef DEBUG
 		fprintf(stderr, "SEND: ");

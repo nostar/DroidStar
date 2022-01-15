@@ -772,7 +772,7 @@ void M17Codec::transmit()
 	}
 
 	txframe.clear();
-	emit update_output_level(m_audio->level());
+	emit update_output_level(m_audio->level() * 2);
 	int r = get_mode() ? 0x05 : 0x07;
 
 	if(m_tx){

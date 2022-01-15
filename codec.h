@@ -62,7 +62,6 @@ public:
 	bool get_hwtx() { return m_hwtx; }
 	void set_hostname(std::string);
 	void set_callsign(std::string);
-	void set_input_src(uint8_t s, QString t) { m_ttsid = s; m_ttstext = t; }
 	struct MODEINFO {
 		qint64 ts;
 		int status;
