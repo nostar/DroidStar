@@ -95,6 +95,6 @@ All of the gradle build files are provided to create an APK file ready to be ins
 # No builds are available on Github
 No builds for any platform are available on this Github site.  This is and always will be an open source project, to be used for educational and development purposes only. I am currently providing a Windows build which is *not* to be confused as any sort of official release of any kind.  No support will be provided for any build at any time.
 
-http://www.dudetronics.com/index.php/droidstar
+http://www.dudetronics.com/
 
 
