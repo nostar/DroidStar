@@ -24,7 +24,7 @@
 //#define DEBUG
 
 XRFCodec::XRFCodec(QString callsign, QString hostname, char module, QString host, int port, bool ipv6, QString vocoder, QString modem, QString audioin, QString audioout) :
-	Codec(callsign, module, hostname, host, port, ipv6, vocoder, modem, audioin, audioout)
+	Codec(callsign, module, hostname, host, port, ipv6, vocoder, modem, audioin, audioout, 5)
 {
 }
 

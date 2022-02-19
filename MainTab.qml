@@ -67,6 +67,7 @@ Item {
 	property alias uitimer: _uitimer
 	property alias comboMode: _comboMode
 	property alias comboHost: _comboHost
+	property alias dtmflabel: _dtmflabel
 	property alias editIAXDTMF: _editIAXDTMF
 	property alias dtmfsendbutton: _dtmfsendbutton
 	property alias comboModule: _comboModule
@@ -319,6 +320,17 @@ Item {
 			//console.log("screen size ", parent.width, " x ", parent.height);
 		}
 	}
+	Text {
+		id: _dtmflabel
+		x: 5
+		y: (parent.height / rows + 1) * 1;
+		width: parent.width / 5
+		height:  parent.height / rows;
+		text: qsTr("DTMF")
+		color: "white"
+		font.pixelSize: parent.height / 30;
+		verticalAlignment: Text.AlignVCenter
+	}
 	TextField {
 		id: _editIAXDTMF
 		x: (parent.width / 4)
@@ -326,7 +338,7 @@ Item {
 		width: (parent.width * 3 / 8) - 4;
 		height: parent.height / rows;
 		font.pixelSize: parent.height / 35
-		inputMethodHints: "ImhPreferNumbers"
+		//inputMethodHints: "ImhPreferNumbers"
 	}
 	Button {
 		id: _dtmfsendbutton
@@ -431,9 +443,9 @@ Item {
 		y: (parent.height / rows + 1) * 3;
 		width: parent.width / 4;
 		height: parent.height / rows;
-		text: qsTr("TX")
+		text: qsTr("Mic")
 		color: "white"
-		font.pixelSize: parent.height / 30;
+		font.pixelSize: parent.height / 40;
 		verticalAlignment: Text.AlignVCenter
 	}
 	Slider {
@@ -444,11 +456,11 @@ Item {
 		y: (parent.height / rows + 1) * 3;
 		width: (parent.width * 3 / 4) - 20
 		height: parent.height / rows;
-		value: 0.5
+		value: 0.1
 		onValueChanged: {
 			v = value * 100;
 			droidstar.set_input_volume(value);
-			micgain_label.text = "TX " + v.toFixed(1);
+			micgain_label.text = "Mic " + v.toFixed(1);
 		}
 	}
 	Text {

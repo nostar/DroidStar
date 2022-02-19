@@ -40,7 +40,7 @@ const uint32_t ENCODING_TABLE_1676[] =
 	 0xF104U, 0xF377U, 0xF5E1U, 0xF792U, 0xF8CDU, 0xFABEU, 0xFC28U, 0xFE5BU};
 
 DMRCodec::DMRCodec(QString callsign, uint32_t dmrid, uint8_t essid, QString password, QString lat, QString lon, QString location, QString desc, QString freq, QString url, QString swid, QString pkid, QString options, uint32_t dstid, QString host, uint32_t port, bool ipv6, QString vocoder, QString modem, QString audioin, QString audioout) :
-	Codec(callsign, 0, NULL, host, port, ipv6, vocoder, modem, audioin, audioout),
+	Codec(callsign, 0, NULL, host, port, ipv6, vocoder, modem, audioin, audioout, 5),
 	m_dmrid(dmrid),
 	m_password(password),
 	m_lat(lat),
@@ -568,7 +568,7 @@ unsigned char * DMRCodec::get_eot()
 
 void DMRCodec::build_frame()
 {
-	qDebug() << "DMR: slot:cc == " << m_txslot << ":" << m_txcc;
+	//qDebug() << "DMR: slot:cc == " << m_txslot << ":" << m_txcc;
 	m_dmrFrame[0U]  = 'D';
 	m_dmrFrame[1U]  = 'M';
 	m_dmrFrame[2U]  = 'R';

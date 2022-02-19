@@ -194,6 +194,7 @@ ApplicationWindow {
             if(droidstar.get_mode() === "REF"){
 				//mainTab.comboMode.width = mainTab.width / 2;
 				mainTab.comboHost.visible = true;
+				mainTab.dtmflabel.visible = false;
 				mainTab.editIAXDTMF.visible = false;
 				mainTab.dtmfsendbutton.visible = false;
 				mainTab.comboHost.currentIndex = mainTab.comboHost.find(droidstar.get_ref_host());
@@ -209,6 +210,7 @@ ApplicationWindow {
             if(droidstar.get_mode() === "DCS"){
 				//mainTab.comboMode.width = mainTab.width / 2;
 				mainTab.comboHost.visible = true;
+				mainTab.dtmflabel.visible = false;
 				mainTab.editIAXDTMF.visible = false;
 				mainTab.dtmfsendbutton.visible = false;
 				mainTab.comboHost.currentIndex = mainTab.comboHost.find(droidstar.get_dcs_host());
@@ -224,6 +226,7 @@ ApplicationWindow {
             if(droidstar.get_mode() === "XRF"){
 				//mainTab.comboMode.width = mainTab.width / 2;
 				mainTab.comboHost.visible = true;
+				mainTab.dtmflabel.visible = false;
 				mainTab.editIAXDTMF.visible = false;
 				mainTab.dtmfsendbutton.visible = false;
 				mainTab.comboHost.currentIndex = mainTab.comboHost.find(droidstar.get_xrf_host());
@@ -239,6 +242,7 @@ ApplicationWindow {
             if(droidstar.get_mode() === "YSF"){
 				//mainTab.comboMode.width = mainTab.width / 2;
 				mainTab.comboHost.visible = true;
+				mainTab.dtmflabel.visible = false;
 				mainTab.editIAXDTMF.visible = false;
 				mainTab.dtmfsendbutton.visible = false;
 				mainTab.comboHost.currentIndex = mainTab.comboHost.find(droidstar.get_ysf_host());
@@ -249,11 +253,12 @@ ApplicationWindow {
 				mainTab.dmrtgidEdit.visible = false;
 				mainTab.comboM17CAN.visible = false;
 				mainTab.privateBox.visible = false;
-				mainTab.sliderMicGain.value = 0.1;
+				mainTab.sliderMicGain.value = 0.5;
             }
 			if(droidstar.get_mode() === "FCS"){
 				//mainTab.comboMode.width = mainTab.width / 2;
 				mainTab.comboHost.visible = true;
+				mainTab.dtmflabel.visible = false;
 				mainTab.editIAXDTMF.visible = false;
 				mainTab.dtmfsendbutton.visible = false;
 				mainTab.comboHost.currentIndex = mainTab.comboHost.find(droidstar.get_fcs_host());
@@ -264,11 +269,12 @@ ApplicationWindow {
 				mainTab.dmrtgidEdit.visible = false;
 				mainTab.comboM17CAN.visible = false;
 				mainTab.privateBox.visible = false;
-				mainTab.sliderMicGain.value = 0.1;
+				mainTab.sliderMicGain.value = 0.5;
 			}
             if(droidstar.get_mode() === "DMR"){
 				//mainTab.comboMode.width = (mainTab.width / 5) - 5;
 				mainTab.comboHost.visible = true;
+				mainTab.dtmflabel.visible = false;
 				mainTab.editIAXDTMF.visible = false;
 				mainTab.dtmfsendbutton.visible = false;
 				mainTab.comboHost.currentIndex = mainTab.comboHost.find(droidstar.get_dmr_host());
@@ -280,11 +286,12 @@ ApplicationWindow {
 				mainTab.dmrtgidEdit.visible = true;
 				mainTab.comboM17CAN.visible = false;
 				mainTab.privateBox.visible = true;
-				mainTab.sliderMicGain.value = 0.1;
+				mainTab.sliderMicGain.value = 0.5;
             }
             if(droidstar.get_mode() === "P25"){
 				//mainTab.comboMode.width = mainTab.width / 2;
 				mainTab.comboHost.visible = true;
+				mainTab.dtmflabel.visible = false;
 				mainTab.editIAXDTMF.visible = false;
 				mainTab.dtmfsendbutton.visible = false;
 				mainTab.comboHost.currentIndex = mainTab.comboHost.find(droidstar.get_p25_host());
@@ -296,11 +303,12 @@ ApplicationWindow {
 				mainTab.dmrtgidEdit.visible = true;
 				mainTab.comboM17CAN.visible = false;
 				mainTab.privateBox.visible = false;
-				mainTab.sliderMicGain.value = 0.2;
+				mainTab.sliderMicGain.value = 0.5;
             }
             if(droidstar.get_mode() === "NXDN"){
 				//mainTab.comboMode.width = mainTab.width / 2;
 				mainTab.comboHost.visible = true;
+				mainTab.dtmflabel.visible = false;
 				mainTab.editIAXDTMF.visible = false;
 				mainTab.dtmfsendbutton.visible = false;
 				mainTab.comboHost.currentIndex = mainTab.comboHost.find(droidstar.get_nxdn_host());
@@ -311,11 +319,12 @@ ApplicationWindow {
 				mainTab.dmrtgidEdit.visible = false;
 				mainTab.comboM17CAN.visible = false;
 				mainTab.privateBox.visible = false;
-				mainTab.sliderMicGain.value = 0.1;
+				mainTab.sliderMicGain.value = 0.5;
             }
 			if(droidstar.get_mode() === "M17"){
 				//mainTab.comboMode.width = mainTab.width / 2;
 				mainTab.comboHost.visible = true;
+				mainTab.dtmflabel.visible = false;
 				mainTab.editIAXDTMF.visible = false;
 				mainTab.dtmfsendbutton.visible = false;
 				mainTab.comboHost.currentIndex = mainTab.comboHost.find(droidstar.get_m17_host());
@@ -333,6 +342,7 @@ ApplicationWindow {
 			if(droidstar.get_mode() === "IAX"){
 				//mainTab.comboMode.width = mainTab.width / 2;
 				mainTab.comboHost.visible = false;
+				mainTab.dtmflabel.visible = true;
 				mainTab.editIAXDTMF.visible = true;
 				mainTab.dtmfsendbutton.visible = true;
 				mainTab.comboModule.visible = false;

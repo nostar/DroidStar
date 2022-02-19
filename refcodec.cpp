@@ -20,7 +20,7 @@
 #include "refcodec.h"
 #include "CRCenc.h"
 
-//#define DEBUG
+#define DEBUG
 
 const unsigned char MMDVM_DSTAR_HEADER = 0x10U;
 const unsigned char MMDVM_DSTAR_DATA   = 0x11U;
@@ -28,7 +28,7 @@ const unsigned char MMDVM_DSTAR_LOST   = 0x12U;
 const unsigned char MMDVM_DSTAR_EOT    = 0x13U;
 
 REFCodec::REFCodec(QString callsign, QString hostname, char module, QString host, int port, bool ipv6, QString vocoder, QString modem, QString audioin, QString audioout) :
-	Codec(callsign, module, hostname, host, port, ipv6, vocoder, modem, audioin, audioout)
+	Codec(callsign, module, hostname, host, port, ipv6, vocoder, modem, audioin, audioout, 5)
 {
 }
 

@@ -46,7 +46,7 @@ const unsigned char REC80[] = {0x80U, 0x00U, 0x00U, 0x00U, 0x00U, 0x00U, 0x00U, 
 #define READ_BIT(p,i)    (p[(i)>>3] & BIT_MASK_TABLE[(i)&7])
 
 P25Codec::P25Codec(QString callsign, int dmrid, int hostname, QString host, int port, bool ipv6, QString modem, QString audioin, QString audioout) :
-	Codec(callsign, 0, NULL, host, port, ipv6, NULL, modem, audioin, audioout),
+	Codec(callsign, 0, NULL, host, port, ipv6, NULL, modem, audioin, audioout, 2),
 	m_hostname(hostname),
 	m_dmrid(dmrid)
 {

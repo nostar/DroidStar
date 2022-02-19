@@ -16,17 +16,15 @@ DroidStar supports MMDVM and MMDVM_HS (hotspot) modems, with basic (possibly bug
 There is a vocoder plugin API available for loading of vocoder software.  Any vocoder plugin used with DroidStar should be properly licensed by the user if any copyright patents apply.  Do not use any patented vocoder plugin that you are not licensed to use.  I have no information regarding aquiring a software vocoder.
 
 # Loading a vocoder plugin
-A vocoder plugin is placed in the standard Download location for the given platform:
-- Linux: ~/Downloads
-- MacOS: ~/Downloads
-- Windows: C:/Users/User/Documents
-- Android: /storage/emulated/0/Download (typically referred to as Internal storage -> Download
+A vocoder plugin can be downloaded from a URL, which will place the vocoder into the correct location for the platform.  Add a full http url, including the filename, to the Vocoder URL option on the settings tab, and click the Download vocoder button.
 
-A vocoder can also be downloaded from a URL.  Add a full http url, including the filename, to the Vocoder URL option on the settings tab, and click the Download vocoder button.
+For Android and iOS devices, the vocoder URL download method is the only way to load a vocoder plugin.  For Linux/MacOS/Windows, a vocoder can also be manually placed.  Copy the plugin to the system settings file location.  On Linux, this is ~/.config/dudetronics.  It is the same place where the host and id files are located (DMRHosts.txt, DMRIDs.data, etc).
 
 The vocoder plugin filename must be named vocoder_plugin.platform.arch where platform and arch can be any of the following:
 platform: linux, darwin, winnt, android, ios
 arch: x86_64, arm, arm64
+
+The platform and arch for your device are identified on the About tab.
 
 There are no software vocoder plugins available in this repository, and I have no information on obtaining one.  DONT ASK!
 
@@ -62,7 +60,7 @@ Host: hostname or IP address of node.
 
 Port: UDP port of node, usually 4569.
 
-Add DTMF commands like \*3node, \*1node, \*70, etc in the IAX DTMF box and hit send to send the DTMF string.  The asterisk (*) character is already added on the Droidstar app, so only input the numeric portion of the command (70 instead of *70, etc). Details on various commands can be found at the AllStar wiki and others.
+Add DTMF commands like \*3node, \*1node, \*70, etc in the IAX DTMF box and hit send to send the DTMF string. Details on various commands can be found at the AllStar wiki and others.
 
 # General building instructions
 This software is written primarily in C++ on Linux and requires Qt5 >= Qt5.15, and natually the devel packages to build.  The imbe_vocoder library is also required.  Java, QML (Javascript based), and C# code is also used where necessary.  The preferred way to obtain Qt 5.15 is to use the Qt open source online installer from the Qt website.  Run this installer as a user (not root) to keep the Qt installation separate from your system libs.  Select the option as shown in this pic https://imgur.com/i0WuFCY which will install everything under ~/Qt.

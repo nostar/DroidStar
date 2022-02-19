@@ -100,7 +100,7 @@ const uint8_t BIT_MASK_TABLE[] = {0x80U, 0x40U, 0x20U, 0x10U, 0x08U, 0x04U, 0x02
 #define READ_BIT(p,i)    (p[(i)>>3] & BIT_MASK_TABLE[(i)&7])
 
 YSFCodec::YSFCodec(QString callsign, QString hostname, QString host, int port, bool ipv6, QString vocoder, QString modem, QString audioin, QString audioout) :
-	Codec(callsign, 0, hostname, host, port, ipv6, vocoder, modem, audioin, audioout),
+	Codec(callsign, 0, hostname, host, port, ipv6, vocoder, modem, audioin, audioout, 5),
 
 	m_fcs(false),
 	m_txfullrate(false)

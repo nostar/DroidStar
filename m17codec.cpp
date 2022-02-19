@@ -84,7 +84,7 @@ const uint8_t BIT_MASK_TABLE[] = {0x80U, 0x40U, 0x20U, 0x10U, 0x08U, 0x04U, 0x02
 #define READ_BIT(p,i)    (p[(i)>>3] & BIT_MASK_TABLE[(i)&7])
 
 M17Codec::M17Codec(QString callsign, char module, QString hostname, QString host, int port, bool ipv6, QString modem, QString audioin, QString audioout) :
-	Codec(callsign, module, hostname, host, port, ipv6, NULL, modem, audioin, audioout),
+	Codec(callsign, module, hostname, host, port, ipv6, NULL, modem, audioin, audioout, 1),
 	m_c2(NULL),
 	m_txrate(1)
 {

@@ -30,7 +30,7 @@ extern cst_voice * register_cmu_us_awb(const char *);
 }
 #endif
 
-Codec::Codec(QString callsign, char module, QString hostname, QString host, int port, bool ipv6, QString vocoder, QString modem, QString audioin, QString audioout) :
+Codec::Codec(QString callsign, char module, QString hostname, QString host, int port, bool ipv6, QString vocoder, QString modem, QString audioin, QString audioout, uint8_t attenuation) :
 	m_module(module),
 	m_hostname(hostname),
 	m_tx(false),
@@ -38,6 +38,7 @@ Codec::Codec(QString callsign, char module, QString hostname, QString host, int 
 	m_audioin(audioin),
 	m_audioout(audioout),
 	m_rxwatchdog(0),
+	m_attenuation(attenuation),
 #ifdef Q_OS_WIN
 	m_rxtimerint(19),
 #else
@@ -105,7 +106,7 @@ void Codec::mmdvm_connect_status(bool s)
 
 void Codec::in_audio_vol_changed(qreal v)
 {
-	m_audio->set_input_volume(v);
+	m_audio->set_input_volume(v / m_attenuation);
 }
 
 void Codec::out_audio_vol_changed(qreal v)

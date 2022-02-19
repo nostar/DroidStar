@@ -37,7 +37,7 @@ class Codec : public QObject
 {
 	Q_OBJECT
 public:
-	Codec(QString callsign, char module, QString hostname, QString host, int port, bool ipv6, QString vocoder, QString modem, QString audioin, QString audioout);
+	Codec(QString callsign, char module, QString hostname, QString host, int port, bool ipv6, QString vocoder, QString modem, QString audioin, QString audioout, uint8_t attenuation);
 	~Codec();
 	void set_modem_flags(bool rxInvert, bool txInvert, bool pttInvert, bool useCOSAsLockout, bool duplex) { m_rxInvert = rxInvert; m_txInvert = txInvert; m_pttInvert = pttInvert; m_useCOSAsLockout = useCOSAsLockout; m_duplex = duplex; }
 	void set_modem_params(uint32_t baud, uint32_t rxfreq, uint32_t txfreq, uint32_t txDelay, float rxLevel, float rfLevel, uint32_t ysfTXHang, float cwIdTXLevel, float dstarTXLevel, float dmrTXLevel, float ysfTXLevel, float p25TXLevel, float nxdnTXLevel, float pocsagTXLevel, float m17TXLevel)
@@ -170,6 +170,7 @@ protected:
 	QString m_audioin;
 	QString m_audioout;
 	uint32_t m_rxwatchdog;
+	uint8_t m_attenuation;
 	uint8_t m_rxtimerint;
 	uint8_t m_txtimerint;
 	QQueue<uint8_t> m_rxcodecq;
