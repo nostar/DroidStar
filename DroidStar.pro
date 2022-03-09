@@ -1,6 +1,7 @@
 QT += quick quickcontrols2 network multimedia
 android:QT += androidextras
 linux:QT += serialport
+unix:QT += serialport
 CONFIG += c++11
 LFLAGS +=
 android:INCLUDEPATH += $$(HOME)/Android/android-build/include
