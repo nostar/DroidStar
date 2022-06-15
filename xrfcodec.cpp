@@ -65,18 +65,22 @@ void XRFCodec::process_udp()
 			m_hwrx = true;
 			m_hwtx = true;
 			m_modeinfo.hw_vocoder_loaded = true;
+#if !defined(Q_OS_IOS)
 			m_ambedev = new SerialAMBE("XRF");
 			m_ambedev->connect_to_serial(m_vocoder);
 			connect(m_ambedev, SIGNAL(connected(bool)), this, SLOT(ambe_connect_status(bool)));
 			connect(m_ambedev, SIGNAL(data_ready()), this, SLOT(get_ambe()));
+#endif
 		}
 		if(m_modemport != ""){
+#if !defined(Q_OS_IOS)
 			m_modem = new SerialModem("XRF");
 			m_modem->set_modem_flags(m_rxInvert, m_txInvert, m_pttInvert, m_useCOSAsLockout, m_duplex);
 			m_modem->set_modem_params(m_baud, m_rxfreq, m_txfreq, m_txDelay, m_rxLevel, m_rfLevel, m_ysfTXHang, m_cwIdTXLevel, m_dstarTXLevel, m_dmrTXLevel, m_ysfTXLevel, m_p25TXLevel, m_nxdnTXLevel, m_pocsagTXLevel, m_m17TXLevel);
 			m_modem->connect_to_serial(m_modemport);
 			connect(m_modem, SIGNAL(connected(bool)), this, SLOT(mmdvm_connect_status(bool)));
 			connect(m_modem, SIGNAL(modem_data_ready(QByteArray)), this, SLOT(process_modem_data(QByteArray)));
+#endif
 		}
 		m_rxtimer = new QTimer();
 		connect(m_rxtimer, SIGNAL(timeout()), this, SLOT(process_rx_data()));
@@ -393,7 +397,9 @@ void XRFCodec::transmit()
 		}
 	}
 	if(m_hwtx){
+#if !defined(Q_OS_IOS)
 		m_ambedev->encode(pcm);
+#endif
 		if(m_tx && (m_txcodecq.size() >= 9)){
 			for(int i = 0; i < 9; ++i){
 				ambe[i] = m_txcodecq.dequeue();
@@ -566,6 +572,7 @@ void XRFCodec::send_frame(uint8_t *ambe)
 
 void XRFCodec::get_ambe()
 {
+#if !defined(Q_OS_IOS)
 	uint8_t ambe[9];
 
 	if(m_ambedev->get_ambe(ambe)){
@@ -573,6 +580,7 @@ void XRFCodec::get_ambe()
 			m_txcodecq.append(ambe[i]);
 		}
 	}
+#endif
 }
 
 void XRFCodec::process_rx_data()
@@ -596,7 +604,9 @@ void XRFCodec::process_rx_data()
 			for(int i = 0; i < s; ++i){
 				out.append(m_rxmodemq.dequeue());
 			}
+#if !defined(Q_OS_IOS)
 			m_modem->write(out);
+#endif
 		}
 	}
 
@@ -605,12 +615,14 @@ void XRFCodec::process_rx_data()
 			ambe[i] = m_rxcodecq.dequeue();
 		}
 		if(m_hwrx){
+#if !defined(Q_OS_IOS)
 			m_ambedev->decode(ambe);
 
 			if(m_ambedev->get_audio(pcm)){
 				m_audio->write(pcm, 160);
 				emit update_output_level(m_audio->level());
 			}
+#endif
 		}
 		else{
 			if(m_modeinfo.sw_vocoder_loaded){

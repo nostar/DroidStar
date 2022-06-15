@@ -84,10 +84,12 @@ void NXDNCodec::process_udp()
 				m_hwrx = true;
 				m_hwtx = true;
 				m_modeinfo.hw_vocoder_loaded = true;
+#if !defined(Q_OS_IOS)
 				m_ambedev = new SerialAMBE("NXDN");
 				m_ambedev->connect_to_serial(m_vocoder);
 				connect(m_ambedev, SIGNAL(connected(bool)), this, SLOT(ambe_connect_status(bool)));
 				connect(m_ambedev, SIGNAL(data_ready()), this, SLOT(get_ambe()));
+#endif
 			}
 			else{
 				m_hwrx = false;
@@ -310,7 +312,9 @@ void NXDNCodec::transmit()
 	}
 
 	if(m_hwtx){
+#if !defined(Q_OS_IOS)
 		m_ambedev->encode(pcm);
+#endif
 	}
 	else{
 		if(m_modeinfo.sw_vocoder_loaded){
@@ -655,6 +659,7 @@ void NXDNCodec::encode_crc6(uint8_t *d, uint8_t len)
 
 void NXDNCodec::get_ambe()
 {
+#if !defined(Q_OS_IOS)
 	uint8_t ambe[7];
 
 	if(m_ambedev->get_ambe(ambe)){
@@ -662,6 +667,7 @@ void NXDNCodec::get_ambe()
 			m_txcodecq.append(ambe[i]);
 		}
 	}
+#endif
 }
 
 void NXDNCodec::process_rx_data()
@@ -683,12 +689,14 @@ void NXDNCodec::process_rx_data()
 			ambe[i] = m_rxcodecq.dequeue();
 		}
 		if(m_hwrx){
+#if !defined(Q_OS_IOS)
 			m_ambedev->decode(ambe);
 
 			if(m_ambedev->get_audio(pcm)){
 				m_audio->write(pcm, 160);
 				emit update_output_level(m_audio->level());
 			}
+#endif
 		}
 		else{
 			if(m_modeinfo.sw_vocoder_loaded){

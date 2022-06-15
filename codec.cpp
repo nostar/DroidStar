@@ -81,9 +81,11 @@ Codec::~Codec()
 void Codec::ambe_connect_status(bool s)
 {
 	if(s){
+#if !defined(Q_OS_IOS)
 		m_modeinfo.ambedesc = m_ambedev->get_ambe_description();
 		m_modeinfo.ambeprodid = m_ambedev->get_ambe_prodid();
 		m_modeinfo.ambeverstr = m_ambedev->get_ambe_verstring();
+#endif
 	}
 	else{
 		m_modeinfo.ambeprodid = "Connect failed";
@@ -96,7 +98,9 @@ void Codec::mmdvm_connect_status(bool s)
 {
 	if(s){
 		//m_modeinfo.mmdvmdesc = m_modem->get_mmdvm_description();
+#if !defined(Q_OS_IOS)
 		m_modeinfo.mmdvm = m_modem->get_mmdvm_version();
+#endif
 	}
 	else{
 		m_modeinfo.mmdvm = "Connect failed";
@@ -147,9 +151,11 @@ void Codec::toggle_tx(bool tx)
 
 void Codec::start_tx()
 {
+#if !defined(Q_OS_IOS)
 	if(m_hwtx){
 		m_ambedev->clear_queue();
 	}
+#endif
 	m_txcodecq.clear();
 	m_tx = true;
 	m_txcnt = 0;
@@ -191,7 +197,7 @@ bool Codec::load_vocoder_plugin()
 #if !defined(Q_OS_ANDROID) && !defined(Q_OS_WIN)
 	config_path += "/dudetronics";
 #endif
-#if defined(Q_OS_ANDROID)
+#if defined(Q_OS_ANDROID) || defined(Q_OS_IOS)
 	QString voc = config_path + "/vocoder_plugin." + QSysInfo::productType() + "." + QSysInfo::currentCpuArchitecture();
 #else
 	QString voc = config_path + "/vocoder_plugin." + QSysInfo::kernelType() + "." + QSysInfo::currentCpuArchitecture();
@@ -237,8 +243,18 @@ bool Codec::load_vocoder_plugin()
 	}
 #endif
 #else
+#if defined(Q_OS_IOS)
+	if(QFileInfo::exists(voc)){
+		m_mbevocoder = new VocoderPlugin();
+		return true;
+	}
+	else{
+		return false;
+	}
+#else
 	m_mbevocoder = new VocoderPlugin();
 	return true;
+#endif
 #endif
 }
 
@@ -249,12 +265,14 @@ void Codec::deleteLater()
 		//m_ping_timer->stop();
 		send_disconnect();
 		delete m_audio;
+#if !defined(Q_OS_IOS)
 		if(m_hwtx){
 			delete m_ambedev;
 		}
 		if(m_modem){
 			delete m_modem;
 		}
+#endif
 	}
 	m_modeinfo.count = 0;
 	QObject::deleteLater();

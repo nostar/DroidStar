@@ -231,12 +231,14 @@ void M17Codec::process_udp()
 			m_modeinfo.status = CONNECTED_RW;
 
 			if(m_modemport != ""){
+#if !defined(Q_OS_IOS)
 				m_modem = new SerialModem("M17");
 				m_modem->set_modem_flags(m_rxInvert, m_txInvert, m_pttInvert, m_useCOSAsLockout, m_duplex);
 				m_modem->set_modem_params(m_baud, m_rxfreq, m_txfreq, m_txDelay, m_rxLevel, m_rfLevel, m_ysfTXHang, m_cwIdTXLevel, m_dstarTXLevel, m_dmrTXLevel, m_ysfTXLevel, m_p25TXLevel, m_nxdnTXLevel, m_pocsagTXLevel, m_m17TXLevel);
 				m_modem->connect_to_serial(m_modemport);
 				connect(m_modem, SIGNAL(connected(bool)), this, SLOT(mmdvm_connect_status(bool)));
 				connect(m_modem, SIGNAL(modem_data_ready(QByteArray)), this, SLOT(process_modem_data(QByteArray)));
+#endif
 			}
 #ifndef USE_EXTERNAL_CODEC2
 			m_c2 = new CCodec2(true);
@@ -366,12 +368,14 @@ void M17Codec::hostname_lookup(QHostInfo i)
 void M17Codec::mmdvm_direct_connect()
 {
 	if(m_modemport != ""){
+#if !defined(Q_OS_IOS)
 		m_modem = new SerialModem("M17");
 		m_modem->set_modem_flags(m_rxInvert, m_txInvert, m_pttInvert, m_useCOSAsLockout, m_duplex);
 		m_modem->set_modem_params(m_baud, m_rxfreq, m_txfreq, m_txDelay, m_rxLevel, m_rfLevel, m_ysfTXHang, m_cwIdTXLevel, m_dstarTXLevel, m_dmrTXLevel, m_ysfTXLevel, m_p25TXLevel, m_nxdnTXLevel, m_pocsagTXLevel, m_m17TXLevel);
 		m_modem->connect_to_serial(m_modemport);
 		connect(m_modem, SIGNAL(connected(bool)), this, SLOT(mmdvm_connect_status(bool)));
 		connect(m_modem, SIGNAL(modem_data_ready(QByteArray)), this, SLOT(process_modem_data(QByteArray)));
+#endif
 		if(m_modeinfo.status == CONNECTING){
 			m_modeinfo.status = CONNECTED_RW;
 		}
@@ -946,7 +950,9 @@ void M17Codec::process_rx_data()
 			for(int i = 0; i < s; ++i){
 				out.append(m_rxmodemq.dequeue());
 			}
+#if !defined(Q_OS_IOS)
 			m_modem->write(out);
+#endif
 		}
 		cnt = 0;
 	}

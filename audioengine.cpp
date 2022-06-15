@@ -17,10 +17,9 @@
 
 #include "audioengine.h"
 #include <QDebug>
-#include <QTimer>
 #include <cmath>
 
-#ifdef Q_OS_MACOS
+#if defined (Q_OS_MACOS) || defined(Q_OS_IOS)
 #define MACHAK 1
 #else
 #define MACHAK 0

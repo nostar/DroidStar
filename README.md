@@ -3,6 +3,9 @@ This software connects to M17, Fusion (YSF/FCS, DN and VW modes are supported), 
 
 This software makes use of software from a number of other open source software projects, including MMDVMHost, MMDVM_CM, mvoice, and others. Not only is software from these projects being used directly, but learning about the various network protocols and encoding/decoding of the various protocols was only possible thanks to the authors of all of these software projects.
 
+# DroidStar for iOS is no more
+Apple recently made iOS SDK 15 the minimum requirement for apps on the app store.  XCode 13 is required for this SDK, but macOS 11 is required for this version.  My mac is a MacBook Pro 13 2012 which is unsupported by macOS 11, so I will no longer be able to provide an iOS version of DroidStar. I bought this MacBook, a used iphone 6s, and paid for a developer account all out of my own pocket to provide a free version of DroidStar for iOS.  Since I have no other use for a mac or an iphone, at this time I have no plans to by new apple hardware.
+
 # DudeStar, DroidStar, and Qt
 The DudeStar application used the Qt Widgets UI, while DroidStar uses the Qt Quick UI.  All of the back end C/C++ source code for both projects has always been identical, but because of the different UI APIs, two repositories had to be maintained for the same project. Even though I prefer the Qt widgets UI over the Qt Quick UI for desktop applications, I have combined both projects into a single entity which is now simply called 'DroidStar'. My dudestar repo has been removed from github, but there are plenty of forks of it on github, in case anyone wishes to continue development of that version.
 

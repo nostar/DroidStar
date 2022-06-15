@@ -24,7 +24,6 @@
 #include <QAudioOutput>
 #include <QAudioInput>
 #include <QQueue>
-#include <QDebug>
 
 #define AUDIO_OUT 1
 #define AUDIO_IN  0

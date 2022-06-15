@@ -30,8 +30,10 @@
 #include <vocoder_plugin_api.h>
 #endif
 #include "audioengine.h"
+#if !defined(Q_OS_IOS)
 #include "serialambe.h"
 #include "serialmodem.h"
+#endif
 
 class Codec : public QObject
 {
@@ -184,8 +186,13 @@ protected:
 #endif
 	QString m_vocoder;
 	QString m_modemport;
+#if defined(Q_OS_IOS)
+	void *m_modem;
+	void *m_ambedev;
+#else
 	SerialModem *m_modem;
 	SerialAMBE *m_ambedev;
+#endif
 	bool m_hwrx;
 	bool m_hwtx;
 	bool m_ipv6;

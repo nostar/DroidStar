@@ -121,7 +121,7 @@ void DroidStar::discover_devices()
 	m_modems.append("None");
 	m_playbacks.append(AudioEngine::discover_audio_devices(AUDIO_OUT));
 	m_captures.append(AudioEngine::discover_audio_devices(AUDIO_IN));
-
+#if !defined(Q_OS_IOS)
 	QMap<QString, QString> l = SerialAMBE::discover_devices();
 	QMap<QString, QString>::const_iterator i = l.constBegin();
 
@@ -130,6 +130,7 @@ void DroidStar::discover_devices()
 		m_modems.append(i.value());
 		++i;
 	}
+#endif
 }
 
 void DroidStar::download_file(QString f, bool u)
