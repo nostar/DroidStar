@@ -200,7 +200,9 @@ bool Codec::load_vocoder_plugin()
 #if defined(Q_OS_ANDROID) || defined(Q_OS_IOS)
 	QString voc = config_path + "/vocoder_plugin." + QSysInfo::productType() + "." + QSysInfo::currentCpuArchitecture();
 #else
-	QString voc = config_path + "/vocoder_plugin." + QSysInfo::kernelType() + "." + QSysInfo::currentCpuArchitecture();
+	QStringList l = QSysInfo::buildAbi().split('-');
+	//QString voc = config_path + "/vocoder_plugin." + QSysInfo::kernelType() + "." + QSysInfo::currentCpuArchitecture();
+	QString voc = config_path + "/vocoder_plugin." + QSysInfo::kernelType() + "." + l.at(0);
 #endif
 #if !defined(Q_OS_WIN)
 	//QString voc = "/mnt/data/src/mbe_vocoder/vocoder_plugin.linux.x86_64.so";
