@@ -671,7 +671,9 @@ void REFCodec::process_rx_data()
 			for(int i = 0; i < s; ++i){
 				out.append(m_rxmodemq.dequeue());
 			}
+#if !defined(Q_OS_IOS)
 			m_modem->write(out);
+#endif
 		}
 	}
 

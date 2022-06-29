@@ -19,8 +19,12 @@ macx:QT += serialport
 macx::INCLUDEPATH += /usr/local/include
 macx:LIBS += -L/usr/local/lib -framework AVFoundation
 macx:QMAKE_MACOSX_DEPLOYMENT_TARGET = 10.14
-macx:QMAKE_INFO_PLIST = Info.plist
-ios:LIBS += -framework AVFoundation
+macx:QMAKE_INFO_PLIST = Info.plist.mac
+ios:LIBS += -lvocoder -framework AVFoundation
+ios:QMAKE_TARGET_BUNDLE_PREFIX = com.dudetronics
+ios:QMAKE_BUNDLE = droidstar
+ios:VERSION = 0.43.20
+ios:QMAKE_ASSET_CATALOGS += Images.xcassets
 ios:QMAKE_INFO_PLIST = Info.plist
 VERSION_BUILD='$(shell cd $$PWD;git rev-parse --short HEAD)'
 DEFINES += VERSION_NUMBER=\"\\\"$${VERSION_BUILD}\\\"\"
@@ -41,7 +45,6 @@ HEADERS += \
 	SHA256.h \
 	YSFConvolution.h \
 	YSFFICH.h \
-	androidserialport.h \
 	audioengine.h \
 	cbptc19696.h \
 	cgolay2087.h \
@@ -58,12 +61,12 @@ HEADERS += \
 	nxdncodec.h \
 	p25codec.h \
 	refcodec.h \
-	serialambe.h \
-	serialmodem.h \
 	vocoder_plugin.h \
 	xrfcodec.h \
 	ysfcodec.h
+android:HEADERS += androidserialport.h
 macx:HEADERS += micpermission.h
+!ios:HEADERS += serialambe.h serialmodem.h
 
 SOURCES += \
 	CRCenc.cpp \
@@ -73,7 +76,6 @@ SOURCES += \
 	SHA256.cpp \
 	YSFConvolution.cpp \
 	YSFFICH.cpp \
-	androidserialport.cpp \
 	audioengine.cpp \
 	cbptc19696.cpp \
 	cgolay2087.cpp \
@@ -90,10 +92,10 @@ SOURCES += \
 	nxdncodec.cpp \
 	p25codec.cpp \
 	refcodec.cpp \
-	serialambe.cpp \
-	serialmodem.cpp \
 	xrfcodec.cpp \
 	ysfcodec.cpp
+android:SOURCES += androidserialport.cpp
+!ios:SOURCES += serialambe.cpp serialmodem.cpp
 !contains(DEFINES, USE_EXTERNAL_CODEC2){
 HEADERS += \
 	codec2/codec2_api.h \
