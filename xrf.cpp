@@ -17,22 +17,22 @@
 
 #include <iostream>
 #include <cstring>
-#include "xrfcodec.h"
+#include "xrf.h"
 #include "CRCenc.h"
 #include "MMDVMDefines.h"
 
 //#define DEBUG
 
-XRFCodec::XRFCodec(QString callsign, QString hostname, char module, QString host, int port, bool ipv6, QString vocoder, QString modem, QString audioin, QString audioout) :
-	Codec(callsign, module, hostname, host, port, ipv6, vocoder, modem, audioin, audioout, 5)
+XRF::XRF()
+{
+	m_attenuation = 5;
+}
+
+XRF::~XRF()
 {
 }
 
-XRFCodec::~XRFCodec()
-{
-}
-
-void XRFCodec::process_udp()
+void XRF::process_udp()
 {
 	QByteArray buf;
 	QHostAddress sender;
@@ -110,7 +110,7 @@ void XRFCodec::process_udp()
 			m_modeinfo.dst = QString(temp);
 			memcpy(temp, buf.data() + 42, 8); temp[8] = '\0';
 			m_modeinfo.src = QString(temp);
-			QString h = m_hostname + " " + m_module;
+			QString h = m_refname + " " + m_module;
 			m_modeinfo.streamid = streamid;
 			m_modeinfo.stream_state = STREAM_NEW;
 			m_modeinfo.ts = QDateTime::currentMSecsSinceEpoch();
@@ -250,7 +250,7 @@ void XRFCodec::process_udp()
 	emit update(m_modeinfo);
 }
 
-void XRFCodec::hostname_lookup(QHostInfo i)
+void XRF::hostname_lookup(QHostInfo i)
 {
 	if (!i.addresses().isEmpty()) {
 		QByteArray out;
@@ -274,7 +274,7 @@ void XRFCodec::hostname_lookup(QHostInfo i)
 	}
 }
 
-void XRFCodec::send_ping()
+void XRF::send_ping()
 {
 	QByteArray out;
 	out.append(m_modeinfo.callsign.toUtf8());
@@ -291,7 +291,7 @@ void XRFCodec::send_ping()
 #endif
 }
 
-void XRFCodec::send_disconnect()
+void XRF::send_disconnect()
 {
 	QByteArray out;
 	out.append(m_modeinfo.callsign.toUtf8());
@@ -310,7 +310,7 @@ void XRFCodec::send_disconnect()
 #endif
 }
 
-void XRFCodec::format_callsign(QString &s)
+void XRF::format_callsign(QString &s)
 {
 	QStringList l = s.simplified().split(' ');
 
@@ -328,7 +328,7 @@ void XRFCodec::format_callsign(QString &s)
 	}
 }
 
-void XRFCodec::process_modem_data(QByteArray d)
+void XRF::process_modem_data(QByteArray d)
 {
 	char cs[9];
 	uint8_t ambe[9];
@@ -354,21 +354,21 @@ void XRFCodec::process_modem_data(QByteArray d)
 	send_frame(ambe);
 }
 
-void XRFCodec::toggle_tx(bool tx)
+void XRF::toggle_tx(bool tx)
 {
 	tx ? start_tx() : stop_tx();
 }
 
-void XRFCodec::start_tx()
+void XRF::start_tx()
 {
 	format_callsign(m_txmycall);
 	format_callsign(m_txurcall);
 	format_callsign(m_txrptr1);
 	format_callsign(m_txrptr2);
-	Codec::start_tx();
+	Mode::start_tx();
 }
 
-void XRFCodec::transmit()
+void XRF::transmit()
 {
 	unsigned char ambe[9];
 	uint8_t ambe_frame[72];
@@ -418,7 +418,7 @@ void XRFCodec::transmit()
 	}
 }
 
-void XRFCodec::send_frame(uint8_t *ambe)
+void XRF::send_frame(uint8_t *ambe)
 {
 	QByteArray txdata;
 	static uint16_t txstreamid = 0;
@@ -570,7 +570,7 @@ void XRFCodec::send_frame(uint8_t *ambe)
 #endif
 }
 
-void XRFCodec::get_ambe()
+void XRF::get_ambe()
 {
 #if !defined(Q_OS_IOS)
 	uint8_t ambe[9];
@@ -583,7 +583,7 @@ void XRFCodec::get_ambe()
 #endif
 }
 
-void XRFCodec::process_rx_data()
+void XRF::process_rx_data()
 {
 	int16_t pcm[160];
 	uint8_t ambe[9];
@@ -642,6 +642,7 @@ void XRFCodec::process_rx_data()
 		m_modeinfo.streamid = 0;
 		m_rxcodecq.clear();
 		qDebug() << "XRF playback stopped";
+		m_modeinfo.stream_state = STREAM_IDLE;
 		return;
 	}
 }

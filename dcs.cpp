@@ -16,22 +16,22 @@
 */
 #include <iostream>
 #include <cstring>
-#include "dcscodec.h"
+#include "dcs.h"
 #include "CRCenc.h"
 #include "MMDVMDefines.h"
 
 //#define DEBUG
 
-DCSCodec::DCSCodec(QString callsign, QString hostname, char module, QString host, int port, bool ipv6, QString vocoder, QString modem, QString audioin, QString audioout) :
-	Codec(callsign, module, hostname, host, port, ipv6, vocoder, modem, audioin, audioout, 5)
+DCS::DCS()
+{
+	m_attenuation = 5;
+}
+
+DCS::~DCS()
 {
 }
 
-DCSCodec::~DCSCodec()
-{
-}
-
-void DCSCodec::process_udp()
+void DCS::process_udp()
 {
 	QByteArray buf;
 	QHostAddress sender;
@@ -126,7 +126,7 @@ void DCSCodec::process_udp()
 			m_modeinfo.dst = QString(temp);
 			memcpy(temp, buf.data() + 31, 8); temp[8] = '\0';
 			m_modeinfo.src = QString(temp);
-			QString h = m_hostname + " " + m_module;
+			QString h = m_refname + " " + m_module;
 
 			if(m_modem){
 				uint8_t out[44];
@@ -236,7 +236,7 @@ void DCSCodec::process_udp()
 	emit update(m_modeinfo);
 }
 
-void DCSCodec::hostname_lookup(QHostInfo i)
+void DCS::hostname_lookup(QHostInfo i)
 {
 	if (!i.addresses().isEmpty()) {
 		QByteArray out;
@@ -262,7 +262,7 @@ void DCSCodec::hostname_lookup(QHostInfo i)
 	}
 }
 
-void DCSCodec::send_ping()
+void DCS::send_ping()
 {
 	static QByteArray out;
 	out.clear();
@@ -270,7 +270,7 @@ void DCSCodec::send_ping()
 	out.append(7 - m_modeinfo.callsign.size(), ' ');
 	out.append(m_module);
 	out.append('\x00');
-	out.append(m_hostname.toUtf8());
+	out.append(m_refname.toUtf8());
 	out.append('\x00');
 	out.append(m_module);
 	m_udp->writeDatagram(out, m_address, m_modeinfo.port);
@@ -284,7 +284,7 @@ void DCSCodec::send_ping()
 #endif
 }
 
-void DCSCodec::send_disconnect()
+void DCS::send_disconnect()
 {
 	QByteArray out;
 	out.append(m_modeinfo.callsign.toUtf8());
@@ -303,7 +303,7 @@ void DCSCodec::send_disconnect()
 #endif
 }
 
-void DCSCodec::format_callsign(QString &s)
+void DCS::format_callsign(QString &s)
 {
 	QStringList l = s.simplified().split(' ');
 
@@ -321,7 +321,7 @@ void DCSCodec::format_callsign(QString &s)
 	}
 }
 
-void DCSCodec::process_modem_data(QByteArray d)
+void DCS::process_modem_data(QByteArray d)
 {
 	QByteArray txdata;
 	char cs[9];
@@ -348,21 +348,21 @@ void DCSCodec::process_modem_data(QByteArray d)
 	send_frame(ambe);
 }
 
-void DCSCodec::toggle_tx(bool tx)
+void DCS::toggle_tx(bool tx)
 {
 	tx ? start_tx() : stop_tx();
 }
 
-void DCSCodec::start_tx()
+void DCS::start_tx()
 {
 	format_callsign(m_txmycall);
 	format_callsign(m_txurcall);
 	format_callsign(m_txrptr1);
 	format_callsign(m_txrptr2);
-	Codec::start_tx();
+	Mode::start_tx();
 }
 
-void DCSCodec::transmit()
+void DCS::transmit()
 {
 	unsigned char ambe[9];
 	uint8_t ambe_frame[72];
@@ -413,7 +413,7 @@ void DCSCodec::transmit()
 	}
 }
 
-void DCSCodec::send_frame(uint8_t *ambe)
+void DCS::send_frame(uint8_t *ambe)
 {
 	QByteArray txdata;
 	static uint16_t txstreamid = 0;
@@ -533,7 +533,7 @@ void DCSCodec::send_frame(uint8_t *ambe)
 #endif
 }
 
-void DCSCodec::get_ambe()
+void DCS::get_ambe()
 {
 #if !defined(Q_OS_IOS)
 	uint8_t ambe[9];
@@ -546,7 +546,7 @@ void DCSCodec::get_ambe()
 #endif
 }
 
-void DCSCodec::process_rx_data()
+void DCS::process_rx_data()
 {
 	int16_t pcm[160];
 	uint8_t ambe[9];
@@ -605,6 +605,7 @@ void DCSCodec::process_rx_data()
 		m_modeinfo.streamid = 0;
 		m_rxcodecq.clear();
 		qDebug() << "DCS playback stopped";
+		m_modeinfo.stream_state = STREAM_IDLE;
 		return;
 	}
 }

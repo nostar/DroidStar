@@ -15,34 +15,32 @@
 	along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#ifndef REFCODEC_H
-#define REFCODEC_H
+#ifndef P25_H
+#define P25_H
 
-#include "codec.h"
+#include "mode.h"
 
-class REFCodec : public Codec
+class P25 : public Mode
 {
 	Q_OBJECT
 public:
-	REFCodec(QString callsign, QString hostname, char module, QString host, int port, bool ipv6, QString vocoder, QString modem, QString audioin, QString audioout);
-	~REFCodec();
-	unsigned char * get_frame(unsigned char *ambe);
+	P25();
+	~P25();
+	uint8_t * get_frame(uint8_t *ambe);
 private:
-	uint8_t packet_size;
+	int m_p25cnt;
+	uint8_t imbe[11U];
+	int m_dstid;
+	uint32_t m_dmrid;
+	uint32_t m_txdstid;
 private slots:
-	void toggle_tx(bool);
-	void start_tx();
 	void process_udp();
-	void process_modem_data(QByteArray);
 	void process_rx_data();
-	void get_ambe();
 	void send_ping();
 	void send_disconnect();
 	void transmit();
-	void format_callsign(QString &s);
 	void hostname_lookup(QHostInfo i);
-	void module_changed(int m) { m_module = 0x41 + m; m_modeinfo.streamid = 0; }
-	void send_frame(uint8_t *);
+	void dmr_tgid_changed(uint32_t id) { m_txdstid = id; }
 };
 
-#endif // REFCODEC_H
+#endif // P25_H

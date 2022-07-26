@@ -15,7 +15,7 @@
 	along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#include "ysfcodec.h"
+#include "ysf.h"
 #include "YSFConvolution.h"
 #include "CRCenc.h"
 #include "Golay24128.h"
@@ -24,7 +24,7 @@
 #include <iostream>
 #include <cstring>
 
-#define DEBUG
+//#define DEBUG
 
 const uint32_t IMBE_INTERLEAVE[] = {
 	0,  7, 12, 19, 24, 31, 36, 43, 48, 55, 60, 67, 72, 79, 84, 91,  96, 103, 108, 115, 120, 127, 132, 139,
@@ -99,19 +99,18 @@ const uint8_t BIT_MASK_TABLE[] = {0x80U, 0x40U, 0x20U, 0x10U, 0x08U, 0x04U, 0x02
 #define WRITE_BIT(p,i,b) p[(i)>>3] = (b) ? (p[(i)>>3] | BIT_MASK_TABLE[(i)&7]) : (p[(i)>>3] & ~BIT_MASK_TABLE[(i)&7])
 #define READ_BIT(p,i)    (p[(i)>>3] & BIT_MASK_TABLE[(i)&7])
 
-YSFCodec::YSFCodec(QString callsign, QString hostname, QString host, int port, bool ipv6, QString vocoder, QString modem, QString audioin, QString audioout) :
-	Codec(callsign, 0, hostname, host, port, ipv6, vocoder, modem, audioin, audioout, 5),
-
+YSF::YSF() :
 	m_fcs(false),
 	m_txfullrate(false)
 {
+	m_attenuation = 5;
 }
 
-YSFCodec::~YSFCodec()
+YSF::~YSF()
 {
 }
 
-void YSFCodec::process_udp()
+void YSF::process_udp()
 {
 	QByteArray buf;
 	QByteArray out;
@@ -129,7 +128,7 @@ void YSFCodec::process_udp()
 	fprintf(stderr, "\n");
 	fflush(stderr);
 #endif
-	if(((buf.size() == 14) && (m_hostname.left(3) != "FCS")) || ((buf.size() == 7) && (m_hostname.left(3) == "FCS"))){
+	if(((buf.size() == 14) && (m_refname.left(3) != "FCS")) || ((buf.size() == 7) && (m_refname.left(3) == "FCS"))){
 		if(m_modeinfo.status == CONNECTING){
 			m_modeinfo.status = CONNECTED_RW;
 			m_txtimer = new QTimer();
@@ -173,14 +172,14 @@ void YSFCodec::process_udp()
 			m_audio = new AudioEngine(m_audioin, m_audioout);
 			m_audio->init();
 
-			if(m_hostname.left(3) == "FCS"){
+			if(m_refname.left(3) == "FCS"){
 				char info[100U];
 				::sprintf(info, "%9u%9u%-6.6s%-12.12s%7u", 438000000, 438000000, "AA00AA", "MMDVM", 1234567);
 				::memset(info + 43U, ' ', 57U);
 				out.append(info, 100);
 				m_udp->writeDatagram(out, m_address, m_modeinfo.port);
 				p = 800;
-				set_fcs_mode(true, m_hostname.left(8).toStdString());
+				set_fcs_mode(true, m_refname.left(8).toStdString());
 			}
 			m_ping_timer->start(p);
 		}
@@ -282,18 +281,18 @@ void YSFCodec::process_udp()
 	emit update(m_modeinfo);
 }
 
-void YSFCodec::hostname_lookup(QHostInfo i)
+void YSF::hostname_lookup(QHostInfo i)
 {
 	if (!i.addresses().isEmpty()) {
 		QByteArray out;
-		if(m_hostname.left(3) == "FCS"){
+		if(m_refname.left(3) == "FCS"){
 			out.append('P');
 			out.append('I');
 			out.append('N');
 			out.append('G');
 			out.append(m_modeinfo.callsign.toUtf8());
 			out.append(6 - m_modeinfo.callsign.size(), ' ');
-			out.append(m_hostname.toUtf8());
+			out.append(m_refname.toUtf8());
 			out.append(7, '\x00');
 		}
 		else{
@@ -319,17 +318,17 @@ void YSFCodec::hostname_lookup(QHostInfo i)
 	}
 }
 
-void YSFCodec::send_ping()
+void YSF::send_ping()
 {
 	QByteArray out;
-	if(m_hostname.left(3) == "FCS"){
+	if(m_refname.left(3) == "FCS"){
 		out.append('P');
 		out.append('I');
 		out.append('N');
 		out.append('G');
 		out.append(m_modeinfo.callsign.toUtf8());
 		out.append(6 - m_modeinfo.callsign.size(), ' ');
-		out.append(m_hostname.toUtf8());
+		out.append(m_refname.toUtf8());
 		out.append(7, '\x00');
 	}
 	else{
@@ -351,10 +350,10 @@ void YSFCodec::send_ping()
 #endif
 }
 
-void YSFCodec::send_disconnect()
+void YSF::send_disconnect()
 {
 	QByteArray out;
-	if(m_hostname.left(3) == "FCS"){
+	if(m_refname.left(3) == "FCS"){
 		out.append('C');
 		out.append('L');
 		out.append('O');
@@ -381,7 +380,7 @@ void YSFCodec::send_disconnect()
 #endif
 }
 
-void YSFCodec::decode_vw(uint8_t* data)
+void YSF::decode_vw(uint8_t* data)
 {
 	uint8_t vch[18U];
 	uint8_t imbe[11U];
@@ -441,7 +440,7 @@ void YSFCodec::decode_vw(uint8_t* data)
 	}
 }
 
-void YSFCodec::decode_vd1(uint8_t* data, uint8_t *dt)
+void YSF::decode_vd1(uint8_t* data, uint8_t *dt)
 {
 	uint8_t dch[45U];
 
@@ -477,7 +476,7 @@ void YSFCodec::decode_vd1(uint8_t* data, uint8_t *dt)
 	}
 }
 
-void YSFCodec::decode_vd2(uint8_t* data, uint8_t *dt)
+void YSF::decode_vd2(uint8_t* data, uint8_t *dt)
 {
 	uint8_t dch[25U];
 
@@ -513,7 +512,7 @@ void YSFCodec::decode_vd2(uint8_t* data, uint8_t *dt)
 	}
 }
 
-void YSFCodec::decode_dn(uint8_t* data)
+void YSF::decode_dn(uint8_t* data)
 {
 	uint8_t v_tmp[7U];
 	uint8_t dt[20];
@@ -606,7 +605,7 @@ void YSFCodec::decode_dn(uint8_t* data)
 	}
 }
 
-void YSFCodec::interleave(uint8_t *ambe)
+void YSF::interleave(uint8_t *ambe)
 {
 	char ambe_data[49];
 	char dvsi_data[7];
@@ -625,7 +624,7 @@ void YSFCodec::interleave(uint8_t *ambe)
 	memcpy(ambe, dvsi_data, 7);
 }
 
-void YSFCodec::process_modem_data(QByteArray d)
+void YSF::process_modem_data(QByteArray d)
 {
 	if(d.size() < 126){
 		return;
@@ -664,7 +663,7 @@ void YSFCodec::process_modem_data(QByteArray d)
 #endif
 }
 
-void YSFCodec::transmit()
+void YSF::transmit()
 {
 	uint8_t ambe_frame[88];
 	uint8_t ambe[7];
@@ -729,7 +728,7 @@ void YSFCodec::transmit()
 	}
 }
 
-void YSFCodec::send_frame()
+void YSF::send_frame()
 {
 	QByteArray txdata;
 	int frame_size;
@@ -775,7 +774,7 @@ void YSFCodec::send_frame()
 	emit update(m_modeinfo);
 }
 
-void YSFCodec::encode_header(bool eot)
+void YSF::encode_header(bool eot)
 {
 	uint8_t callsign[12];
 	::memcpy(callsign, "          ", 10);
@@ -830,7 +829,7 @@ void YSFCodec::encode_header(bool eot)
 	writeDataFRModeData2(csd2, p_frame);
 }
 
-void YSFCodec::encode_vw()
+void YSF::encode_vw()
 {
 	uint8_t callsign[12];
 	::memcpy(callsign, "          ", 10);
@@ -887,7 +886,7 @@ void YSFCodec::encode_vw()
 	}
 }
 
-void YSFCodec::encode_imbe(uint8_t* data, const uint8_t* imbe)
+void YSF::encode_imbe(uint8_t* data, const uint8_t* imbe)
 {
 	bool bTemp[144U];
 	bool* bit = bTemp;
@@ -986,7 +985,7 @@ void YSFCodec::encode_imbe(uint8_t* data, const uint8_t* imbe)
 	}
 }
 
-void YSFCodec::encode_dv2()
+void YSF::encode_dv2()
 {
 	uint8_t callsign[12];
 	::memcpy(callsign, "          ", 10);
@@ -1070,7 +1069,7 @@ void YSFCodec::encode_dv2()
 	}
 }
 
-void YSFCodec::writeDataFRModeData1(const uint8_t* dt, uint8_t* data)
+void YSF::writeDataFRModeData1(const uint8_t* dt, uint8_t* data)
 {
 	data += YSF_SYNC_LENGTH_BYTES + YSF_FICH_LENGTH_BYTES;
 
@@ -1111,7 +1110,7 @@ void YSFCodec::writeDataFRModeData1(const uint8_t* dt, uint8_t* data)
 	}
 }
 
-void YSFCodec::writeDataFRModeData2(const uint8_t* dt, uint8_t* data)
+void YSF::writeDataFRModeData2(const uint8_t* dt, uint8_t* data)
 {
 	data += YSF_SYNC_LENGTH_BYTES + YSF_FICH_LENGTH_BYTES;
 
@@ -1152,7 +1151,7 @@ void YSFCodec::writeDataFRModeData2(const uint8_t* dt, uint8_t* data)
 	}
 }
 
-void YSFCodec::ysf_scramble(uint8_t *buf, const int len)
+void YSF::ysf_scramble(uint8_t *buf, const int len)
 {	// buffer is (de)scrambled in place
 	static const uint8_t scramble_code[180] = {
 	1, 0, 0, 1, 0, 0, 1, 1, 1, 1, 0, 1, 0, 1, 1, 1,
@@ -1174,7 +1173,7 @@ void YSFCodec::ysf_scramble(uint8_t *buf, const int len)
 	}
 }
 
-void YSFCodec::generate_vch_vd2(const uint8_t *a)
+void YSF::generate_vch_vd2(const uint8_t *a)
 {
 	uint8_t buf[104];
 	uint8_t result[104];
@@ -1215,7 +1214,7 @@ void YSFCodec::generate_vch_vd2(const uint8_t *a)
 	::memcpy(m_vch, vch, 13);
 }
 
-void YSFCodec::writeVDMode2Data(uint8_t* data, const uint8_t* dt)
+void YSF::writeVDMode2Data(uint8_t* data, const uint8_t* dt)
 {
 	data += YSF_SYNC_LENGTH_BYTES + YSF_FICH_LENGTH_BYTES;
 	
@@ -1293,7 +1292,7 @@ void YSFCodec::writeVDMode2Data(uint8_t* data, const uint8_t* dt)
 	}
 }
 
-void YSFCodec::get_ambe()
+void YSF::get_ambe()
 {
 #if !defined(Q_OS_IOS)
 	uint8_t ambe[7];
@@ -1306,7 +1305,7 @@ void YSFCodec::get_ambe()
 #endif
 }
 
-void YSFCodec::process_rx_data()
+void YSF::process_rx_data()
 {
 	int16_t pcm[160];
 	uint8_t ambe[7];
@@ -1378,6 +1377,7 @@ void YSFCodec::process_rx_data()
 		m_rximbecodecq.clear();
 		//m_ambedev->clear_queue();
 		qDebug() << "YSF playback stopped";
+		m_modeinfo.stream_state = STREAM_IDLE;
 		return;
 	}
 }

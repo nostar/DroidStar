@@ -17,14 +17,14 @@
 
 #include <iostream>
 #include <cstring>
-#include "dmrcodec.h"
+#include "dmr.h"
 #include "cgolay2087.h"
 #include "crs129.h"
 #include "SHA256.h"
 #include "CRCenc.h"
 #include "MMDVMDefines.h"
 
-//#define DEBUG
+#define DEBUG
 
 const uint32_t ENCODING_TABLE_1676[] =
 	{0x0000U, 0x0273U, 0x04E5U, 0x0696U, 0x09C9U, 0x0BBAU, 0x0D2CU, 0x0F5FU, 0x11E2U, 0x1391U, 0x1507U, 0x1774U,
@@ -39,39 +39,41 @@ const uint32_t ENCODING_TABLE_1676[] =
 	 0xD97AU, 0xDB09U, 0xDD9FU, 0xDFECU, 0xE0E6U, 0xE295U, 0xE403U, 0xE670U, 0xE92FU, 0xEB5CU, 0xEDCAU, 0xEFB9U,
 	 0xF104U, 0xF377U, 0xF5E1U, 0xF792U, 0xF8CDU, 0xFABEU, 0xFC28U, 0xFE5BU};
 
-DMRCodec::DMRCodec(QString callsign, uint32_t dmrid, uint8_t essid, QString password, QString lat, QString lon, QString location, QString desc, QString freq, QString url, QString swid, QString pkid, QString options, uint32_t dstid, QString host, uint32_t port, bool ipv6, QString vocoder, QString modem, QString audioin, QString audioout) :
-	Codec(callsign, 0, NULL, host, port, ipv6, vocoder, modem, audioin, audioout, 5),
-	m_dmrid(dmrid),
-	m_password(password),
-	m_lat(lat),
-	m_lon(lon),
-	m_location(location),
-	m_desc(desc),
-	m_freq(freq),
-	m_url(url),
-	m_swid(swid),
-	m_pkid(pkid),
-	m_txdstid(dstid),
+DMR::DMR() :
 	m_txslot(2),
-	m_txcc(1),
-	m_options(options)
+	m_txcc(1)
 {
 	m_dmrcnt = 0;
 	m_flco = FLCO_GROUP;
+	m_attenuation = 5;
+}
 
+DMR::~DMR()
+{
+}
+
+void DMR::set_dmr_params(uint8_t essid, QString password, QString lat, QString lon, QString location, QString desc, QString freq, QString url, QString swid, QString pkid, QString options)
+{
 	if (essid){
 		m_essid = m_dmrid * 100 + (essid-1);
 	}
 	else{
 		m_essid = m_dmrid;
 	}
+
+	m_password = password;
+	m_lat = lat;
+	m_lon = lon;
+	m_location = location;
+	m_desc = desc;
+	m_freq = freq;
+	m_url = url;
+	m_swid = swid;
+	m_pkid = pkid;
+	m_options = options;
 }
 
-DMRCodec::~DMRCodec()
-{
-}
-
-void DMRCodec::process_udp()
+void DMR::process_udp()
 {
 	QByteArray buf;
 	QByteArray in;
@@ -290,7 +292,7 @@ void DMRCodec::process_udp()
 #endif
 }
 
-void DMRCodec::setup_connection()
+void DMR::setup_connection()
 {
 	m_modeinfo.status = CONNECTED_RW;
 	//m_mbeenc->set_gain_adjust(2.5);
@@ -331,7 +333,7 @@ void DMRCodec::setup_connection()
 	m_audio->init();
 }
 
-void DMRCodec::hostname_lookup(QHostInfo i)
+void DMR::hostname_lookup(QHostInfo i)
 {
 	if (!i.addresses().isEmpty()) {
 		QByteArray out;
@@ -358,7 +360,7 @@ void DMRCodec::hostname_lookup(QHostInfo i)
 	}
 }
 
-void DMRCodec::send_ping()
+void DMR::send_ping()
 {
 	QByteArray out;
 	char tag[] = { 'R','P','T','P','I','N','G' };
@@ -378,7 +380,7 @@ void DMRCodec::send_ping()
 #endif
 }
 
-void DMRCodec::send_disconnect()
+void DMR::send_disconnect()
 {
 	QByteArray out;
 	out.append('R');
@@ -401,7 +403,7 @@ void DMRCodec::send_disconnect()
 #endif
 }
 
-void DMRCodec::process_modem_data(QByteArray d)
+void DMR::process_modem_data(QByteArray d)
 {
 	QByteArray txdata;
 	uint8_t lcData[12U];
@@ -445,7 +447,7 @@ void DMRCodec::process_modem_data(QByteArray d)
 #endif
 }
 
-void DMRCodec::transmit()
+void DMR::transmit()
 {
 	uint8_t ambe[72];
 	int16_t pcm[160];
@@ -496,7 +498,7 @@ void DMRCodec::transmit()
 	}
 }
 
-void DMRCodec::send_frame()
+void DMR::send_frame()
 {
 	QByteArray txdata;
 
@@ -565,14 +567,14 @@ void DMRCodec::send_frame()
 #endif
 }
 
-unsigned char * DMRCodec::get_eot()
+unsigned char * DMR::get_eot()
 {
 	encode_header(DT_TERMINATOR_WITH_LC);
 	m_dmrcnt = 0;
 	return m_dmrFrame;
 }
 
-void DMRCodec::build_frame()
+void DMR::build_frame()
 {
 	//qDebug() << "DMR: slot:cc == " << m_txslot << ":" << m_txcc;
 	m_dmrFrame[0U]  = 'D';
@@ -614,14 +616,14 @@ void DMRCodec::build_frame()
 	m_modeinfo.frame_number = m_dmrcnt;
 }
 
-void DMRCodec::encode_header(uint8_t t)
+void DMR::encode_header(uint8_t t)
 {
 	addDMRDataSync(m_dmrFrame+20, 0);
 	m_dataType = t;
 	full_lc_encode(m_dmrFrame+20, t);
 }
 
-void DMRCodec::encode_data()
+void DMR::encode_data()
 {
 	unsigned int n_dmr = (m_dmrcnt - 1) % 6U;
 
@@ -637,7 +639,7 @@ void DMRCodec::encode_data()
 	}
 }
 
-void DMRCodec::encode16114(bool* d)
+void DMR::encode16114(bool* d)
 {
 	d[11] = d[0] ^ d[1] ^ d[2] ^ d[3] ^ d[5] ^ d[7] ^ d[8];
 	d[12] = d[1] ^ d[2] ^ d[3] ^ d[4] ^ d[6] ^ d[8] ^ d[9];
@@ -646,7 +648,7 @@ void DMRCodec::encode16114(bool* d)
 	d[15] = d[0] ^ d[2] ^ d[5] ^ d[6] ^ d[8] ^ d[9] ^ d[10];
 }
 
-void DMRCodec::encode_qr1676(uint8_t* data)
+void DMR::encode_qr1676(uint8_t* data)
 {
 	uint32_t value = (data[0U] >> 1) & 0x7FU;
 	uint32_t cksum = ENCODING_TABLE_1676[value];
@@ -655,7 +657,7 @@ void DMRCodec::encode_qr1676(uint8_t* data)
 	data[1U] = cksum & 0xFFU;
 }
 
-void DMRCodec::get_emb_data(uint8_t* data, uint8_t lcss)
+void DMR::get_emb_data(uint8_t* data, uint8_t lcss)
 {
 	uint8_t DMREMB[2U];
 	DMREMB[0U]  = (m_modeinfo.cc << 4) & 0xF0U;
@@ -671,7 +673,7 @@ void DMRCodec::get_emb_data(uint8_t* data, uint8_t lcss)
 	data[19U] = (data[19U] & 0x0FU) | ((DMREMB[1U] << 4U) & 0xF0U);
 }
 
-uint8_t DMRCodec::get_embedded_data(uint8_t* data, uint8_t n)
+uint8_t DMR::get_embedded_data(uint8_t* data, uint8_t n)
 {
 	if (n >= 1U && n < 5U) {
 		n--;
@@ -712,7 +714,7 @@ uint8_t DMRCodec::get_embedded_data(uint8_t* data, uint8_t n)
 	}
 }
 
-void DMRCodec::encode_embedded_data()
+void DMR::encode_embedded_data()
 {
 	uint32_t crc;
 	lc_get_data(m_data);
@@ -761,7 +763,7 @@ void DMRCodec::encode_embedded_data()
 	}
 }
 
-void DMRCodec::bitsToByteBE(const bool* bits, uint8_t& byte)
+void DMR::bitsToByteBE(const bool* bits, uint8_t& byte)
 {
 	byte  = bits[0U] ? 0x80U : 0x00U;
 	byte |= bits[1U] ? 0x40U : 0x00U;
@@ -773,7 +775,7 @@ void DMRCodec::bitsToByteBE(const bool* bits, uint8_t& byte)
 	byte |= bits[7U] ? 0x01U : 0x00U;
 }
 
-void DMRCodec::byteToBitsBE(uint8_t byte, bool* bits)
+void DMR::byteToBitsBE(uint8_t byte, bool* bits)
 {
 	bits[0U] = (byte & 0x80U) == 0x80U;
 	bits[1U] = (byte & 0x40U) == 0x40U;
@@ -785,7 +787,7 @@ void DMRCodec::byteToBitsBE(uint8_t byte, bool* bits)
 	bits[7U] = (byte & 0x01U) == 0x01U;
 }
 
-void DMRCodec::lc_get_data(bool* bits)
+void DMR::lc_get_data(bool* bits)
 {
 	uint8_t bytes[9U];
 	memset(bytes, 0, 9);
@@ -802,7 +804,7 @@ void DMRCodec::lc_get_data(bool* bits)
 	byteToBitsBE(bytes[8U], bits + 64U);
 }
 
-void DMRCodec::lc_get_data(uint8_t *bytes)
+void DMR::lc_get_data(uint8_t *bytes)
 {
 	bool pf, r;
 	uint8_t fid, options;
@@ -832,7 +834,7 @@ void DMRCodec::lc_get_data(uint8_t *bytes)
 	bytes[8U] = m_dmrid >> 0;
 }
 
-void DMRCodec::full_lc_encode(uint8_t* data, uint8_t type)  // for header
+void DMR::full_lc_encode(uint8_t* data, uint8_t type)  // for header
 {
 	uint8_t lcData[12U];
 	uint8_t parity[4U];
@@ -861,7 +863,7 @@ void DMRCodec::full_lc_encode(uint8_t* data, uint8_t type)  // for header
 	m_bptc.encode(lcData, data);
 }
 
-void DMRCodec::get_slot_data(uint8_t* data)
+void DMR::get_slot_data(uint8_t* data)
 {
 	uint8_t DMRSlotType[3U];
 	DMRSlotType[0U]  = (m_modeinfo.cc << 4) & 0xF0U;
@@ -878,7 +880,7 @@ void DMRCodec::get_slot_data(uint8_t* data)
 }
 
 
-void DMRCodec::addDMRDataSync(uint8_t* data, bool duplex)
+void DMR::addDMRDataSync(uint8_t* data, bool duplex)
 {
 	if (duplex) {
 		for (uint32_t i = 0U; i < 7U; i++)
@@ -889,7 +891,7 @@ void DMRCodec::addDMRDataSync(uint8_t* data, bool duplex)
 	}
 }
 
-void DMRCodec::addDMRAudioSync(uint8_t* data, bool duplex)
+void DMR::addDMRAudioSync(uint8_t* data, bool duplex)
 {
 	if (duplex) {
 		for (uint32_t i = 0U; i < 7U; i++)
@@ -900,7 +902,7 @@ void DMRCodec::addDMRAudioSync(uint8_t* data, bool duplex)
 	}
 }
 
-void DMRCodec::get_ambe()
+void DMR::get_ambe()
 {
 #if !defined(Q_OS_IOS)
 	uint8_t ambe[9];
@@ -913,7 +915,7 @@ void DMRCodec::get_ambe()
 #endif
 }
 
-void DMRCodec::process_rx_data()
+void DMR::process_rx_data()
 {
 	int16_t pcm[160];
 	uint8_t ambe[9];
@@ -974,6 +976,7 @@ void DMRCodec::process_rx_data()
 		m_modeinfo.streamid = 0;
 		m_rxcodecq.clear();
 		qDebug() << "DMR playback stopped";
+		m_modeinfo.stream_state = STREAM_IDLE;
 		return;
 	}
 }

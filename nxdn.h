@@ -15,18 +15,18 @@
 	along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#ifndef NXDNCODEC_H
-#define NXDNCODEC_H
+#ifndef NXDN_H
+#define NXDN_H
 
 //#include <inttypes.h>
-#include "codec.h"
+#include "mode.h"
 
-class NXDNCodec : public Codec
+class NXDN : public Mode
 {
 	Q_OBJECT
 public:
-	NXDNCodec(QString callsign, uint16_t nxdnid, uint32_t gwid, QString host, int port, bool ipv6, QString vocoder, QString modem, QString audioin, QString audioout);
-	~NXDNCodec();
+	NXDN();
+	~NXDN();
 	unsigned char * get_frame();
 	unsigned char * get_eot(){m_eot = true; return get_frame();}
 	void set_hwtx(bool hw){m_hwtx = hw;}
@@ -73,4 +73,4 @@ private:
 	void interleave(uint8_t *ambe);
 };
 
-#endif // NXDNCODEC_H
+#endif // NXDN_H

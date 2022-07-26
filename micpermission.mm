@@ -21,6 +21,7 @@
 #import <AVFoundation/AVCaptureDevice.h>
 int MicPermission::check_permission()
 {
+	[UIApplication sharedApplication].idleTimerDisabled = YES;
     AVAuthorizationStatus status = [AVCaptureDevice authorizationStatusForMediaType:AVMediaTypeAudio];
     if(status != AVAuthorizationStatusAuthorized){
         [AVCaptureDevice requestAccessForMediaType:AVMediaTypeAudio completionHandler:^(BOOL granted) {

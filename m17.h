@@ -15,23 +15,23 @@
 	along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#ifndef M17CODEC_H
-#define M17CODEC_H
+#ifndef M17_H
+#define M17_H
 
 #include <string>
-#include "codec.h"
+#include "mode.h"
 #ifdef USE_EXTERNAL_CODEC2
 #include <codec2/codec2.h>
 #else
 #include "codec2/codec2_api.h"
 #endif
 
-class M17Codec : public Codec
+class M17 : public Mode
 {
 	Q_OBJECT
 public:
-	M17Codec(QString callsign, char module, QString hostname, QString host, int port, bool ipv6, QString modem, QString audioin, QString audioout);
-	~M17Codec();
+	M17();
+	~M17();
 	static void encode_callsign(uint8_t *);
 	static void decode_callsign(uint8_t *);
 	void decode_c2(int16_t *, uint8_t *);
@@ -55,7 +55,7 @@ private slots:
 	void hostname_lookup(QHostInfo i);
 	void mmdvm_direct_connect();
 	void rate_changed(int r) { m_txrate = r; }
-	void can_changed(int c) { m_txcan = c; }
+	void can_changed(int c) { m_txcan = c; qDebug() << "CAN == " << c; }
 	void process_rx_data();
 	void splitFragmentLICH(const uint8_t*, uint32_t&, uint32_t&, uint32_t&, uint32_t&);
 	void combineFragmentLICH(uint32_t, uint32_t, uint32_t, uint32_t, uint8_t*);
@@ -70,4 +70,4 @@ private:
 	uint8_t m_txcan;
 };
 
-#endif // M17CODEC_H
+#endif // M17_H

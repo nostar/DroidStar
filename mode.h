@@ -15,8 +15,8 @@
 	along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#ifndef CODEC_H
-#define CODEC_H
+#ifndef MODE_H
+#define MODE_H
 
 #include <QObject>
 #include <QtNetwork>
@@ -35,13 +35,22 @@
 #include "serialmodem.h"
 #endif
 
-class Codec : public QObject
+class Mode : public QObject
 {
 	Q_OBJECT
 public:
-	Codec(QString callsign, char module, QString hostname, QString host, int port, bool ipv6, QString vocoder, QString modem, QString audioin, QString audioout, uint8_t attenuation);
-	~Codec();
-	void set_modem_flags(bool rxInvert, bool txInvert, bool pttInvert, bool useCOSAsLockout, bool duplex) { m_rxInvert = rxInvert; m_txInvert = txInvert; m_pttInvert = pttInvert; m_useCOSAsLockout = useCOSAsLockout; m_duplex = duplex; }
+	Mode();
+	~Mode();
+	static Mode* create_mode(QString);
+	void init(QString callsign, uint32_t dmrid, char module, QString refname, QString host, int port, bool ipv6, QString vocoder, QString modem, QString audioin, QString audioout);
+	void set_modem_flags(bool rxInvert, bool txInvert, bool pttInvert, bool useCOSAsLockout, bool duplex)
+	{
+		m_rxInvert = rxInvert;
+		m_txInvert = txInvert;
+		m_pttInvert = pttInvert;
+		m_useCOSAsLockout = useCOSAsLockout;
+		m_duplex = duplex;
+	}
 	void set_modem_params(uint32_t baud, uint32_t rxfreq, uint32_t txfreq, uint32_t txDelay, float rxLevel, float rfLevel, uint32_t ysfTXHang, float cwIdTXLevel, float dstarTXLevel, float dmrTXLevel, float ysfTXLevel, float p25TXLevel, float nxdnTXLevel, float pocsagTXLevel, float m17TXLevel)
 	{
 		m_baud = baud;
@@ -60,6 +69,8 @@ public:
 		m_pocsagTXLevel = pocsagTXLevel;
 		m_m17TXLevel = m17TXLevel;
 	}
+	virtual void set_dmr_params(uint8_t, QString, QString, QString, QString, QString, QString, QString, QString, QString, QString) {}
+	virtual void set_iax_params(QString, QString, QString, QString, int) {}
 	bool get_hwrx() { return m_hwrx; }
 	bool get_hwtx() { return m_hwtx; }
 	void set_hostname(std::string);
@@ -118,12 +129,13 @@ public:
 		STREAM_UNKNOWN
 	};
 signals:
-	void update(Codec::MODEINFO);
+	void update(Mode::MODEINFO);
 	void update_output_level(unsigned short);
 protected slots:
 	virtual void send_disconnect(){}
 	virtual void hostname_lookup(QHostInfo){}
 	virtual void mmdvm_direct_connect(){}
+
 	void ambe_connect_status(bool);
 	void mmdvm_connect_status(bool);
 	void send_connect();
@@ -148,7 +160,8 @@ protected:
 	QUdpSocket *m_udp = nullptr;
 	QHostAddress m_address;
 	char m_module;
-	QString m_hostname;
+	uint32_t m_dmrid;
+	QString m_refname;
 	bool m_tx;
 	uint16_t m_txcnt;
 	uint16_t m_ttscnt;
@@ -235,4 +248,4 @@ protected:
 	int m_txDCOffset;
 };
 
-#endif // CODEC_H
+#endif // MODE_H

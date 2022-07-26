@@ -31,12 +31,11 @@ DEFINES += VERSION_NUMBER=\"\\\"$${VERSION_BUILD}\\\"\"
 DEFINES += QT_DEPRECATED_WARNINGS
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 DEFINES += VOCODER_PLUGIN
-#DEFINES += USE_FLITE
+DEFINES += USE_FLITE
 #DEFINES += USE_EXTERNAL_CODEC2
 
 HEADERS += \
 	CRCenc.h \
-	DMRData.h \
 	DMRDefines.h \
 	Golay24128.h \
 	M17Convolution.h \
@@ -49,28 +48,27 @@ HEADERS += \
 	cbptc19696.h \
 	cgolay2087.h \
 	chamming.h \
-	codec.h \
 	crs129.h \
-	dcscodec.h \
-	dmrcodec.h \
+	dcs.h \
+	dmr.h \
 	droidstar.h \
 	httpmanager.h \
-	iaxcodec.h \
+	iax.h \
 	iaxdefines.h \
-	m17codec.h \
-	nxdncodec.h \
-	p25codec.h \
-	refcodec.h \
+	m17.h \
+	mode.h \
+	nxdn.h \
+	p25.h \
+	ref.h \
 	vocoder_plugin.h \
-	xrfcodec.h \
-	ysfcodec.h
+	xrf.h \
+	ysf.h
 android:HEADERS += androidserialport.h
 macx:HEADERS += micpermission.h
 !ios:HEADERS += serialambe.h serialmodem.h
 
 SOURCES += \
 	CRCenc.cpp \
-	DMRData.cpp \
 	Golay24128.cpp \
 	M17Convolution.cpp \
 	SHA256.cpp \
@@ -80,20 +78,20 @@ SOURCES += \
 	cbptc19696.cpp \
 	cgolay2087.cpp \
 	chamming.cpp \
-	codec.cpp \
 	crs129.cpp \
-	dcscodec.cpp \
-	dmrcodec.cpp \
+	dcs.cpp \
+	dmr.cpp \
 	droidstar.cpp \
 	httpmanager.cpp \
-	iaxcodec.cpp \
-	m17codec.cpp \
+	iax.cpp \
+	m17.cpp \
 	main.cpp \
-	nxdncodec.cpp \
-	p25codec.cpp \
-	refcodec.cpp \
-	xrfcodec.cpp \
-	ysfcodec.cpp
+	mode.cpp \
+	nxdn.cpp \
+	p25.cpp \
+	ref.cpp \
+	xrf.cpp \
+	ysf.cpp
 android:SOURCES += androidserialport.cpp
 !ios:SOURCES += serialambe.cpp serialmodem.cpp
 !contains(DEFINES, USE_EXTERNAL_CODEC2){

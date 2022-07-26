@@ -15,7 +15,7 @@
 	along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#include "nxdncodec.h"
+#include "nxdn.h"
 #include <cstring>
 
 //#define DEBUG
@@ -39,20 +39,18 @@ const unsigned char BIT_MASK_TABLE[] = { 0x80U, 0x40U, 0x20U, 0x10U, 0x08U, 0x04
 #define WRITE_BIT1(p,i,b) p[(i)>>3] = (b) ? (p[(i)>>3] | BIT_MASK_TABLE[(i)&7]) : (p[(i)>>3] & ~BIT_MASK_TABLE[(i)&7])
 #define READ_BIT1(p,i)    (p[(i)>>3] & BIT_MASK_TABLE[(i)&7])
 
-NXDNCodec::NXDNCodec(QString callsign, uint16_t nxdnid, uint32_t gwid, QString host, int port, bool ipv6, QString vocoder, QString modem, QString audioin, QString audioout) :
-	Codec(callsign, 0, NULL, host, port, ipv6, vocoder, modem, audioin, audioout, 5),
-	m_nxdnid(nxdnid)
+NXDN::NXDN()
 {
 	m_txcnt = 0;
 	m_txtimerint = 19;
-	m_modeinfo.gwid = gwid;
+	m_attenuation = 5;
 }
 
-NXDNCodec::~NXDNCodec()
+NXDN::~NXDN()
 {
 }
 
-void NXDNCodec::process_udp()
+void NXDN::process_udp()
 {
 	QByteArray buf;
 	QHostAddress sender;
@@ -190,7 +188,7 @@ void NXDNCodec::process_udp()
 	emit update(m_modeinfo);
 }
 
-void NXDNCodec::interleave(uint8_t *ambe)
+void NXDN::interleave(uint8_t *ambe)
 {
 	char ambe_data[49];
 	char dvsi_data[7];
@@ -209,7 +207,7 @@ void NXDNCodec::interleave(uint8_t *ambe)
 	memcpy(ambe, dvsi_data, 7);
 }
 
-void NXDNCodec::hostname_lookup(QHostInfo i)
+void NXDN::hostname_lookup(QHostInfo i)
 {
 	if (!i.addresses().isEmpty()) {
 		QByteArray out;
@@ -237,7 +235,7 @@ void NXDNCodec::hostname_lookup(QHostInfo i)
 	}
 }
 
-void NXDNCodec::send_ping()
+void NXDN::send_ping()
 {
 	QByteArray out;
 	out.append('N');
@@ -260,7 +258,7 @@ void NXDNCodec::send_ping()
 #endif
 }
 
-void NXDNCodec::send_disconnect()
+void NXDN::send_disconnect()
 {
 	QByteArray out;
 	out.append('N');
@@ -283,7 +281,7 @@ void NXDNCodec::send_disconnect()
 #endif
 }
 
-void NXDNCodec::transmit()
+void NXDN::transmit()
 {
 	uint8_t ambe[7];
 	int16_t pcm[160];
@@ -338,7 +336,7 @@ void NXDNCodec::transmit()
 	}
 }
 
-void NXDNCodec::send_frame()
+void NXDN::send_frame()
 {
 	QByteArray txdata;
 	unsigned char *temp_nxdn;
@@ -371,7 +369,7 @@ void NXDNCodec::send_frame()
 	emit update(m_modeinfo);
 }
 
-uint8_t * NXDNCodec::get_frame()
+uint8_t * NXDN::get_frame()
 {
 	memcpy(m_nxdnframe, "NXDND", 5);
 	m_nxdnframe[5U] = (m_nxdnid >> 8) & 0xFFU;
@@ -407,7 +405,7 @@ uint8_t * NXDNCodec::get_frame()
 	return m_nxdnframe;
 }
 
-void NXDNCodec::encode_header()
+void NXDN::encode_header()
 {
 	const uint8_t idle[3U] = {0x10, 0x00, 0x00};
 	m_lich = 0;
@@ -437,7 +435,7 @@ void NXDNCodec::encode_header()
 	memcpy(&m_nxdnframe[29U], m_layer3, 14U);
 }
 
-void NXDNCodec::encode_data()
+void NXDN::encode_data()
 {
 	uint8_t msg[3U];
 	m_lich = 0;
@@ -502,7 +500,7 @@ void NXDNCodec::encode_data()
 	m_nxdnframe[41] |= (m_ambe[27] >> 2);
 }
 
-void NXDNCodec::deinterleave_ambe(uint8_t *d)
+void NXDN::deinterleave_ambe(uint8_t *d)
 {
 	uint8_t dvsi_data[49];
 	uint8_t ambe_data[7];
@@ -524,36 +522,36 @@ void NXDNCodec::deinterleave_ambe(uint8_t *d)
 	memcpy(d, ambe_data, 7);
 }
 
-unsigned char NXDNCodec::get_lich_fct(uint8_t lich)
+unsigned char NXDN::get_lich_fct(uint8_t lich)
 {
 	return (lich >> 4) & 0x03U;
 }
 
-void NXDNCodec::set_lich_rfct(uint8_t rfct)
+void NXDN::set_lich_rfct(uint8_t rfct)
 {
 	m_lich &= 0x3FU;
 	m_lich |= (rfct << 6) & 0xC0U;
 }
 
-void NXDNCodec::set_lich_fct(uint8_t fct)
+void NXDN::set_lich_fct(uint8_t fct)
 {
 	m_lich &= 0xCFU;
 	m_lich |= (fct << 4) & 0x30U;
 }
 
-void NXDNCodec::set_lich_option(uint8_t o)
+void NXDN::set_lich_option(uint8_t o)
 {
 	m_lich &= 0xF3U;
 	m_lich |= (o << 2) & 0x0CU;
 }
 
-void NXDNCodec::set_lich_dir(uint8_t d)
+void NXDN::set_lich_dir(uint8_t d)
 {
 	m_lich &= 0xFDU;
 	m_lich |= (d << 1) & 0x02U;
 }
 
-uint8_t NXDNCodec::get_lich()
+uint8_t NXDN::get_lich()
 {
 	bool parity;
 	switch (m_lich & 0xF0U) {
@@ -573,19 +571,19 @@ uint8_t NXDNCodec::get_lich()
 }
 
 
-void NXDNCodec::set_sacch_ran(uint8_t ran)
+void NXDN::set_sacch_ran(uint8_t ran)
 {
 	m_sacch[0] &= 0xC0U;
 	m_sacch[0] |= ran;
 }
 
-void NXDNCodec::set_sacch_struct(uint8_t s)
+void NXDN::set_sacch_struct(uint8_t s)
 {
 	m_sacch[0] &= 0x3FU;
 	m_sacch[0] |= (s << 6) & 0xC0U;;
 }
 
-void NXDNCodec::set_sacch_data(const uint8_t *d)
+void NXDN::set_sacch_data(const uint8_t *d)
 {
 	uint8_t offset = 8U;
 	for (uint8_t i = 0U; i < 18U; i++, offset++) {
@@ -594,42 +592,42 @@ void NXDNCodec::set_sacch_data(const uint8_t *d)
 	}
 }
 
-void NXDNCodec::get_sacch(uint8_t *d)
+void NXDN::get_sacch(uint8_t *d)
 {
 	memcpy(d, m_sacch, 4U);
 	encode_crc6(d, 26);
 }
 
-void NXDNCodec::set_layer3_msgtype(uint8_t t)
+void NXDN::set_layer3_msgtype(uint8_t t)
 {
 	m_layer3[0] &= 0xC0U;
 	m_layer3[0] |= t & 0x3FU;
 }
 
-void NXDNCodec::set_layer3_srcid(uint16_t src)
+void NXDN::set_layer3_srcid(uint16_t src)
 {
 	m_layer3[3U] = (src >> 8) & 0xFF;
 	m_layer3[4U] = (src >> 0) & 0xFF ;
 }
 
-void NXDNCodec::set_layer3_dstid(uint16_t dst)
+void NXDN::set_layer3_dstid(uint16_t dst)
 {
 	m_layer3[5U] = (dst >> 8) & 0xFF;
 	m_layer3[6U] = (dst >> 0) & 0xFF ;
 }
 
-void NXDNCodec::set_layer3_grp(bool grp)
+void NXDN::set_layer3_grp(bool grp)
 {
 	m_layer3[2U] |= grp ? 0x20U : 0x20U;
 }
 
-void NXDNCodec::set_layer3_blks(uint8_t b)
+void NXDN::set_layer3_blks(uint8_t b)
 {
 	m_layer3[8U] &= 0xF0U;
 	m_layer3[8U] |= b & 0x0FU;
 }
 
-void NXDNCodec::layer3_encode(uint8_t* d, uint8_t len, uint8_t offset)
+void NXDN::layer3_encode(uint8_t* d, uint8_t len, uint8_t offset)
 {
 	for (uint32_t i = 0U; i < len; i++, offset++) {
 		bool b = READ_BIT1(m_layer3, offset);
@@ -637,7 +635,7 @@ void NXDNCodec::layer3_encode(uint8_t* d, uint8_t len, uint8_t offset)
 	}
 }
 
-void NXDNCodec::encode_crc6(uint8_t *d, uint8_t len)
+void NXDN::encode_crc6(uint8_t *d, uint8_t len)
 {
 	uint8_t crc = 0x3FU;
 
@@ -657,7 +655,7 @@ void NXDNCodec::encode_crc6(uint8_t *d, uint8_t len)
 	}
 }
 
-void NXDNCodec::get_ambe()
+void NXDN::get_ambe()
 {
 #if !defined(Q_OS_IOS)
 	uint8_t ambe[7];
@@ -670,7 +668,7 @@ void NXDNCodec::get_ambe()
 #endif
 }
 
-void NXDNCodec::process_rx_data()
+void NXDN::process_rx_data()
 {
 	int16_t pcm[160];
 	uint8_t ambe[7];
@@ -716,6 +714,7 @@ void NXDNCodec::process_rx_data()
 		m_modeinfo.streamid = 0;
 		m_rxcodecq.clear();
 		qDebug() << "YSF playback stopped";
+		m_modeinfo.stream_state = STREAM_IDLE;
 		return;
 	}
 }

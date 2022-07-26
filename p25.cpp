@@ -17,7 +17,7 @@
 
 #include <iostream>
 #include <cstring>
-#include "p25codec.h"
+#include "p25.h"
 
 //#define DEBUG
 
@@ -45,20 +45,18 @@ const unsigned char REC80[] = {0x80U, 0x00U, 0x00U, 0x00U, 0x00U, 0x00U, 0x00U, 
 #define WRITE_BIT(p,i,b) p[(i)>>3] = (b) ? (p[(i)>>3] | BIT_MASK_TABLE[(i)&7]) : (p[(i)>>3] & ~BIT_MASK_TABLE[(i)&7])
 #define READ_BIT(p,i)    (p[(i)>>3] & BIT_MASK_TABLE[(i)&7])
 
-P25Codec::P25Codec(QString callsign, int dmrid, int hostname, QString host, int port, bool ipv6, QString modem, QString audioin, QString audioout) :
-	Codec(callsign, 0, NULL, host, port, ipv6, NULL, modem, audioin, audioout, 2),
-	m_hostname(hostname),
-	m_dmrid(dmrid)
+P25::P25()
 {
 	m_p25cnt = 0;
 	m_txtimerint = 19;
+	m_attenuation = 2;
 }
 
-P25Codec::~P25Codec()
+P25::~P25()
 {
 }
 
-void P25Codec::process_udp()
+void P25::process_udp()
 {
 	QByteArray buf;
 	QHostAddress sender;
@@ -78,6 +76,7 @@ void P25Codec::process_udp()
 		if(m_modeinfo.status == CONNECTING){
 			m_modeinfo.status = CONNECTED_RW;
 			m_modeinfo.status = CONNECTED_RW;
+			m_dstid = m_refname.toInt();
 			m_txtimer = new QTimer();
 			m_rxtimer = new QTimer();
 			connect(m_rxtimer, SIGNAL(timeout()), this, SLOT(process_rx_data()));
@@ -175,7 +174,7 @@ void P25Codec::process_udp()
 	}
 }
 
-void P25Codec::hostname_lookup(QHostInfo i)
+void P25::hostname_lookup(QHostInfo i)
 {
 	if (!i.addresses().isEmpty()) {
 		QByteArray out;
@@ -197,7 +196,7 @@ void P25Codec::hostname_lookup(QHostInfo i)
 	}
 }
 
-void P25Codec::send_ping()
+void P25::send_ping()
 {
 	QByteArray out;
 	out.append(0xf0);
@@ -214,7 +213,7 @@ void P25Codec::send_ping()
 #endif
 }
 
-void P25Codec::send_disconnect()
+void P25::send_disconnect()
 {
 	QByteArray out;
 	out.append(0xf1);
@@ -231,7 +230,7 @@ void P25Codec::send_disconnect()
 #endif
 }
 
-void P25Codec::transmit()
+void P25::transmit()
 {
 	QByteArray txdata;
 	uint8_t imbe[11];
@@ -286,9 +285,9 @@ void P25Codec::transmit()
 		case 0x03U:
 			::memcpy(buffer, REC65, 17U);
 			::memcpy(buffer + 5U, imbe, 11U);
-			buffer[1U] = (m_hostname >> 16) & 0xFFU;
-			buffer[2U] = (m_hostname >> 8) & 0xFFU;
-			buffer[3U] = (m_hostname >> 0) & 0xFFU;
+			buffer[1U] = (m_dstid >> 16) & 0xFFU;
+			buffer[2U] = (m_dstid >> 8) & 0xFFU;
+			buffer[3U] = (m_dstid >> 0) & 0xFFU;
 			txdata.append((char *)buffer, 17U);
 			++p25step;
 			break;
@@ -383,7 +382,7 @@ void P25Codec::transmit()
 		}
 		m_modeinfo.stream_state = TRANSMITTING;
 		m_modeinfo.srcid = m_dmrid;
-		m_modeinfo.dstid = m_hostname;
+		m_modeinfo.dstid = m_dstid;
 		m_modeinfo.frame_number = p25step;
 		m_udp->writeDatagram(txdata, m_address, m_modeinfo.port);
 	}
@@ -414,7 +413,7 @@ void P25Codec::transmit()
 #endif
 }
 
-void P25Codec::process_rx_data()
+void P25::process_rx_data()
 {
 	if(m_rxwatchdog++ > 50){
 		qDebug() << "P25 RX stream timeout ";
@@ -444,5 +443,6 @@ void P25Codec::process_rx_data()
 		m_modeinfo.streamid = 0;
 		m_rxcodecq.clear();
 		qDebug() << "P25 playback stopped";
+		m_modeinfo.stream_state = STREAM_IDLE;
 	}
 }

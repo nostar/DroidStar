@@ -15,8 +15,8 @@
 	along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#ifndef YSFCODEC_H
-#define YSFCODEC_H
+#ifndef YSF_H
+#define YSF_H
 
 #include <cstdint>
 
@@ -50,15 +50,15 @@ const uint8_t YSF_MR_NOT_BUSY = 0x01U;
 const uint8_t YSF_MR_BUSY     = 0x02U;
 
 #include <string>
-#include "codec.h"
+#include "mode.h"
 #include "YSFFICH.h"
 
-class YSFCodec : public Codec
+class YSF : public Mode
 {
 	Q_OBJECT
 public:
-	YSFCodec(QString callsign, QString hostname, QString host, int port, bool ipv6, QString vocoder, QString modem, QString audioin, QString audioout);
-	~YSFCodec();
+	YSF();
+	~YSF();
 	void set_fcs_mode(bool y, std::string f = "        "){ m_fcs = y; m_fcsname = f; }
 private slots:
 	void process_udp();

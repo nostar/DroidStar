@@ -15,17 +15,17 @@
 	along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#ifndef XRFCODEC_H
-#define XRFCODEC_H
+#ifndef DCS_H
+#define DCS_H
 
-#include "codec.h"
+#include "mode.h"
 
-class XRFCodec : public Codec
+class DCS : public Mode
 {
 	Q_OBJECT
 public:
-	XRFCodec(QString callsign, QString hostname, char module, QString host, int port, bool ipv6, QString vocoder, QString modem, QString audioin, QString audioout);
-	~XRFCodec();
+	DCS();
+	~DCS();
 	unsigned char * get_frame(unsigned char *ambe);
 private:
 	QString m_txusrtxt;
@@ -33,17 +33,18 @@ private:
 private slots:
 	void toggle_tx(bool);
 	void start_tx();
-	void format_callsign(QString &);
 	void process_udp();
+	void process_modem_data(QByteArray);
 	void process_rx_data();
-	void process_modem_data(QByteArray d);
 	void get_ambe();
 	void send_ping();
 	void send_disconnect();
 	void transmit();
+	void format_callsign(QString &s);
 	void hostname_lookup(QHostInfo i);
+	void module_changed(int m) { m_module = 0x41 + m; m_modeinfo.streamid = 0; }
 	void usrtxt_changed(QString t) { m_txusrtxt = t; }
 	void send_frame(uint8_t *);
 };
 
-#endif // XRFCODEC_H
+#endif // DCS_H

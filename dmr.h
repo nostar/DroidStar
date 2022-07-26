@@ -15,21 +15,21 @@
 	along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#ifndef DMRCODEC_H
-#define DMRCODEC_H
+#ifndef DMR_H
+#define DMR_H
 
-#include "codec.h"
-//#include <inttypes.h>
-#include "DMRData.h"
+#include "mode.h"
+#include "DMRDefines.h"
 #include "cbptc19696.h"
 
-class DMRCodec : public Codec
+class DMR : public Mode
 {
 	Q_OBJECT
 public:
-	DMRCodec(QString callsign, uint32_t dmrid, uint8_t essid, QString password, QString lat, QString lon, QString location, QString desc, QString freq, QString url, QString swid, QString pkid, QString options, uint32_t dstid, QString host, uint32_t port, bool ipv6, QString vocoder, QString modem, QString audioin, QString audioout);
-	~DMRCodec();
-	unsigned char * get_eot();
+	DMR();
+	~DMR();
+	void set_dmr_params(uint8_t essid, QString password, QString lat, QString lon, QString location, QString desc, QString freq, QString url, QString swid, QString pkid, QString options);
+	uint8_t * get_eot();
 private slots:
 	void process_udp();
 	void process_rx_data();
@@ -39,13 +39,12 @@ private slots:
 	void send_disconnect();
 	void transmit();
 	void hostname_lookup(QHostInfo i);
-	void dmr_tgid_changed(unsigned int id) { m_txdstid = id; }
+	void dmr_tgid_changed(int id) { m_txdstid = id; }
 	void dmrpc_state_changed(int p){m_flco = p ? FLCO_USER_USER : FLCO_GROUP; }
 	void cc_changed(int cc) {m_txcc = cc + 1; }
 	void slot_changed(int s) {m_txslot = s + 1; }
 	void send_frame();
 private:
-	uint32_t m_dmrid;
 	uint32_t m_essid;
 	QString m_password;
 	QString m_lat;
@@ -92,4 +91,4 @@ private:
 	void setup_connection();
 };
 
-#endif // DMRCODEC_H
+#endif // DMR_H

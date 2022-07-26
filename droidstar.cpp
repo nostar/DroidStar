@@ -17,10 +17,6 @@
 
 #include "droidstar.h"
 #include "httpmanager.h"
-#include "SHA256.h"
-#include "crs129.h"
-#include "cbptc19696.h"
-#include "cgolay2087.h"
 #ifdef Q_OS_ANDROID
 #include <QtAndroidExtras>
 #endif
@@ -45,10 +41,10 @@ DroidStar::DroidStar(QObject *parent) :
 	m_outlevel(0),
 	m_tts(0)
 {
-	qRegisterMetaType<M17Codec::MODEINFO>("Codec::MODEINFO");
+	qRegisterMetaType<Mode::MODEINFO>("Mode::MODEINFO");
 	m_settings_processed = false;
 	m_modelchange = false;
-	connect_status = Codec::DISCONNECTED;
+	connect_status = Mode::DISCONNECTED;
 	m_settings = new QSettings(QSettings::IniFormat, QSettings::UserScope, "dudetronics", "droidstar", this);
 	config_path = QStandardPaths::writableLocation(QStandardPaths::ConfigLocation);
 #if !defined(Q_OS_ANDROID) && !defined(Q_OS_WIN)
@@ -102,8 +98,8 @@ void DroidStar::keepScreenOn()
 
 void DroidStar::reset_connect_status()
 {
-	if(connect_status == Codec::CONNECTED_RW){
-		connect_status = Codec::CONNECTING;
+	if(connect_status == Mode::CONNECTED_RW){
+		connect_status = Mode::CONNECTING;
 		process_connect();
 	}
 }
@@ -229,8 +225,8 @@ void DroidStar::tts_text_changed(QString ttstxt)
 
 void DroidStar::process_connect()
 {
-	if(connect_status != Codec::DISCONNECTED){
-		connect_status = Codec::DISCONNECTED;
+	if(connect_status != Mode::DISCONNECTED){
+		connect_status = Mode::DISCONNECTED;
 		m_modethread->quit();
 		m_data1.clear();
 		m_data2.clear();
@@ -255,55 +251,55 @@ void DroidStar::process_connect()
 		}
 
 		if(m_protocol == "REF"){
-			m_host = m_saved_refhost;
+			m_refname = m_saved_refhost;
 		}
 		else if(m_protocol == "DCS"){
-			m_host = m_saved_dcshost;
+			m_refname = m_saved_dcshost;
 		}
 		else if(m_protocol == "XRF"){
-			m_host = m_saved_xrfhost;
+			m_refname = m_saved_xrfhost;
 		}
 		else if(m_protocol == "YSF"){
-			m_host = m_saved_ysfhost;
+			m_refname = m_saved_ysfhost;
 		}
 		else if(m_protocol == "FCS"){
-			m_host = m_saved_fcshost;
+			m_refname = m_saved_fcshost;
 		}
 		else if(m_protocol == "DMR"){
-			m_host = m_saved_dmrhost;
+			m_refname = m_saved_dmrhost;
 		}
 		else if(m_protocol == "P25"){
-			m_host = m_saved_p25host;
+			m_refname = m_saved_p25host;
 		}
 		else if(m_protocol == "NXDN"){
-			m_host = m_saved_nxdnhost;
+			m_refname = m_saved_nxdnhost;
 		}
 		else if(m_protocol == "M17"){
-			m_host = m_saved_m17host;
+			m_refname = m_saved_m17host;
 		}
 
 		emit connect_status_changed(1);
-		connect_status = Codec::CONNECTING;
+		connect_status = Mode::CONNECTING;
 		QStringList sl;
 
 		if(m_protocol != "IAX"){
-			m_hostname = m_hostmap[m_host];
-			sl = m_hostname.split(',');
+			m_host = m_hostmap[m_refname];
+			sl = m_host.split(',');
 
-			if( (m_protocol == "M17") && (m_host != "MMDVM_DIRECT") && (m_ipv6) && (sl.size() > 2) && (sl.at(2) != "none") ){
-				m_hostname = sl.at(2).simplified();
+			if( (m_protocol == "M17") && (m_refname != "MMDVM_DIRECT") && (m_ipv6) && (sl.size() > 2) && (sl.at(2) != "none") ){
+				m_host = sl.at(2).simplified();
 				m_port = sl.at(1).toInt();
 			}
 			else if(sl.size() > 1){
-				m_hostname = sl.at(0).simplified();
+				m_host = sl.at(0).simplified();
 				m_port = sl.at(1).toInt();
 			}
-			else if( (m_protocol == "M17") && (m_host == "MMDVM_DIRECT") ){
+			else if( (m_protocol == "M17") && (m_refname == "MMDVM_DIRECT") ){
 				qDebug() << "Going MMDVM_DIRECT";
 			}
 			else{
 				m_errortxt = "Invalid host selection";
-				connect_status = Codec::DISCONNECTED;
+				connect_status = Mode::DISCONNECTED;
 				emit connect_status_changed(5);
 				return;
 			}
@@ -331,240 +327,79 @@ void DroidStar::process_connect()
 		const int rxfreq = m_modemRxFreq.toInt() + m_modemRxOffset.toInt();
 		const int txfreq = m_modemTxFreq.toInt() + m_modemTxOffset.toInt();
 
-		emit update_log("Connecting to " + m_hostname + ":" + QString::number(m_port) + "...");
-		if( (m_protocol == "REF") || ((m_protocol == "XRF") && m_xrf2ref) ){
-			m_ref = new REFCodec(m_callsign, m_host, m_module, m_hostname, 20001, false, vocoder, modem, m_capture, m_playback);
-			m_ref->set_modem_flags(rxInvert, txInvert, pttInvert, useCOSAsLockout, duplex);
-			m_ref->set_modem_params(m_modemBaud.toUInt(), rxfreq, txfreq, m_modemTxDelay.toInt(), m_modemRxLevel.toFloat(), m_modemRFLevel.toFloat(), ysfTXHang, m_modemCWIdTxLevel.toFloat(), m_modemDstarTxLevel.toFloat(), m_modemDMRTxLevel.toFloat(), m_modemYSFTxLevel.toFloat(), m_modemP25TxLevel.toFloat(), m_modemNXDNTxLevel.toFloat(), pocsagTXLevel, m17TXLevel);
-			m_modethread = new QThread;
-			m_ref->moveToThread(m_modethread);
-			connect(this, SIGNAL(module_changed(char)), m_ref, SLOT(module_changed(char)));
-			connect(m_ref, SIGNAL(update(Codec::MODEINFO)), this, SLOT(update_ref_data(Codec::MODEINFO)));
-			connect(m_ref, SIGNAL(update_output_level(unsigned short)), this, SLOT(update_output_level(unsigned short)));
-			connect(m_modethread, SIGNAL(started()), m_ref, SLOT(send_connect()));
-			connect(m_modethread, SIGNAL(finished()), m_ref, SLOT(deleteLater()));
-			connect(this, SIGNAL(input_source_changed(int,QString)), m_ref, SLOT(input_src_changed(int,QString)));
-			connect(this, SIGNAL(swrx_state_changed(int)), m_ref, SLOT(swrx_state_changed(int)));
-			connect(this, SIGNAL(swtx_state_changed(int)), m_ref, SLOT(swtx_state_changed(int)));
-			connect(this, SIGNAL(agc_state_changed(int)), m_ref, SLOT(agc_state_changed(int)));
-			connect(this, SIGNAL(tx_clicked(bool)), m_ref, SLOT(toggle_tx(bool)));
-			connect(this, SIGNAL(tx_pressed()), m_ref, SLOT(start_tx()));
-			connect(this, SIGNAL(tx_released()), m_ref, SLOT(stop_tx()));
-			connect(this, SIGNAL(in_audio_vol_changed(qreal)), m_ref, SLOT(in_audio_vol_changed(qreal)));
-			connect(this, SIGNAL(mycall_changed(QString)), m_ref, SLOT(mycall_changed(QString)));
-			connect(this, SIGNAL(urcall_changed(QString)), m_ref, SLOT(urcall_changed(QString)));
-			connect(this, SIGNAL(rptr1_changed(QString)), m_ref, SLOT(rptr1_changed(QString)));
-			connect(this, SIGNAL(rptr2_changed(QString)), m_ref, SLOT(rptr2_changed(QString)));
-			connect(this, SIGNAL(usrtxt_changed(QString)), m_ref, SLOT(usrtxt_changed(QString)));
-			emit module_changed(m_module);
-			emit mycall_changed(m_mycall);
-			emit urcall_changed(m_urcall);
-			emit rptr1_changed(m_rptr1);
-			emit rptr2_changed(m_rptr2);
-			emit usrtxt_changed(m_dstarusertxt);
-			m_modethread->start();
+		emit update_log("Connecting to " + m_host + ":" + QString::number(m_port) + "...");
+
+		m_mode = Mode::create_mode(m_protocol);
+		m_modethread = new QThread;
+		m_mode->moveToThread(m_modethread);
+		m_mode->init(m_callsign, m_dmrid, m_module, m_refname, m_host, m_port, m_ipv6, vocoder, modem, m_capture, m_playback);
+		if(m_protocol == "DMR"){
+
 		}
-		if(m_protocol == "DCS"){
-			m_dcs = new DCSCodec(m_callsign, m_host, m_module, m_hostname, m_port, false, vocoder, modem, m_capture, m_playback);
-			m_dcs->set_modem_flags(rxInvert, txInvert, pttInvert, useCOSAsLockout, duplex);
-			m_dcs->set_modem_params(m_modemBaud.toUInt(), rxfreq, txfreq, m_modemTxDelay.toInt(), m_modemRxLevel.toFloat(), m_modemRFLevel.toFloat(), ysfTXHang, m_modemCWIdTxLevel.toFloat(), m_modemDstarTxLevel.toFloat(), m_modemDMRTxLevel.toFloat(), m_modemYSFTxLevel.toFloat(), m_modemP25TxLevel.toFloat(), m_modemNXDNTxLevel.toFloat(), pocsagTXLevel, m17TXLevel);
-			m_modethread = new QThread;
-			m_dcs->moveToThread(m_modethread);
-			connect(m_dcs, SIGNAL(update(Codec::MODEINFO)), this, SLOT(update_dcs_data(Codec::MODEINFO)));
-			connect(m_dcs, SIGNAL(update_output_level(unsigned short)), this, SLOT(update_output_level(unsigned short)));
-			connect(m_modethread, SIGNAL(started()), m_dcs, SLOT(send_connect()));
-			connect(m_modethread, SIGNAL(finished()), m_dcs, SLOT(deleteLater()));
-			connect(this, SIGNAL(input_source_changed(int,QString)), m_dcs, SLOT(input_src_changed(int,QString)));
-			connect(this, SIGNAL(swrx_state_changed(int)), m_dcs, SLOT(swrx_state_changed(int)));
-			connect(this, SIGNAL(swtx_state_changed(int)), m_dcs, SLOT(swtx_state_changed(int)));
-			connect(this, SIGNAL(agc_state_changed(int)), m_dcs, SLOT(agc_state_changed(int)));
-			connect(this, SIGNAL(tx_clicked(bool)), m_dcs, SLOT(toggle_tx(bool)));
-			connect(this, SIGNAL(tx_pressed()), m_dcs, SLOT(start_tx()));
-			connect(this, SIGNAL(tx_released()), m_dcs, SLOT(stop_tx()));
-			connect(this, SIGNAL(in_audio_vol_changed(qreal)), m_dcs, SLOT(in_audio_vol_changed(qreal)));
-			connect(this, SIGNAL(mycall_changed(QString)), m_dcs, SLOT(mycall_changed(QString)));
-			connect(this, SIGNAL(urcall_changed(QString)), m_dcs, SLOT(urcall_changed(QString)));
-			connect(this, SIGNAL(rptr1_changed(QString)), m_dcs, SLOT(rptr1_changed(QString)));
-			connect(this, SIGNAL(rptr2_changed(QString)), m_dcs, SLOT(rptr2_changed(QString)));
-			connect(this, SIGNAL(usrtxt_changed(QString)), m_dcs, SLOT(usrtxt_changed(QString)));
-			emit mycall_changed(m_mycall);
-			emit urcall_changed(m_urcall);
-			emit rptr1_changed(m_rptr1);
-			emit rptr2_changed(m_rptr2);
-			emit usrtxt_changed(m_dstarusertxt);
-			m_modethread->start();
-		}
-		if( (m_protocol == "XRF") && (m_xrf2ref == false) ){
-			m_xrf = new XRFCodec(m_callsign, m_host, m_module, m_hostname, m_port, false, vocoder, modem, m_capture, m_playback);
-			m_xrf->set_modem_flags(rxInvert, txInvert, pttInvert, useCOSAsLockout, duplex);
-			m_xrf->set_modem_params(m_modemBaud.toUInt(), rxfreq, txfreq, m_modemTxDelay.toInt(), m_modemRxLevel.toFloat(), m_modemRFLevel.toFloat(), ysfTXHang, m_modemCWIdTxLevel.toFloat(), m_modemDstarTxLevel.toFloat(), m_modemDMRTxLevel.toFloat(), m_modemYSFTxLevel.toFloat(), m_modemP25TxLevel.toFloat(), m_modemNXDNTxLevel.toFloat(), pocsagTXLevel, m17TXLevel);
-			m_modethread = new QThread;
-			m_xrf->moveToThread(m_modethread);
-			connect(m_xrf, SIGNAL(update(Codec::MODEINFO)), this, SLOT(update_xrf_data(Codec::MODEINFO)));
-			connect(m_xrf, SIGNAL(update_output_level(unsigned short)), this, SLOT(update_output_level(unsigned short)));
-			connect(m_modethread, SIGNAL(started()), m_xrf, SLOT(send_connect()));
-			connect(m_modethread, SIGNAL(finished()), m_xrf, SLOT(deleteLater()));
-			connect(this, SIGNAL(input_source_changed(int,QString)), m_xrf, SLOT(input_src_changed(int,QString)));
-			connect(this, SIGNAL(swrx_state_changed(int)), m_xrf, SLOT(swrx_state_changed(int)));
-			connect(this, SIGNAL(swtx_state_changed(int)), m_xrf, SLOT(swtx_state_changed(int)));
-			connect(this, SIGNAL(agc_state_changed(int)), m_xrf, SLOT(agc_state_changed(int)));
-			connect(this, SIGNAL(tx_clicked(bool)), m_xrf, SLOT(toggle_tx(bool)));
-			connect(this, SIGNAL(tx_pressed()), m_xrf, SLOT(start_tx()));
-			connect(this, SIGNAL(tx_released()), m_xrf, SLOT(stop_tx()));
-			connect(this, SIGNAL(in_audio_vol_changed(qreal)), m_xrf, SLOT(in_audio_vol_changed(qreal)));
-			connect(this, SIGNAL(mycall_changed(QString)), m_xrf, SLOT(mycall_changed(QString)));
-			connect(this, SIGNAL(urcall_changed(QString)), m_xrf, SLOT(urcall_changed(QString)));
-			connect(this, SIGNAL(rptr1_changed(QString)), m_xrf, SLOT(rptr1_changed(QString)));
-			connect(this, SIGNAL(rptr2_changed(QString)), m_xrf, SLOT(rptr2_changed(QString)));
-			connect(this, SIGNAL(usrtxt_changed(QString)), m_xrf, SLOT(usrtxt_changed(QString)));
-			emit mycall_changed(m_mycall);
-			emit urcall_changed(m_urcall);
-			emit rptr1_changed(m_rptr1);
-			emit rptr2_changed(m_rptr2);
-			emit usrtxt_changed(m_dstarusertxt);
-			m_modethread->start();
-		}
+		m_mode->set_modem_flags(rxInvert, txInvert, pttInvert, useCOSAsLockout, duplex);
+		m_mode->set_modem_params(m_modemBaud.toUInt(), rxfreq, txfreq, m_modemTxDelay.toInt(), m_modemRxLevel.toFloat(), m_modemRFLevel.toFloat(), ysfTXHang, m_modemCWIdTxLevel.toFloat(), m_modemDstarTxLevel.toFloat(), m_modemDMRTxLevel.toFloat(), m_modemYSFTxLevel.toFloat(), m_modemP25TxLevel.toFloat(), m_modemNXDNTxLevel.toFloat(), pocsagTXLevel, m17TXLevel);
+
+		connect(this, SIGNAL(module_changed(char)), m_mode, SLOT(module_changed(char)));
+		connect(m_mode, SIGNAL(update(Mode::MODEINFO)), this, SLOT(update_data(Mode::MODEINFO)));
+		connect(m_mode, SIGNAL(update_output_level(unsigned short)), this, SLOT(update_output_level(unsigned short)));
+		connect(m_modethread, SIGNAL(started()), m_mode, SLOT(send_connect()));
+		connect(m_modethread, SIGNAL(finished()), m_mode, SLOT(deleteLater()));
+		connect(this, SIGNAL(input_source_changed(int,QString)), m_mode, SLOT(input_src_changed(int,QString)));
+		connect(this, SIGNAL(swrx_state_changed(int)), m_mode, SLOT(swrx_state_changed(int)));
+		connect(this, SIGNAL(swtx_state_changed(int)), m_mode, SLOT(swtx_state_changed(int)));
+		connect(this, SIGNAL(agc_state_changed(int)), m_mode, SLOT(agc_state_changed(int)));
+		connect(this, SIGNAL(tx_clicked(bool)), m_mode, SLOT(toggle_tx(bool)));
+		connect(this, SIGNAL(tx_pressed()), m_mode, SLOT(start_tx()));
+		connect(this, SIGNAL(tx_released()), m_mode, SLOT(stop_tx()));
+		connect(this, SIGNAL(in_audio_vol_changed(qreal)), m_mode, SLOT(in_audio_vol_changed(qreal)));
+		connect(this, SIGNAL(mycall_changed(QString)), m_mode, SLOT(mycall_changed(QString)));
+		connect(this, SIGNAL(urcall_changed(QString)), m_mode, SLOT(urcall_changed(QString)));
+		connect(this, SIGNAL(rptr1_changed(QString)), m_mode, SLOT(rptr1_changed(QString)));
+		connect(this, SIGNAL(rptr2_changed(QString)), m_mode, SLOT(rptr2_changed(QString)));
+		connect(this, SIGNAL(usrtxt_changed(QString)), m_mode, SLOT(usrtxt_changed(QString)));
+
 		if(m_protocol == "DMR"){
 			QString dmrpass = sl.at(2).simplified();
 
-			if((m_host.size() > 2) && (m_host.left(2) == "BM")){
+			if((m_refname.size() > 2) && (m_refname.left(2) == "BM")){
 				if(!m_bm_password.isEmpty()){
 					dmrpass = m_bm_password;
 				}
 			}
 
-			if((m_host.size() > 4) && (m_host.left(4) == "TGIF")){
+			if((m_refname.size() > 4) && (m_refname.left(4) == "TGIF")){
 				if(!m_tgif_password.isEmpty()){
 					dmrpass = m_tgif_password;
 				}
 			}
+			m_mode->set_dmr_params(m_essid, dmrpass, m_latitude, m_longitude, m_location, m_description, m_freq, m_url, m_swid, m_pkgid, m_dmropts);
+			connect(this, SIGNAL(dmr_tgid_changed(int)), m_mode, SLOT(dmr_tgid_changed(int)));
+			connect(this, SIGNAL(dmrpc_state_changed(int)), m_mode, SLOT(dmrpc_state_changed(int)));
+			connect(this, SIGNAL(slot_changed(int)), m_mode, SLOT(slot_changed(int)));
+			connect(this, SIGNAL(cc_changed(int)), m_mode, SLOT(cc_changed(int)));
+		}
 
-			m_dmr = new DMRCodec(m_callsign, m_dmrid, m_essid, dmrpass, m_latitude, m_longitude, m_location, m_description, m_freq, m_url, m_swid, m_pkgid, m_dmropts, m_dmr_destid, m_hostname, m_port, false, vocoder, modem, m_capture, m_playback);
-			m_dmr->set_modem_flags(rxInvert, txInvert, pttInvert, useCOSAsLockout, duplex);
-			m_dmr->set_modem_params(m_modemBaud.toUInt(), rxfreq, txfreq, m_modemTxDelay.toInt(), m_modemRxLevel.toFloat(), m_modemRFLevel.toFloat(), ysfTXHang, m_modemCWIdTxLevel.toFloat(), m_modemDstarTxLevel.toFloat(), m_modemDMRTxLevel.toFloat(), m_modemYSFTxLevel.toFloat(), m_modemP25TxLevel.toFloat(), m_modemNXDNTxLevel.toFloat(), pocsagTXLevel, m17TXLevel);
-			m_modethread = new QThread;
-			m_dmr->moveToThread(m_modethread);
-			connect(m_dmr, SIGNAL(update(Codec::MODEINFO)), this, SLOT(update_dmr_data(Codec::MODEINFO)));
-			connect(m_dmr, SIGNAL(update_output_level(unsigned short)), this, SLOT(update_output_level(unsigned short)));
-			connect(m_modethread, SIGNAL(started()), m_dmr, SLOT(send_connect()));
-			connect(m_modethread, SIGNAL(finished()), m_dmr, SLOT(deleteLater()));
-			connect(this, SIGNAL(input_source_changed(int,QString)), m_dmr, SLOT(input_src_changed(int,QString)));
-			connect(this, SIGNAL(swrx_state_changed(int)), m_dmr, SLOT(swrx_state_changed(int)));
-			connect(this, SIGNAL(swtx_state_changed(int)), m_dmr, SLOT(swtx_state_changed(int)));
-			connect(this, SIGNAL(agc_state_changed(int)), m_dmr, SLOT(agc_state_changed(int)));
-			connect(this, SIGNAL(tx_clicked(bool)), m_dmr, SLOT(toggle_tx(bool)));
-			connect(this, SIGNAL(tx_pressed()), m_dmr, SLOT(start_tx()));
-			connect(this, SIGNAL(tx_released()), m_dmr, SLOT(stop_tx()));
-			connect(this, SIGNAL(dmr_tgid_changed(uint)), m_dmr, SLOT(dmr_tgid_changed(uint)));
-			connect(this, SIGNAL(dmrpc_state_changed(int)), m_dmr, SLOT(dmrpc_state_changed(int)));
-			connect(this, SIGNAL(slot_changed(int)), m_dmr, SLOT(slot_changed(int)));
-			connect(this, SIGNAL(cc_changed(int)), m_dmr, SLOT(cc_changed(int)));
-			connect(this, SIGNAL(in_audio_vol_changed(qreal)), m_dmr, SLOT(in_audio_vol_changed(qreal)));
-			m_modethread->start();
-		}
-		if( (m_protocol == "YSF") || (m_protocol == "FCS") ){
-			m_ysf = new YSFCodec(m_callsign, m_host, m_hostname, m_port, false, vocoder, modem, m_capture, m_playback);
-			m_ysf->set_modem_flags(rxInvert, txInvert, pttInvert, useCOSAsLockout, duplex);
-			m_ysf->set_modem_params(m_modemBaud.toUInt(), rxfreq, txfreq, m_modemTxDelay.toInt(), m_modemRxLevel.toFloat(), m_modemRFLevel.toFloat(), ysfTXHang, m_modemCWIdTxLevel.toFloat(), m_modemDstarTxLevel.toFloat(), m_modemDMRTxLevel.toFloat(), m_modemYSFTxLevel.toFloat(), m_modemP25TxLevel.toFloat(), m_modemNXDNTxLevel.toFloat(), pocsagTXLevel, m17TXLevel);
-			m_modethread = new QThread;
-			m_ysf->moveToThread(m_modethread);
-			connect(m_ysf, SIGNAL(update(Codec::MODEINFO)), this, SLOT(update_ysf_data(Codec::MODEINFO)));
-			connect(m_ysf, SIGNAL(update_output_level(unsigned short)), this, SLOT(update_output_level(unsigned short)));
-			connect(this, SIGNAL(m17_rate_changed(int)), m_ysf, SLOT(rate_changed(int)));
-			connect(m_modethread, SIGNAL(started()), m_ysf, SLOT(send_connect()));
-			connect(m_modethread, SIGNAL(finished()), m_ysf, SLOT(deleteLater()));
-			connect(this, SIGNAL(input_source_changed(int,QString)), m_ysf, SLOT(input_src_changed(int,QString)));
-			connect(this, SIGNAL(swrx_state_changed(int)), m_ysf, SLOT(swrx_state_changed(int)));
-			connect(this, SIGNAL(swtx_state_changed(int)), m_ysf, SLOT(swtx_state_changed(int)));
-			connect(this, SIGNAL(agc_state_changed(int)), m_ysf, SLOT(agc_state_changed(int)));
-			connect(this, SIGNAL(tx_clicked(bool)), m_ysf, SLOT(toggle_tx(bool)));
-			connect(this, SIGNAL(tx_pressed()), m_ysf, SLOT(start_tx()));
-			connect(this, SIGNAL(tx_released()), m_ysf, SLOT(stop_tx()));
-			connect(this, SIGNAL(in_audio_vol_changed(qreal)), m_ysf, SLOT(in_audio_vol_changed(qreal)));
-			m_modethread->start();
-		}
-		if(m_protocol == "P25"){
-			m_dmrid = m_dmrids.key(m_callsign);
-			m_dmr_destid = m_host.toUInt();
-			m_p25 = new P25Codec(m_callsign, m_dmrid, m_dmr_destid, m_hostname, m_port, false, modem, m_capture, m_playback);
-			m_modethread = new QThread;
-			m_p25->moveToThread(m_modethread);
-			connect(m_p25, SIGNAL(update(Codec::MODEINFO)), this, SLOT(update_p25_data(Codec::MODEINFO)));
-			connect(m_p25, SIGNAL(update_output_level(unsigned short)), this, SLOT(update_output_level(unsigned short)));
-			connect(m_modethread, SIGNAL(started()), m_p25, SLOT(send_connect()));
-			connect(m_modethread, SIGNAL(finished()), m_p25, SLOT(deleteLater()));
-			connect(this, SIGNAL(input_source_changed(int,QString)), m_p25, SLOT(input_src_changed(int,QString)));
-			connect(this, SIGNAL(agc_state_changed(int)), m_p25, SLOT(agc_state_changed(int)));
-			connect(this, SIGNAL(tx_clicked(bool)), m_p25, SLOT(toggle_tx(bool)));
-			connect(this, SIGNAL(tx_pressed()), m_p25, SLOT(start_tx()));
-			connect(this, SIGNAL(tx_released()), m_p25, SLOT(stop_tx()));
-			connect(this, SIGNAL(in_audio_vol_changed(qreal)), m_p25, SLOT(in_audio_vol_changed(qreal)));
-			m_modethread->start();
-		}
-		if(m_protocol == "NXDN"){
-			m_dmr_destid = m_host.toUInt();
-			m_nxdn = new NXDNCodec(m_callsign, m_nxdnids.key(m_callsign), m_dmr_destid, m_hostname, m_port, false, vocoder, modem, m_capture, m_playback);
-			m_modethread = new QThread;
-			m_nxdn->moveToThread(m_modethread);
-			connect(m_nxdn, SIGNAL(update(Codec::MODEINFO)), this, SLOT(update_nxdn_data(Codec::MODEINFO)));
-			connect(m_nxdn, SIGNAL(update_output_level(unsigned short)), this, SLOT(update_output_level(unsigned short)));
-			connect(m_modethread, SIGNAL(started()), m_nxdn, SLOT(send_connect()));
-			connect(m_modethread, SIGNAL(finished()), m_nxdn, SLOT(deleteLater()));
-			connect(this, SIGNAL(input_source_changed(int,QString)), m_nxdn, SLOT(input_src_changed(int,QString)));
-			connect(this, SIGNAL(swrx_state_changed(int)), m_nxdn, SLOT(swrx_state_changed(int)));
-			connect(this, SIGNAL(swtx_state_changed(int)), m_nxdn, SLOT(swtx_state_changed(int)));
-			connect(this, SIGNAL(agc_state_changed(int)), m_nxdn, SLOT(agc_state_changed(int)));
-			connect(this, SIGNAL(tx_clicked(bool)), m_nxdn, SLOT(toggle_tx(bool)));
-			connect(this, SIGNAL(tx_pressed()), m_nxdn, SLOT(start_tx()));
-			connect(this, SIGNAL(tx_released()), m_nxdn, SLOT(stop_tx()));
-			connect(this, SIGNAL(in_audio_vol_changed(qreal)), m_nxdn, SLOT(in_audio_vol_changed(qreal)));
-			m_modethread->start();
-		}
 		if(m_protocol == "M17"){
-			m_m17 = new M17Codec(m_callsign, m_module, m_host, m_hostname, m_port, false, modem, m_capture, m_playback);
-			m_m17->set_modem_flags(rxInvert, txInvert, pttInvert, useCOSAsLockout, duplex);
-			m_m17->set_modem_params(m_modemBaud.toUInt(), rxfreq, txfreq, m_modemTxDelay.toInt(), m_modemRxLevel.toFloat(), m_modemRFLevel.toFloat(), ysfTXHang, m_modemCWIdTxLevel.toFloat(), m_modemDstarTxLevel.toFloat(), m_modemDMRTxLevel.toFloat(), m_modemYSFTxLevel.toFloat(), m_modemP25TxLevel.toFloat(), m_modemNXDNTxLevel.toFloat(), pocsagTXLevel, m17TXLevel);
-			m_modethread = new QThread;
-			m_m17->moveToThread(m_modethread);
-			connect(m_m17, SIGNAL(update(Codec::MODEINFO)), this, SLOT(update_m17_data(Codec::MODEINFO)));
-			connect(m_m17, SIGNAL(update_output_level(unsigned short)), this, SLOT(update_output_level(unsigned short)));
-			connect(this, SIGNAL(m17_rate_changed(int)), m_m17, SLOT(rate_changed(int)));
-			connect(this, SIGNAL(m17_can_changed(int)), m_m17, SLOT(can_changed(int)));
-			connect(this, SIGNAL(input_source_changed(int,QString)), m_m17, SLOT(input_src_changed(int,QString)));
-			connect(m_modethread, SIGNAL(started()), m_m17, SLOT(send_connect()));
-			connect(m_modethread, SIGNAL(finished()), m_m17, SLOT(deleteLater()));
-			connect(this, SIGNAL(agc_state_changed(int)), m_m17, SLOT(agc_state_changed(int)));
-			connect(this, SIGNAL(tx_clicked(bool)), m_m17, SLOT(toggle_tx(bool)));
-			connect(this, SIGNAL(tx_pressed()), m_m17, SLOT(start_tx()));
-			connect(this, SIGNAL(tx_released()), m_m17, SLOT(stop_tx()));
-			connect(this, SIGNAL(in_audio_vol_changed(qreal)), m_m17, SLOT(in_audio_vol_changed(qreal)));
-			m_modethread->start();
+			connect(this, SIGNAL(m17_rate_changed(int)), m_mode, SLOT(rate_changed(int)));
+			connect(this, SIGNAL(m17_can_changed(int)), m_mode, SLOT(can_changed(int)));
 		}
+
 		if(m_protocol == "IAX"){
-			m_iax = new IAXCodec(m_callsign, m_iaxuser, m_iaxpassword, m_iaxnode, m_iaxhost, m_iaxport, m_capture, m_playback);
-			m_modethread = new QThread;
-			m_iax->moveToThread(m_modethread);
-			connect(m_iax, SIGNAL(update()), this, SLOT(update_iax_data()));
-			connect(m_iax, SIGNAL(update_output_level(unsigned short)), this, SLOT(update_output_level(unsigned short)));
-			connect(m_modethread, SIGNAL(started()), m_iax, SLOT(send_connect()));
-			connect(m_modethread, SIGNAL(finished()), m_iax, SLOT(deleteLater()));
-			connect(this, SIGNAL(input_source_changed(int,QString)), m_iax, SLOT(input_src_changed(int,QString)));
-			//connect(this, SIGNAL(agc_state_changed(int)), m_xrf, SLOT(agc_state_changed(int)));
-			connect(this, SIGNAL(tx_clicked(bool)), m_iax, SLOT(toggle_tx(bool)));
-			connect(this, SIGNAL(tx_pressed()), m_iax, SLOT(start_tx()));
-			connect(this, SIGNAL(tx_released()), m_iax, SLOT(stop_tx()));
-			connect(this, SIGNAL(in_audio_vol_changed(qreal)), m_iax, SLOT(in_audio_vol_changed(qreal)));
-			connect(this, SIGNAL(send_dtmf(QByteArray)), m_iax, SLOT(send_dtmf(QByteArray)));
-			m_modethread->start();
+			m_mode->set_iax_params(m_iaxuser, m_iaxpassword, m_iaxnode, m_iaxhost, m_iaxport);
+			connect(this, SIGNAL(send_dtmf(QByteArray)), m_mode, SLOT(send_dtmf(QByteArray)));
 		}
+
+		m_modethread->start();
+
 	}
+
 	qDebug() << "process_connect called m_callsign == " << m_callsign;
 	qDebug() << "process_connect called m_dmrid == " << m_dmrid;
 	qDebug() << "process_connect called m_bm_password == " << m_bm_password;
 	qDebug() << "process_connect called m_tgif_password == " << m_tgif_password;
 	qDebug() << "process_connect called m_dmropts == " << m_dmropts;
+	qDebug() << "process_connect called m_refname == " << m_refname;
 	qDebug() << "process_connect called m_host == " << m_host;
-	qDebug() << "process_connect called m_hostname == " << m_hostname;
 	qDebug() << "process_connect called m_module == " << m_module;
 	qDebug() << "process_connect called m_protocol == " << m_protocol;
 	qDebug() << "process_connect called m_port == " << m_port;
@@ -1403,30 +1238,24 @@ void DroidStar::check_host_files()
 */
 }
 
-void DroidStar::update_ref_data(Codec::MODEINFO info)
+void DroidStar::update_data(Mode::MODEINFO info)
 {
-	if((connect_status == Codec::CONNECTING) && (info.status == Codec::DISCONNECTED)){
+	if((connect_status == Mode::CONNECTING) && (info.status == Mode::DISCONNECTED)){
 		process_connect();
 		return;
 	}
-	if( (connect_status == Codec::CONNECTING) && (info.status == Codec::CONNECTED_RW)){
-		connect_status = Codec::CONNECTED_RW;
+
+	if( (connect_status == Mode::CONNECTING) && ( info.status == Mode::CONNECTED_RW)){
+		connect_status = Mode::CONNECTED_RW;
 		emit connect_status_changed(2);
-		emit in_audio_vol_changed(0.0);
-		emit swtx_state(!m_ref->get_hwtx());
-		emit swrx_state(!m_ref->get_hwrx());
-		emit rptr2_changed(m_host + " " + m_module);
+		emit in_audio_vol_changed(0.5);
+		emit swtx_state(!m_mode->get_hwtx());
+		emit swrx_state(!m_mode->get_hwrx());
+		emit rptr2_changed(m_refname + " " + m_module);
 		if(m_mycall.isEmpty()) set_mycall(m_callsign);
 		if(m_urcall.isEmpty()) set_urcall("CQCQCQ");
 		if(m_rptr1.isEmpty()) set_rptr1(m_callsign + " " + m_module);
-		emit update_log("Connected to DStar " + m_host + " " + m_hostname + ":" + QString::number(m_port));
-
-		if(info.sw_vocoder_loaded){
-			emit update_log("Vocoder plugin loaded");
-		}
-		else{
-			emit update_log("No vocoder plugin found");
-		}
+		emit update_log("Connected to " + m_protocol + " " + m_refname + " " + m_host + ":" + QString::number(m_port));
 	}
 
 	m_netstatustxt = "Connected ping cnt: " + QString::number(info.count);
@@ -1439,7 +1268,7 @@ void DroidStar::update_ref_data(Codec::MODEINFO info)
 
 	QStringList verlist = info.ambeverstr.split('.');
 	if(verlist.size() > 7){
-		m_ambestatustxt += " " + verlist.at(0) + " " + verlist.at(5);
+		m_ambestatustxt += " " + verlist.at(0) + " " + verlist.at(5) + " " + verlist.at(6);
 	}
 
 	verlist = info.mmdvm.split(' ');
@@ -1447,7 +1276,15 @@ void DroidStar::update_ref_data(Codec::MODEINFO info)
 		m_mmdvmstatustxt += verlist.at(0) + " " + verlist.at(1);
 	}
 
-	if(info.streamid){
+	if(info.stream_state == Mode::STREAM_IDLE){
+		m_data1.clear();
+		m_data2.clear();
+		m_data3.clear();
+		m_data4.clear();
+		m_data5.clear();
+		m_data6.clear();
+	}
+	else if (m_protocol == "REF" || m_protocol == "XRF" || m_protocol == "DCS"){
 		m_data1 = info.src;
 		m_data2 = info.dst;
 		m_data3 = info.gw;
@@ -1455,388 +1292,7 @@ void DroidStar::update_ref_data(Codec::MODEINFO info)
 		m_data5 = QString::number(info.streamid, 16) + " " + QString("%1").arg(info.frame_number, 2, 16, QChar('0'));
 		m_data6 = info.usertxt;
 	}
-	else{
-		m_data1.clear();
-		m_data2.clear();
-		m_data3.clear();
-		m_data4.clear();
-		m_data5.clear();
-		m_data6.clear();
-	}
-	QString t = QDateTime::fromMSecsSinceEpoch(info.ts).toString("yyyy.MM.dd hh:mm:ss.zzz");
-	if(info.stream_state == Codec::STREAM_NEW){
-		emit update_log(t + " XRF RX started id: " + QString::number(info.streamid, 16) + " src: " + info.src + " dst: " + info.gw2);
-	}
-	if(info.stream_state == Codec::STREAM_END){
-		emit update_log(t + " XRF RX ended id: " + QString::number(info.streamid, 16) + " src: " + info.src + " dst: " + info.gw2);
-	}
-	if(info.stream_state == Codec::STREAM_LOST){
-		emit update_log(t + " XRF RX lost id: " + QString::number(info.streamid, 16) + " src: " + info.src + " dst: " + info.gw2);
-	}
-	emit update_data();
-}
-
-void DroidStar::update_dcs_data(Codec::MODEINFO info)
-{
-	if((connect_status == Codec::CONNECTING) && (info.status == Codec::DISCONNECTED)){
-		process_connect();
-		return;
-	}
-	if( (connect_status == Codec::CONNECTING) && (info.status == Codec::CONNECTED_RW)){
-		connect_status = Codec::CONNECTED_RW;
-		emit connect_status_changed(2);
-		emit in_audio_vol_changed(0.0);
-		emit swtx_state(!m_dcs->get_hwtx());
-		emit swrx_state(!m_dcs->get_hwrx());
-		emit rptr2_changed(m_host + " " + m_module);
-		if(m_mycall.isEmpty()) set_mycall(m_callsign);
-		if(m_urcall.isEmpty()) set_urcall("CQCQCQ");
-		if(m_rptr1.isEmpty()) set_rptr1(m_callsign + " " + m_module);
-		emit update_log("Connected to DStar " + m_host + " " + m_hostname + ":" + QString::number(m_port));
-
-		if(info.sw_vocoder_loaded){
-			emit update_log("Vocoder plugin loaded");
-		}
-		else{
-			emit update_log("No vocoder plugin found");
-		}
-	}
-
-	m_netstatustxt = "Connected ping cnt: " + QString::number(info.count);
-	m_ambestatustxt = "AMBE: " + (info.ambeprodid.isEmpty() ? "No device" : info.ambeprodid);
-	m_mmdvmstatustxt = "MMDVM: ";
-
-	if(info.mmdvm.isEmpty()){
-		m_mmdvmstatustxt += "No device";
-	}
-
-	QStringList verlist = info.ambeverstr.split('.');
-	if(verlist.size() > 7){
-		m_ambestatustxt += " " + verlist.at(0) + " " + verlist.at(5);
-	}
-
-	verlist = info.mmdvm.split(' ');
-	if(verlist.size() > 3){
-		m_mmdvmstatustxt += verlist.at(0) + " " + verlist.at(1);
-	}
-
-	if(info.streamid){
-		m_data1 = info.src;
-		m_data2 = info.dst;
-		m_data3 = info.gw;
-		m_data4 = info.gw2;
-		m_data5 = QString::number(info.streamid, 16) + " " + QString("%1").arg(info.frame_number, 2, 16, QChar('0'));
-		m_data6 = info.usertxt;
-	}
-	else{
-		m_data1.clear();
-		m_data2.clear();
-		m_data3.clear();
-		m_data4.clear();
-		m_data5.clear();
-		m_data6.clear();
-	}
-	QString t = QDateTime::fromMSecsSinceEpoch(info.ts).toString("yyyy.MM.dd hh:mm:ss.zzz");
-	if(info.stream_state == Codec::STREAM_NEW){
-		emit update_log(t + " XRF RX started id: " + QString::number(info.streamid, 16) + " src: " + info.src + " dst: " + info.gw2);
-	}
-	if(info.stream_state == Codec::STREAM_END){
-		emit update_log(t + " XRF RX ended id: " + QString::number(info.streamid, 16) + " src: " + info.src + " dst: " + info.gw2);
-	}
-	if(info.stream_state == Codec::STREAM_LOST){
-		emit update_log(t + " XRF RX lost id: " + QString::number(info.streamid, 16) + " src: " + info.src + " dst: " + info.gw2);
-	}
-
-	emit update_data();
-}
-
-void DroidStar::update_xrf_data(Codec::MODEINFO info)
-{
-	if((connect_status == Codec::CONNECTING) && (info.status == Codec::DISCONNECTED)){
-		process_connect();
-		return;
-	}
-	if( (connect_status == Codec::CONNECTING) && (info.status == Codec::CONNECTED_RW)){
-		connect_status = Codec::CONNECTED_RW;
-		emit connect_status_changed(2);
-		emit in_audio_vol_changed(0.0);
-		emit swtx_state(!m_xrf->get_hwtx());
-		emit swrx_state(!m_xrf->get_hwrx());
-		emit rptr2_changed(m_host + " " + m_module);
-		if(m_mycall.isEmpty()) set_mycall(m_callsign);
-		if(m_urcall.isEmpty()) set_urcall("CQCQCQ");
-		if(m_rptr1.isEmpty()) set_rptr1(m_callsign + " " + m_module);
-		emit update_log("Connected to DStar " + m_host + " " + m_hostname + ":" + QString::number(m_port));
-
-		if(info.sw_vocoder_loaded){
-			emit update_log("Vocoder plugin loaded");
-		}
-		else{
-			emit update_log("No vocoder plugin found");
-		}
-	}
-
-	m_netstatustxt = "Connected ping cnt: " + QString::number(info.count);
-	m_ambestatustxt = "AMBE: " + (info.ambeprodid.isEmpty() ? "No device" : info.ambeprodid);
-	m_mmdvmstatustxt = "MMDVM: ";
-
-	if(info.mmdvm.isEmpty()){
-		m_mmdvmstatustxt += "No device";
-	}
-
-	QStringList verlist = info.ambeverstr.split('.');
-	if(verlist.size() > 7){
-		m_ambestatustxt += " " + verlist.at(0) + " " + verlist.at(5);
-	}
-
-	verlist = info.mmdvm.split(' ');
-	if(verlist.size() > 3){
-		m_mmdvmstatustxt += verlist.at(0) + " " + verlist.at(1);
-	}
-
-	if(info.streamid){
-		m_data1 = info.src;
-		m_data2 = info.dst;
-		m_data3 = info.gw;
-		m_data4 = info.gw2;
-		m_data5 = QString::number(info.streamid, 16) + " " + QString("%1").arg(info.frame_number, 2, 16, QChar('0'));
-		m_data6 = info.usertxt;
-	}
-	else{
-		m_data1.clear();
-		m_data2.clear();
-		m_data3.clear();
-		m_data4.clear();
-		m_data5.clear();
-		m_data6.clear();
-	}
-	QString t = QDateTime::fromMSecsSinceEpoch(info.ts).toString("yyyy.MM.dd hh:mm:ss.zzz");
-	if(info.stream_state == Codec::STREAM_NEW){
-		emit update_log(t + " XRF RX started id: " + QString::number(info.streamid, 16) + " src: " + info.src + " dst: " + info.gw2);
-	}
-	if(info.stream_state == Codec::STREAM_END){
-		emit update_log(t + " XRF RX ended id: " + QString::number(info.streamid, 16) + " src: " + info.src + " dst: " + info.gw2);
-	}
-	if(info.stream_state == Codec::STREAM_LOST){
-		emit update_log(t + " XRF RX lost id: " + QString::number(info.streamid, 16) + " src: " + info.src + " dst: " + info.gw2);
-	}
-	emit update_data();
-}
-
-void DroidStar::update_nxdn_data(Codec::MODEINFO info)
-{
-	if( (connect_status == Codec::CONNECTING) && ( info.status == Codec::CONNECTED_RW)){
-		connect_status = Codec::CONNECTED_RW;
-		emit connect_status_changed(2);
-		emit in_audio_vol_changed(0.5);
-		emit swtx_state(!m_nxdn->get_hwtx());
-		emit swrx_state(!m_nxdn->get_hwrx());
-		emit update_log("Connected to " + m_protocol + " " + m_host + " " + m_hostname + ":" + QString::number(m_port));
-
-		if(info.sw_vocoder_loaded){
-			emit update_log("Vocoder plugin loaded");
-		}
-		else{
-			emit update_log("No vocoder plugin found");
-		}
-	}
-
-	m_netstatustxt = "Connected ping cnt: " + QString::number(info.count);
-	m_ambestatustxt = "AMBE: " + (info.ambeprodid.isEmpty() ? "No device" : info.ambeprodid);
-	m_mmdvmstatustxt = "MMDVM: ";
-
-	if(info.mmdvm.isEmpty()){
-		m_mmdvmstatustxt += "No device";
-	}
-
-	QStringList verlist = info.ambeverstr.split('.');
-	if(verlist.size() > 7){
-		m_ambestatustxt += " " + verlist.at(0) + " " + verlist.at(5);
-	}
-
-	verlist = info.mmdvm.split(' ');
-	if(verlist.size() > 3){
-		m_mmdvmstatustxt += verlist.at(0) + " " + verlist.at(1);
-	}
-
-	if(info.stream_state == Codec::STREAM_IDLE){
-		m_data1.clear();
-		m_data2.clear();
-		m_data3.clear();
-		m_data4.clear();
-		m_data5.clear();
-		m_data6.clear();
-	}
-	else{
-		if(info.srcid){
-			m_data1 = m_nxdnids[info.srcid];
-			m_data2 = QString::number(info.srcid);
-		}
-		m_data3 = QString::number(info.dstid);
-
-		if(info.frame_number){
-			QString n = QString("%1").arg(info.frame_number, 4, 16, QChar('0'));
-			m_data5 = n;
-		}
-	}
-	QString t = QDateTime::fromMSecsSinceEpoch(info.ts).toString("yyyy.MM.dd hh:mm:ss.zzz");
-	if(info.stream_state == Codec::STREAM_NEW){
-		emit update_log(t + " NXDN RX started id: " + QString::number(info.streamid, 16) + " src: " + QString::number(info.srcid) + " dst: " + QString::number(info.dstid));
-	}
-	if(info.stream_state == Codec::STREAM_END){
-		emit update_log(t + " NXDN RX ended id: " + QString::number(info.streamid, 16) + " src: " + QString::number(info.srcid) + " dst: " + QString::number(info.dstid));
-	}
-	if(info.stream_state == Codec::STREAM_LOST){
-		emit update_log(t + " NXDN RX lost id: " + QString::number(info.streamid, 16) + " src: " + QString::number(info.srcid) + " dst: " + QString::number(info.dstid));
-	}
-	emit update_data();
-}
-
-void DroidStar::update_dmr_data(Codec::MODEINFO info)
-{
-	if((connect_status == Codec::CONNECTING) && (info.status == Codec::DISCONNECTED)){
-		m_errortxt = "Connection refused by DMR server.  You must have a valid DMR ID, matching callsign, and if you are already connected with this DMR ID on another device, you must use a unique ESSID.  Some servers also require specific Lat/Long/Location/Decsription settings.  It is up to you to determine the connect requirements for the server you are connecting to.";
-		emit connect_status_changed(5);
-		//process_connect();
-		return;
-	}
-	if(info.status == Codec::CLOSED){
-		m_errortxt = "DMR server closing down.  Try a different server or try again later.";
-		emit connect_status_changed(5);
-		//process_connect();
-		return;
-	}
-	if( (connect_status == Codec::CONNECTING) && ( info.status == Codec::CONNECTED_RW)){
-		connect_status = Codec::CONNECTED_RW;
-		emit connect_status_changed(2);
-		emit in_audio_vol_changed(0.5);
-		emit swtx_state(!m_dmr->get_hwtx());
-		emit swrx_state(!m_dmr->get_hwrx());
-		emit update_log("Connected to " + m_protocol + " " + m_host + " " + m_hostname + ":" + QString::number(m_port));
-
-		if(info.sw_vocoder_loaded){
-			emit update_log("Vocoder plugin loaded");
-		}
-		else{
-			emit update_log("No vocoder plugin found");
-		}
-	}
-
-	m_netstatustxt = "Connected ping cnt: " + QString::number(info.count);
-	m_ambestatustxt = "AMBE: " + (info.ambeprodid.isEmpty() ? "No device" : info.ambeprodid);
-	m_mmdvmstatustxt = "MMDVM: ";
-
-	if(info.mmdvm.isEmpty()){
-		m_mmdvmstatustxt += "No device";
-	}
-
-	QStringList verlist = info.ambeverstr.split('.');
-	if(verlist.size() > 7){
-		m_ambestatustxt += " " + verlist.at(0) + " " + verlist.at(5);
-	}
-
-	verlist = info.mmdvm.split(' ');
-	if(verlist.size() > 3){
-		m_mmdvmstatustxt += verlist.at(0) + " " + verlist.at(1);
-	}
-
-	if(info.stream_state == Codec::STREAM_IDLE){
-		m_data1.clear();
-		m_data2.clear();
-		m_data3.clear();
-		m_data4.clear();
-		m_data5.clear();
-		m_data6.clear();
-	}
-	else{
-		m_data1 = m_dmrids[info.srcid];
-		m_data2 = info.srcid ? QString::number(info.srcid) : "";
-		m_data3 = info.dstid ? QString::number(info.dstid) : "";
-		m_data4 = info.gwid ? QString::number(info.gwid) : "";
-		QString s = "Slot" + QString::number(info.slot);
-		QString flco;
-
-		switch( (info.slot & 0x40) >> 6){
-		case 0:
-			flco = "Group";
-			break;
-		case 3:
-			flco = "Private";
-			break;
-		case 8:
-			flco = "GPS";
-			break;
-		default:
-			flco = "Unknown";
-			break;
-		}
-
-		if(info.frame_number){
-			QString n = s + " " + flco + " " + QString("%1").arg(info.frame_number, 2, 16, QChar('0'));
-			m_data5 = n;
-		}
-	}
-	QString t = QDateTime::fromMSecsSinceEpoch(info.ts).toString("yyyy.MM.dd hh:mm:ss.zzz");
-	if(info.stream_state == Codec::STREAM_NEW){
-		emit update_log(t + " DMR RX started id: " + QString::number(info.streamid, 16) + " src: " + QString::number(info.srcid) + " dst: " + QString::number(info.dstid));
-	}
-	if(info.stream_state == Codec::STREAM_END){
-		emit update_log(t + " DMR RX ended id: " + QString::number(info.streamid, 16) + " src: " + QString::number(info.srcid) + " dst: " + QString::number(info.dstid));
-	}
-	if(info.stream_state == Codec::STREAM_LOST){
-		emit update_log(t + " DMR RX lost id: " + QString::number(info.streamid, 16) + " src: " + QString::number(info.srcid) + " dst: " + QString::number(info.dstid));
-	}
-	emit update_data();
-}
-
-void DroidStar::update_ysf_data(Codec::MODEINFO info)
-{
-	if( (connect_status == Codec::CONNECTING) && (info.status == Codec::CONNECTED_RW)){
-		connect_status = Codec::CONNECTED_RW;
-		emit connect_status_changed(2);
-		emit in_audio_vol_changed(0.5);
-		emit swtx_state(!m_ysf->get_hwtx());
-		emit swrx_state(!m_ysf->get_hwrx());
-		emit update_log("Connected to " + m_protocol + " " + m_host + " " + m_hostname + ":" + QString::number(m_port));
-
-		if(info.sw_vocoder_loaded){
-			emit update_log("Vocoder plugin loaded");
-		}
-		else{
-			emit update_log("No vocoder plugin found");
-			if(!info.hw_vocoder_loaded) {
-				emit open_vocoder_dialog();
-			}
-		}
-	}
-
-	m_netstatustxt = "Connected ping cnt: " + QString::number(info.count);
-	m_ambestatustxt = "AMBE: " + (info.ambeprodid.isEmpty() ? "No device" : info.ambeprodid);
-	m_mmdvmstatustxt = "MMDVM: ";
-
-	if(info.mmdvm.isEmpty()){
-		m_mmdvmstatustxt += "No device";
-	}
-
-	QStringList verlist = info.ambeverstr.split('.');
-	if(verlist.size() > 7){
-		m_ambestatustxt += " " + verlist.at(0) + " " + verlist.at(5);
-	}
-
-	verlist = info.mmdvm.split(' ');
-	if(verlist.size() > 3){
-		m_mmdvmstatustxt += verlist.at(0) + " " + verlist.at(1);
-	}
-
-	if(info.stream_state == Codec::STREAM_IDLE){
-		m_data1.clear();
-		m_data2.clear();
-		m_data3.clear();
-		m_data4.clear();
-		m_data5.clear();
-		m_data6.clear();
-	}
-	else{
+	else if (m_protocol == "YSF" || m_protocol == "FCS"){
 		m_data1 = info.gw;
 		m_data2 =info.src;
 		m_data3 = info.dst;
@@ -1864,57 +1320,35 @@ void DroidStar::update_ysf_data(Codec::MODEINFO info)
 			m_data5 = m_data6 = "";
 		}
 	}
-	QString t = QDateTime::fromMSecsSinceEpoch(info.ts).toString("yyyy.MM.dd hh:mm:ss.zzz");
-	if(info.stream_state == Codec::STREAM_NEW){
-		emit update_log(t + " YSF RX started");
-	}
-	if(info.stream_state == Codec::STREAM_END){
-		emit update_log(t + " YSF RX ended");
-	}
-	if(info.stream_state == Codec::STREAM_LOST){
-		emit update_log(t + " YSF RX lost");
-	}
-	emit update_data();
-}
+	else if(m_protocol == "DMR"){
+		m_data1 = m_dmrids[info.srcid];
+		m_data2 = info.srcid ? QString::number(info.srcid) : "";
+		m_data3 = info.dstid ? QString::number(info.dstid) : "";
+		m_data4 = info.gwid ? QString::number(info.gwid) : "";
+		QString s = "Slot" + QString::number(info.slot);
+		QString flco;
 
-void DroidStar::update_p25_data(Codec::MODEINFO info)
-{
-	if( (connect_status == Codec::CONNECTING) && (info.status == Codec::CONNECTED_RW)){
-		connect_status = Codec::CONNECTED_RW;
-		emit connect_status_changed(2);
-		emit in_audio_vol_changed(0.5);
-		emit swtx_state(!m_p25->get_hwtx());
-		emit swrx_state(!m_p25->get_hwrx());
-		emit update_log("Connected to " + m_protocol + " " + m_host + " " + m_hostname + ":" + QString::number(m_port));
-	}
+		switch( (info.slot & 0x40) >> 6){
+		case 0:
+			flco = "Group";
+			break;
+		case 3:
+			flco = "Private";
+			break;
+		case 8:
+			flco = "GPS";
+			break;
+		default:
+			flco = "Unknown";
+			break;
+		}
 
-	m_netstatustxt = "Host: " + m_hostname + ":" + QString::number(m_port) + " Cnt: " + QString::number(info.count);
-	m_ambestatustxt = "AMBE: " + (info.ambeprodid.isEmpty() ? "No device" : info.ambeprodid);
-	m_mmdvmstatustxt = "MMDVM: ";
-
-	if(info.mmdvm.isEmpty()){
-		m_mmdvmstatustxt += "No device";
+		if(info.frame_number){
+			QString n = s + " " + flco + " " + QString("%1").arg(info.frame_number, 2, 16, QChar('0'));
+			m_data5 = n;
+		}
 	}
-
-	QStringList verlist = info.ambeverstr.split('.');
-	if(verlist.size() > 7){
-		m_ambestatustxt += " " + verlist.at(0) + " " + verlist.at(5);
-	}
-
-	verlist = info.mmdvm.split(' ');
-	if(verlist.size() > 3){
-		m_mmdvmstatustxt += verlist.at(0) + " " + verlist.at(1);
-	}
-
-	if(info.stream_state == Codec::STREAM_IDLE){
-		m_data1.clear();
-		m_data2.clear();
-		m_data3.clear();
-		m_data4.clear();
-		m_data5.clear();
-		m_data6.clear();
-	}
-	else{
+	else if(m_protocol == "P25"){
 		m_data1 = m_dmrids[info.srcid];
 		m_data2 = info.srcid ? QString::number(info.srcid) : "";
 		m_data3 = info.dstid ? QString::number(info.dstid) : "";
@@ -1924,49 +1358,19 @@ void DroidStar::update_p25_data(Codec::MODEINFO info)
 			m_data5 = n;
 		}
 	}
-	QString t = QDateTime::fromMSecsSinceEpoch(info.ts).toString("yyyy.MM.dd hh:mm:ss.zzz");
-	if(info.stream_state == Codec::STREAM_NEW){
-		emit update_log(t + " P25 RX started id: " + QString::number(info.streamid, 16) + " src: " + QString::number(info.srcid) + " dst: " + QString::number(info.dstid));
-	}
-	if(info.stream_state == Codec::STREAM_END){
-		emit update_log(t + " P25 RX ended id: " + QString::number(info.streamid, 16) + " src: " + QString::number(info.srcid) + " dst: " + QString::number(info.dstid));
-	}
-	if(info.stream_state == Codec::STREAM_LOST){
-		emit update_log(t + " P25 RX lost id: " + QString::number(info.streamid, 16) + " src: " + QString::number(info.srcid) + " dst: " + QString::number(info.dstid));
-	}
-	emit update_data();
-}
+	else if(m_protocol == "NXDN"){
+		if(info.srcid){
+			m_data1 = m_nxdnids[info.srcid];
+			m_data2 = QString::number(info.srcid);
+		}
+		m_data3 = QString::number(info.dstid);
 
-void DroidStar::update_m17_data(M17Codec::MODEINFO info)
-{
-	if( (connect_status == Codec::CONNECTING) && ( info.status == Codec::CONNECTED_RW)){
-		connect_status = Codec::CONNECTED_RW;
-		emit connect_status_changed(2);
-		emit in_audio_vol_changed(0.5);
-		emit swtx_state(!m_m17->get_hwtx());
-		emit swrx_state(!m_m17->get_hwrx());
-		emit update_log("Connected to " + m_protocol + " " + m_host + " " + m_hostname + ":" + QString::number(m_port));
+		if(info.frame_number){
+			QString n = QString("%1").arg(info.frame_number, 4, 16, QChar('0'));
+			m_data5 = n;
+		}
 	}
-
-	m_netstatustxt = "Connected ping cnt: " + QString::number(info.count);
-	m_ambestatustxt = "AMBE: " + (info.ambeprodid.isEmpty() ? "No device" : info.ambeprodid);
-	m_mmdvmstatustxt = "MMDVM: ";
-
-	if(info.mmdvm.isEmpty()){
-		m_mmdvmstatustxt += "No device";
-	}
-
-	QStringList verlist = info.ambeverstr.split('.');
-	if(verlist.size() > 7){
-		m_ambestatustxt += " " + verlist.at(0) + " " + verlist.at(5) + " " + verlist.at(6);
-	}
-
-	verlist = info.mmdvm.split(' ');
-	if(verlist.size() > 3){
-		m_mmdvmstatustxt += verlist.at(0) + " " + verlist.at(1);
-	}
-
-	if(info.streamid){
+	else if(m_protocol == "M17"){
 		m_data1 = info.src;
 		m_data2 = info.dst;
 		m_data3 = info.type ? "3200 Voice" : "1600 V/D";
@@ -1976,41 +1380,19 @@ void DroidStar::update_m17_data(M17Codec::MODEINFO info)
 		}
 		m_data5 = QString::number(info.streamid, 16);
 	}
-	else{
-		m_data1.clear();
-		m_data2.clear();
-		m_data3.clear();
-		m_data4.clear();
-		m_data5.clear();
+	else if(m_protocol == "IAX"){
+
 	}
 	QString t = QDateTime::fromMSecsSinceEpoch(info.ts).toString("yyyy.MM.dd hh:mm:ss.zzz");
-	if(info.stream_state == Codec::STREAM_NEW){
-		emit update_log(t + " M17 RX started id: " + QString::number(info.streamid, 16) + " src: " + info.src + " dst: " + info.dst);
+	if(info.stream_state == Mode::STREAM_NEW){
+		emit update_log(t + " " + m_protocol + " RX started id: " + QString::number(info.streamid, 16) + " src: " + info.src + " dst: " + info.gw2);
 	}
-	if(info.stream_state == Codec::STREAM_END){
-		emit update_log(t + " M17 RX ended id: " + QString::number(info.streamid, 16) + " src: " + info.src + " dst: " + info.dst);
+	if(info.stream_state == Mode::STREAM_END){
+		emit update_log(t + " " + m_protocol + " RX ended id: " + QString::number(info.streamid, 16) + " src: " + info.src + " dst: " + info.gw2);
 	}
-	if(info.stream_state == Codec::STREAM_LOST){
-		emit update_log(t + " M17 RX lost id: " + QString::number(info.streamid, 16) + " src: " + info.src + " dst: " + info.dst);
+	if(info.stream_state == Mode::STREAM_LOST){
+		emit update_log(t + " " + m_protocol + " RX lost id: " + QString::number(info.streamid, 16) + " src: " + info.src + " dst: " + info.gw2);
 	}
-	emit update_data();
-}
-
-void DroidStar::update_iax_data()
-{
-	if((connect_status == Codec::CONNECTING) && (m_iax->get_status() == Codec::DISCONNECTED)){
-		m_errortxt = "Connection refused by.  Check your AllStar/IAX settings and make sure that you have permission to connect to this node.";
-		emit connect_status_changed(5);
-		return;
-	}
-	if( (connect_status == Codec::CONNECTING) && ( m_iax->get_status() == Codec::CONNECTED_RW)){
-		connect_status = Codec::CONNECTED_RW;
-		emit connect_status_changed(2);
-		emit in_audio_vol_changed(0.5);
-		emit update_log("Connected to " + m_protocol + " " + m_iaxhost + ":" + QString::number(m_iaxport));
-	}
-
-	m_netstatustxt = "Connected ping cnt: " + QString::number(m_iax->get_cnt());
 	emit update_data();
 }
 

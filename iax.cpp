@@ -15,14 +15,14 @@
 	along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#include "iaxcodec.h"
+#include "iax.h"
 #include "iaxdefines.h"
 #ifdef Q_OS_WIN
 #include <winsock2.h>
 #else
 #include <arpa/inet.h>
 #endif
-//#define DEBUG
+#define DEBUG
 
 #ifdef USE_FLITE
 extern "C" {
@@ -32,19 +32,11 @@ extern cst_voice * register_cmu_us_awb(const char *);
 }
 #endif
 
-IAXCodec::IAXCodec(QString callsign, QString username, QString password, QString node, QString host, int port, QString audioin, QString audioout) :
-	m_callsign(callsign),
-	m_username(username),
-	m_password(password),
-	m_node(node),
-	m_host(host),
-	m_port(port),
+IAX::IAX() :
 	m_scallno(0),
 	m_dcallno(0),
 	m_regscallno(0x7fff),
 	m_regdcallno(0),
-	m_audioin(audioin),
-	m_audioout(audioout),
 	m_iseq(0),
 	m_oseq(0),
 	m_tx(false),
@@ -63,6 +55,20 @@ IAXCodec::IAXCodec(QString callsign, QString username, QString password, QString
 	voice_kal = register_cmu_us_kal16(nullptr);
 	voice_awb = register_cmu_us_awb(nullptr);
 #endif
+}
+
+IAX::~IAX()
+{
+}
+
+void IAX::set_iax_params(QString username, QString password, QString node, QString host, int port)
+{
+	m_username = username;
+	m_password = password;
+	m_node = node;
+	m_host = host;
+	m_port = port;
+
 	QStringList l = m_node.split('@');
 	if(l.size() == 2){
 		m_node = l.at(0).simplified();
@@ -71,10 +77,6 @@ IAXCodec::IAXCodec(QString callsign, QString username, QString password, QString
 	else{
 		m_context = "iax-client";
 	}
-}
-
-IAXCodec::~IAXCodec()
-{
 }
 
 int16_t ulaw_decode(int8_t number)
@@ -118,7 +120,7 @@ int8_t ulaw_encode(int16_t number)
    return (~(sign | ((position - 5) << 4) | lsb));
 }
 
-void IAXCodec::send_call()
+void IAX::send_call()
 {
 	uint16_t scall = htons(++m_scallno | 0x8000);
 	m_oseq = m_iseq = 0;
@@ -167,7 +169,7 @@ void IAXCodec::send_call()
 #endif
 }
 
-void IAXCodec::send_call_auth()
+void IAX::send_call_auth()
 {
 	QByteArray out;
 	m_md5seed.append(m_password.toUtf8());
@@ -197,7 +199,7 @@ void IAXCodec::send_call_auth()
 #endif
 }
 
-void IAXCodec::send_dtmf(QByteArray dtmf)
+void IAX::send_dtmf(QByteArray dtmf)
 {
 	QByteArray out;
 	uint16_t scall = htons(m_scallno | 0x8000);
@@ -225,7 +227,7 @@ void IAXCodec::send_dtmf(QByteArray dtmf)
 	}
 }
 
-void IAXCodec::send_radio_key(bool key)
+void IAX::send_radio_key(bool key)
 {
 	QByteArray out;
 	uint16_t scall = htons(m_scallno | 0x8000);
@@ -250,7 +252,7 @@ void IAXCodec::send_radio_key(bool key)
 #endif
 }
 
-void IAXCodec::send_ping()
+void IAX::send_ping()
 {
 	QByteArray out;
 	uint16_t scall = htons(m_scallno | 0x8000);
@@ -275,7 +277,7 @@ void IAXCodec::send_ping()
 #endif
 }
 
-void IAXCodec::send_pong()
+void IAX::send_pong()
 {
 	QByteArray out;
 	uint16_t scall = htons(m_scallno | 0x8000);
@@ -324,7 +326,7 @@ void IAXCodec::send_pong()
 #endif
 }
 
-void IAXCodec::send_ack(uint16_t scall, uint16_t dcall, uint8_t oseq, uint8_t iseq)
+void IAX::send_ack(uint16_t scall, uint16_t dcall, uint8_t oseq, uint8_t iseq)
 {
 	QByteArray out;
 	scall = htons(scall | 0x8000);
@@ -349,7 +351,7 @@ void IAXCodec::send_ack(uint16_t scall, uint16_t dcall, uint8_t oseq, uint8_t is
 #endif
 }
 
-void IAXCodec::send_lag_response()
+void IAX::send_lag_response()
 {
 	QByteArray out;
 	uint16_t scall = htons(m_scallno | 0x8000);
@@ -374,7 +376,7 @@ void IAXCodec::send_lag_response()
 #endif
 }
 
-void IAXCodec::send_voice_frame(int16_t *f)
+void IAX::send_voice_frame(int16_t *f)
 {
 	QByteArray out;
 	uint16_t scall = htons(m_scallno | 0x8000);
@@ -404,7 +406,7 @@ void IAXCodec::send_voice_frame(int16_t *f)
 #endif
 }
 
-void IAXCodec::send_registration(uint16_t dcall)
+void IAX::send_registration(uint16_t dcall)
 {
 	//static qint64 time = QDateTime::currentMSecsSinceEpoch();
 	uint32_t ts;
@@ -459,7 +461,7 @@ void IAXCodec::send_registration(uint16_t dcall)
 #endif
 }
 
-void IAXCodec::send_disconnect()
+void IAX::send_disconnect()
 {
 	QByteArray out;
 	uint16_t scall = htons(m_scallno | 0x8000);
@@ -487,7 +489,7 @@ void IAXCodec::send_disconnect()
 #endif
 }
 
-void IAXCodec::hostname_lookup(QHostInfo i)
+void IAX::hostname_lookup(QHostInfo i)
 {
 	if (!i.addresses().isEmpty()) {
 		m_address = i.addresses().first();
@@ -501,14 +503,14 @@ void IAXCodec::hostname_lookup(QHostInfo i)
 	}
 }
 
-void IAXCodec::send_connect()
+void IAX::send_connect()
 {
-	m_status = CONNECTING;
+	m_modeinfo.status = CONNECTING;
 	qDebug() << "lookup IP = " << m_host << ":" << m_port;
 	QHostInfo::lookupHost(m_host, this, SLOT(hostname_lookup(QHostInfo)));
 }
 
-void IAXCodec::process_udp()
+void IAX::process_udp()
 {
 	QByteArray buf;
 	QHostAddress sender;
@@ -545,7 +547,7 @@ void IAXCodec::process_udp()
 		uint16_t dcallno = (((buf.data()[0] & 0x7f) << 8) | ((uint8_t)buf.data()[1]));
 		uint16_t scallno = (((buf.data()[2] & 0x7f) << 8) | ((uint8_t)buf.data()[3]));
 		send_ack(scallno, dcallno, 2, 2);
-		if(m_status == CONNECTING){
+		if(m_modeinfo.status == CONNECTING){
 			send_call();
 		}
 	}
@@ -553,7 +555,7 @@ void IAXCodec::process_udp()
 		(buf.data()[10] == AST_FRAME_IAX) &&
 		(buf.data()[11] == IAX_COMMAND_REGREJ) )
 	{
-		m_status = DISCONNECTED;
+		m_modeinfo.status = DISCONNECTED;
 	}
 	else if( (buf.data()[0] & 0x80) &&
 		(buf.data()[10] == AST_FRAME_IAX) &&
@@ -595,7 +597,7 @@ void IAXCodec::process_udp()
 		(buf.data()[10] == AST_FRAME_IAX) &&
 		(buf.data()[11] == IAX_COMMAND_REJECT) )
 	{
-		m_status = DISCONNECTED;
+		m_modeinfo.status = DISCONNECTED;
 	}
 	else if( (buf.data()[0] & 0x80) &&
 		(buf.data()[10] == AST_FRAME_CONTROL) &&
@@ -614,8 +616,8 @@ void IAXCodec::process_udp()
 		(buf.data()[10] == AST_FRAME_CONTROL) &&
 		(buf.data()[11] == AST_CONTROL_ANSWER) )
 	{
-		if(m_status == CONNECTING){
-			m_status = CONNECTED_RW;
+		if(m_modeinfo.status == CONNECTING){
+			m_modeinfo.status = CONNECTED_RW;
 			m_txtimer = new QTimer();
 			connect(m_txtimer, SIGNAL(timeout()), this, SLOT(transmit()));
 			m_rxtimer = new QTimer();
@@ -726,10 +728,10 @@ void IAXCodec::process_udp()
 			}
 		}
 	}
-	emit update();
+	emit update(m_modeinfo);
 }
 
-void IAXCodec::process_rx_data()
+void IAX::process_rx_data()
 {
 	int16_t pcm[160];
 
@@ -743,13 +745,13 @@ void IAXCodec::process_rx_data()
 	else return;
 }
 
-void IAXCodec::toggle_tx(bool tx)
+void IAX::toggle_tx(bool tx)
 {
 	qDebug() << "IAXCodec::toggle_tx(bool tx) == " << tx;
 	tx ? start_tx() : stop_tx();
 }
 
-void IAXCodec::start_tx()
+void IAX::start_tx()
 {
 	//std::cerr << "Pressed TX buffersize == " << audioin->bufferSize() << std::endl;
 	//QByteArray tx("*99", 3);
@@ -771,7 +773,7 @@ void IAXCodec::start_tx()
 #endif
 }
 
-void IAXCodec::stop_tx()
+void IAX::stop_tx()
 {
 	m_tx = false;
 	send_radio_key(false);
@@ -779,7 +781,7 @@ void IAXCodec::stop_tx()
 	//send_dtmf(tx);
 }
 
-void IAXCodec::transmit()
+void IAX::transmit()
 {
 	QByteArray out;
 	int16_t pcm[160];
@@ -825,9 +827,9 @@ void IAXCodec::transmit()
 #endif
 }
 
-void IAXCodec::deleteLater()
+void IAX::deleteLater()
 {
-	if(m_status == CONNECTED_RW){
+	if(m_modeinfo.status == CONNECTED_RW){
 		m_udp->disconnect();
 		m_txtimer->stop();
 		m_rxtimer->stop();

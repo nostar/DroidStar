@@ -14,13 +14,23 @@
 	You should have received a copy of the GNU General Public License
 	along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
-#include "codec.h"
+#include "mode.h"
 #include <iostream>
 #ifdef Q_OS_WIN
 #include <windows.h>
 #else
 #include <dlfcn.h>
 #endif
+
+#include "m17.h"
+#include "ysf.h"
+#include "dmr.h"
+#include "p25.h"
+#include "nxdn.h"
+#include "ref.h"
+#include "xrf.h"
+#include "dcs.h"
+#include "iax.h"
 
 #ifdef USE_FLITE
 extern "C" {
@@ -30,32 +40,70 @@ extern cst_voice * register_cmu_us_awb(const char *);
 }
 #endif
 
-Codec::Codec(QString callsign, char module, QString hostname, QString host, int port, bool ipv6, QString vocoder, QString modem, QString audioin, QString audioout, uint8_t attenuation) :
-	m_module(module),
-	m_hostname(hostname),
-	m_tx(false),
-	m_ttsid(0),
-	m_audioin(audioin),
-	m_audioout(audioout),
-	m_rxwatchdog(0),
-	m_attenuation(attenuation),
-#ifdef Q_OS_WIN
-	m_rxtimerint(19),
-#else
-	m_rxtimerint(20),
-#endif
-	m_txtimerint(19),
-	m_vocoder(vocoder),
-	m_modemport(modem),
-	m_modem(nullptr),
-	m_ambedev(nullptr),
-	m_hwrx(false),
-	m_hwtx(false),
-	m_ipv6(ipv6)
+Mode* Mode::create_mode(QString m)
 {
+	Mode *mode = nullptr;
+
+	if(m == "M17"){
+		mode = new M17();
+	}
+	else if(m == "YSF" || m == "FCS"){
+		mode = new YSF();
+	}
+	else if(m == "DMR"){
+		mode = new DMR();
+	}
+	else if(m == "P25"){
+		mode = new P25();
+	}
+	else if(m == "NXDN"){
+		mode = new NXDN();
+	}
+	else if(m == "REF"){
+		mode = new REF();
+	}
+	else if(m == "XRF"){
+		mode = new XRF();
+	}
+	else if(m == "DCS"){
+		mode = new DCS();
+	}
+	else if(m == "IAX"){
+		mode = new IAX();
+	}
+	return mode;
+}
+
+Mode::Mode()
+{
+}
+
+Mode::~Mode()
+{
+}
+
+void Mode::init(QString callsign, uint32_t dmrid, char module, QString refname, QString host, int port, bool ipv6, QString vocoder, QString modem, QString audioin, QString audioout)
+{
+	m_dmrid = dmrid;
+	m_module = module;
+	m_refname = refname;
+	m_ipv6 = ipv6;
+	m_vocoder = vocoder;
+	m_modemport = modem;
+	m_audioin = audioin;
+	m_audioout = audioout;
+
+	m_modem = nullptr;
+	m_ambedev = nullptr;
+	m_hwrx = false;
+	m_hwtx = false;
+	m_tx = false;
+	m_ttsid = 0;
+	m_rxwatchdog = 0;
+
 	m_modeinfo.callsign = callsign;
 	m_modeinfo.gwid = 0;
-	m_modeinfo.srcid = 0;
+	m_modeinfo.srcid = dmrid;
 	m_modeinfo.dstid = 0;
 	m_modeinfo.host = host;
 	m_modeinfo.port = port;
@@ -66,19 +114,21 @@ Codec::Codec(QString callsign, char module, QString hostname, QString host, int 
 	m_modeinfo.stream_state = STREAM_IDLE;
 	m_modeinfo.sw_vocoder_loaded = false;
 	m_modeinfo.hw_vocoder_loaded = false;
+#ifdef Q_OS_WIN
+	m_rxtimerint = 19;
+#else
+	m_rxtimerint = 20;
+#endif
 #ifdef USE_FLITE
 	flite_init();
 	voice_slt = register_cmu_us_slt(nullptr);
 	voice_kal = register_cmu_us_kal16(nullptr);
 	voice_awb = register_cmu_us_awb(nullptr);
 #endif
+
 }
 
-Codec::~Codec()
-{
-}
-
-void Codec::ambe_connect_status(bool s)
+void Mode::ambe_connect_status(bool s)
 {
 	if(s){
 #if !defined(Q_OS_IOS)
@@ -94,7 +144,7 @@ void Codec::ambe_connect_status(bool s)
 	emit update(m_modeinfo);
 }
 
-void Codec::mmdvm_connect_status(bool s)
+void Mode::mmdvm_connect_status(bool s)
 {
 	if(s){
 		//m_modeinfo.mmdvmdesc = m_modem->get_mmdvm_description();
@@ -108,23 +158,23 @@ void Codec::mmdvm_connect_status(bool s)
 	emit update(m_modeinfo);
 }
 
-void Codec::in_audio_vol_changed(qreal v)
+void Mode::in_audio_vol_changed(qreal v)
 {
 	m_audio->set_input_volume(v / m_attenuation);
 }
 
-void Codec::out_audio_vol_changed(qreal v)
+void Mode::out_audio_vol_changed(qreal v)
 {
 	m_audio->set_output_volume(v);
 }
 
-void Codec::agc_state_changed(int s)
+void Mode::agc_state_changed(int s)
 {
 	qDebug() << "Codec::agc_state_changed() called s == " << s;
 	m_audio->set_agc(s);
 }
 
-void Codec::send_connect()
+void Mode::send_connect()
 {
 	m_modeinfo.status = CONNECTING;
 
@@ -144,12 +194,12 @@ void Codec::send_connect()
 	}
 }
 
-void Codec::toggle_tx(bool tx)
+void Mode::toggle_tx(bool tx)
 {
 	tx ? start_tx() : stop_tx();
 }
 
-void Codec::start_tx()
+void Mode::start_tx()
 {
 #if !defined(Q_OS_IOS)
 	if(m_hwtx){
@@ -185,12 +235,12 @@ void Codec::start_tx()
 	}
 }
 
-void Codec::stop_tx()
+void Mode::stop_tx()
 {
 	m_tx = false;
 }
 
-bool Codec::load_vocoder_plugin()
+bool Mode::load_vocoder_plugin()
 {
 #ifdef VOCODER_PLUGIN
 	QString config_path = QStandardPaths::writableLocation(QStandardPaths::ConfigLocation);
@@ -262,7 +312,7 @@ bool Codec::load_vocoder_plugin()
 #endif
 }
 
-void Codec::deleteLater()
+void Mode::deleteLater()
 {
 	if(m_modeinfo.status == CONNECTED_RW){
 		//m_udp->disconnect();

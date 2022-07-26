@@ -17,26 +17,26 @@
 
 #include <iostream>
 #include <cstring>
-#include "refcodec.h"
+#include "ref.h"
 #include "CRCenc.h"
 
-#define DEBUG
+//#define DEBUG
 
 const unsigned char MMDVM_DSTAR_HEADER = 0x10U;
 const unsigned char MMDVM_DSTAR_DATA   = 0x11U;
 const unsigned char MMDVM_DSTAR_LOST   = 0x12U;
 const unsigned char MMDVM_DSTAR_EOT    = 0x13U;
 
-REFCodec::REFCodec(QString callsign, QString hostname, char module, QString host, int port, bool ipv6, QString vocoder, QString modem, QString audioin, QString audioout) :
-	Codec(callsign, module, hostname, host, port, ipv6, vocoder, modem, audioin, audioout, 5)
+REF::REF()
+{
+	m_attenuation = 5;
+}
+
+REF::~REF()
 {
 }
 
-REFCodec::~REFCodec()
-{
-}
-
-void REFCodec::process_udp()
+void REF::process_udp()
 {
 	QByteArray buf;
 	QByteArray out;
@@ -157,7 +157,7 @@ void REFCodec::process_udp()
 		QString urcall = QString(temp);
 		memcpy(temp, buf.data() + 44, 8); temp[8] = '\0';
 		QString mycall = QString(temp);
-		QString h = m_hostname + " " + m_module;
+		QString h = m_refname + " " + m_module;
 
 		if( (rptr2.simplified() == h.simplified()) || (rptr1.simplified() == h.simplified()) ){
 			m_rxwatchdog = 0;
@@ -296,7 +296,7 @@ void REFCodec::process_udp()
 	//emit update(m_modeinfo);
 }
 
-void REFCodec::hostname_lookup(QHostInfo i)
+void REF::hostname_lookup(QHostInfo i)
 {
 	if (!i.addresses().isEmpty()) {
 		QByteArray out;
@@ -320,7 +320,7 @@ void REFCodec::hostname_lookup(QHostInfo i)
 	}
 }
 
-void REFCodec::send_ping()
+void REF::send_ping()
 {
 	QByteArray out;
 	out.append(0x03);
@@ -337,7 +337,7 @@ void REFCodec::send_ping()
 #endif
 }
 
-void REFCodec::send_disconnect()
+void REF::send_disconnect()
 {
 	QByteArray out;
 	out.append(0x05);
@@ -356,7 +356,7 @@ void REFCodec::send_disconnect()
 #endif
 }
 
-void REFCodec::format_callsign(QString &s)
+void REF::format_callsign(QString &s)
 {
 	QStringList l = s.simplified().split(' ');
 
@@ -374,7 +374,7 @@ void REFCodec::format_callsign(QString &s)
 	}
 }
 
-void REFCodec::process_modem_data(QByteArray d)
+void REF::process_modem_data(QByteArray d)
 {
 	QByteArray txdata;
 	char cs[9];
@@ -401,21 +401,21 @@ void REFCodec::process_modem_data(QByteArray d)
 	send_frame(ambe);
 }
 
-void REFCodec::toggle_tx(bool tx)
+void REF::toggle_tx(bool tx)
 {
 	tx ? start_tx() : stop_tx();
 }
 
-void REFCodec::start_tx()
+void REF::start_tx()
 {
 	format_callsign(m_txmycall);
 	format_callsign(m_txurcall);
 	format_callsign(m_txrptr1);
 	format_callsign(m_txrptr2);
-	Codec::start_tx();
+	Mode::start_tx();
 }
 
-void REFCodec::transmit()
+void REF::transmit()
 {
 	unsigned char ambe[9];
 	uint8_t ambe_frame[72];
@@ -467,7 +467,7 @@ void REFCodec::transmit()
 	}
 }
 
-void REFCodec::send_frame(uint8_t *ambe)
+void REF::send_frame(uint8_t *ambe)
 {
 	QByteArray txdata;
 	static uint16_t txstreamid = 0;
@@ -637,7 +637,7 @@ void REFCodec::send_frame(uint8_t *ambe)
 #endif
 }
 
-void REFCodec::get_ambe()
+void REF::get_ambe()
 {
 #if !defined(Q_OS_IOS)
 	uint8_t ambe[9];
@@ -650,7 +650,7 @@ void REFCodec::get_ambe()
 #endif
 }
 
-void REFCodec::process_rx_data()
+void REF::process_rx_data()
 {
 	int16_t pcm[160];
 	uint8_t ambe[9];
@@ -709,6 +709,7 @@ void REFCodec::process_rx_data()
 		m_modeinfo.streamid = 0;
 		m_rxcodecq.clear();
 		qDebug() << "REF playback stopped";
+		m_modeinfo.stream_state = STREAM_IDLE;
 		return;
 	}
 }

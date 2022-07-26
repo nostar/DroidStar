@@ -15,29 +15,22 @@
 	along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#ifndef IAXCODEC_H
-#define IAXCODEC_H
+#ifndef IAX_H
+#define IAX_H
 
-#include <QObject>
-#include <QtNetwork>
-#include "audioengine.h"
-#ifdef USE_FLITE
-#include <flite/flite.h>
-#endif
+#include "mode.h"
 
-class IAXCodec : public QObject
+class IAX : public Mode
 {
 	Q_OBJECT
 public:
-	IAXCodec(QString callsign, QString username, QString password, QString node, QString host, int port, QString audioin, QString audioout);
-	~IAXCodec();
-	uint8_t get_status(){ return m_status; }
+	IAX();//QString callsign, QString username, QString password, QString node, QString host, int port, QString audioin, QString audioout);
+	~IAX();
+	void set_iax_params(QString username, QString password, QString node, QString host, int port);
+	//uint8_t get_status(){ return m_status; }
 	QString get_host() { return m_host; }
 	int get_port() { return m_port; }
 	int get_cnt() { return m_cnt; }
-signals:
-	void update();
-	void update_output_level(unsigned short);
 private slots:
 	void deleteLater();
 	void process_udp();
@@ -62,16 +55,6 @@ private slots:
 	void in_audio_vol_changed(qreal v){ m_audio->set_input_volume(v); }
 	void out_audio_vol_changed(qreal v){ m_audio->set_output_volume(v); }
 private:
-	enum{
-		DISCONNECTED,
-		CLOSED,
-		CONNECTING,
-		DMR_AUTH,
-		DMR_CONF,
-		DMR_OPTS,
-		CONNECTED_RW,
-		CONNECTED_RO
-	} m_status;
 	QUdpSocket *m_udp = nullptr;
 	QHostAddress m_address;
 	QString m_callsign;
@@ -119,4 +102,4 @@ private:
 #endif
 };
 
-#endif // IAXCODEC_H
+#endif // IAX_H

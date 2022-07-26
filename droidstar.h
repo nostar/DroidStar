@@ -20,15 +20,7 @@
 
 #include <QObject>
 #include <QTimer>
-#include "refcodec.h"
-#include "dcscodec.h"
-#include "xrfcodec.h"
-#include "ysfcodec.h"
-#include "dmrcodec.h"
-#include "p25codec.h"
-#include "nxdncodec.h"
-#include "m17codec.h"
-#include "iaxcodec.h"
+#include "mode.h"
 
 class DroidStar : public QObject
 {
@@ -54,7 +46,7 @@ signals:
 	void tx_released();
 	void tx_clicked(bool);
 	void dmrpc_state_changed(int);
-	void dmr_tgid_changed(unsigned int);
+	void dmr_tgid_changed(int);
 	void m17_rate_changed(int);
 	void m17_can_changed(int);
 	void send_dtmf(QByteArray);
@@ -70,7 +62,7 @@ signals:
 	void urcall_changed(QString);
 	void usrtxt_changed(QString);
 public slots:
-	void set_callsign(const QString &callsign) { m_callsign = callsign.simplified(); save_settings(); }
+	void set_callsign(const QString &callsign) {  m_callsign = callsign.simplified(); save_settings(); }
 	void set_dmrtgid(const QString &dmrtgid) { m_dmr_destid = dmrtgid.simplified().toUInt(); save_settings(); }
 	void set_slot(const int slot) {emit slot_changed(slot); }
 	void set_cc(const int cc) {emit cc_changed(cc); }
@@ -271,7 +263,7 @@ private:
 	QString hosts_filename;
 	QString m_callsign;
 	QString m_host;
-	QString m_hostname;
+	QString m_refname;
 	QString m_protocol;
 	QString m_bm_password;
 	QString m_tgif_password;
@@ -328,15 +320,7 @@ private:
 	QMap<QString, QString> m_hostmap;
 	QStringList m_customhosts;
 	QThread *m_modethread;
-	REFCodec *m_ref;
-	DCSCodec *m_dcs;
-	XRFCodec *m_xrf;
-	YSFCodec *m_ysf;
-	DMRCodec *m_dmr;
-	P25Codec *m_p25;
-	NXDNCodec *m_nxdn;
-	M17Codec *m_m17;
-	IAXCodec *m_iax;
+	Mode *m_mode;
 	QByteArray user_data;
 	QString m_iaxuser;
 	QString m_iaxpassword;
@@ -401,15 +385,7 @@ private slots:
 	void process_m17_hosts();
 	void process_dmr_ids();
 	void process_nxdn_ids();
-	void update_dmr_data(Codec::MODEINFO);
-	void update_ref_data(Codec::MODEINFO);
-	void update_dcs_data(Codec::MODEINFO);
-	void update_xrf_data(Codec::MODEINFO);
-	void update_nxdn_data(Codec::MODEINFO);
-	void update_p25_data(Codec::MODEINFO);
-	void update_ysf_data(Codec::MODEINFO);
-	void update_m17_data(Codec::MODEINFO);
-	void update_iax_data();
+	void update_data(Mode::MODEINFO);
 	void save_settings();
 	void update_output_level(unsigned short l){ m_outlevel = l;}
 	//void load_md380_fw();
