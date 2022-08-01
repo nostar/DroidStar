@@ -28,9 +28,9 @@ public:
 
 	void start();
 	void decode(uint8_t s0, uint8_t s1);
-	void chainback(unsigned char* out, unsigned int nBits);
+	void chainback(uint8_t* out, uint32_t nBits);
 
-	void encode(const unsigned char* in, unsigned char* out, unsigned int nBits) const;
+	void encode(const uint8_t* in, uint8_t* out, uint32_t nBits) const;
 
 private:
 	uint16_t* m_metrics1;

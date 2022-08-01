@@ -19,23 +19,24 @@
 
 #if !defined(CRC_H)
 #define	CRC_H
+#include <cstdint>
 
 class CCRC
 {
 public:
-	//static bool checkFiveBit(bool* in, unsigned int tcrc);
-	static void bitsToByteBE(const bool* bits, unsigned char& byte);
-	static void encodeFiveBit(const bool* in, unsigned int& tcrc);
+	//static bool checkFiveBit(bool* in, uint32_t tcrc);
+	static void bitsToByteBE(const bool* bits, uint8_t& byte);
+	static void encodeFiveBit(const bool* in, uint32_t& tcrc);
 
-	static void addCCITT161(unsigned char* in, unsigned int length);
-	static void addCCITT162(unsigned char* in, unsigned int length);
+	static void addCCITT161(uint8_t* in, uint32_t length);
+	static void addCCITT162(uint8_t* in, uint32_t length);
 
-	static bool checkCCITT161(const unsigned char* in, unsigned int length);
-	static bool checkCCITT162(const unsigned char* in, unsigned int length);
+	static bool checkCCITT161(const uint8_t* in, uint32_t length);
+	static bool checkCCITT162(const uint8_t* in, uint32_t length);
 
-	static unsigned char crc8(const unsigned char* in, unsigned int length);
+	static unsigned char crc8(const uint8_t* in, uint32_t length);
 	
-	static unsigned char addCRC(const unsigned char* in, unsigned int length);
+	static unsigned char addCRC(const uint8_t* in, uint32_t length);
 };
 
 #endif

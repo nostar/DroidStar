@@ -35,7 +35,7 @@ const uint8_t NXDN_LICH_DIRECTION_INBOUND	= 0U;
 const uint8_t NXDN_MESSAGE_TYPE_VCALL       = 1U;
 const uint8_t NXDN_MESSAGE_TYPE_TX_REL      = 8U;
 
-const unsigned char BIT_MASK_TABLE[] = { 0x80U, 0x40U, 0x20U, 0x10U, 0x08U, 0x04U, 0x02U, 0x01U };
+const uint8_t BIT_MASK_TABLE[] = { 0x80U, 0x40U, 0x20U, 0x10U, 0x08U, 0x04U, 0x02U, 0x01U };
 #define WRITE_BIT1(p,i,b) p[(i)>>3] = (b) ? (p[(i)>>3] | BIT_MASK_TABLE[(i)&7]) : (p[(i)>>3] & ~BIT_MASK_TABLE[(i)&7])
 #define READ_BIT1(p,i)    (p[(i)>>3] & BIT_MASK_TABLE[(i)&7])
 
@@ -62,7 +62,7 @@ void NXDN::process_udp()
 #ifdef DEBUG
 	fprintf(stderr, "RECV: ");
 	for(int i = 0; i < buf.size(); ++i){
-		fprintf(stderr, "%02x ", (unsigned char)buf.data()[i]);
+		fprintf(stderr, "%02x ", (uint8_t)buf.data()[i]);
 	}
 	fprintf(stderr, "\n");
 	fflush(stderr);
@@ -227,7 +227,7 @@ void NXDN::hostname_lookup(QHostInfo i)
 #ifdef DEBUG
 		fprintf(stderr, "CONN: ");
 		for(int i = 0; i < out.size(); ++i){
-			fprintf(stderr, "%02x ", (unsigned char)out.data()[i]);
+			fprintf(stderr, "%02x ", (uint8_t)out.data()[i]);
 		}
 		fprintf(stderr, "\n");
 		fflush(stderr);
@@ -251,7 +251,7 @@ void NXDN::send_ping()
 #ifdef DEBUG
 	fprintf(stderr, "PING: ");
 	for(int i = 0; i < out.size(); ++i){
-		fprintf(stderr, "%02x ", (unsigned char)out.data()[i]);
+		fprintf(stderr, "%02x ", (uint8_t)out.data()[i]);
 	}
 	fprintf(stderr, "\n");
 	fflush(stderr);
@@ -274,7 +274,7 @@ void NXDN::send_disconnect()
 #ifdef DEBUG
 	fprintf(stderr, "SEND: ");
 	for(int i = 0; i < out.size(); ++i){
-		fprintf(stderr, "%02x ", (unsigned char)out.data()[i]);
+		fprintf(stderr, "%02x ", (uint8_t)out.data()[i]);
 	}
 	fprintf(stderr, "\n");
 	fflush(stderr);
@@ -339,7 +339,7 @@ void NXDN::transmit()
 void NXDN::send_frame()
 {
 	QByteArray txdata;
-	unsigned char *temp_nxdn;
+	uint8_t *temp_nxdn;
 	if(m_tx){
 		m_modeinfo.stream_state = TRANSMITTING;
 		temp_nxdn = get_frame();
@@ -348,7 +348,7 @@ void NXDN::send_frame()
 
 		fprintf(stderr, "SEND:%d: ", txdata.size());
 		for(int i = 0; i < txdata.size(); ++i){
-			fprintf(stderr, "%02x ", (unsigned char)txdata.data()[i]);
+			fprintf(stderr, "%02x ", (uint8_t)txdata.data()[i]);
 		}
 		fprintf(stderr, "\n");
 		fflush(stderr);
@@ -522,7 +522,7 @@ void NXDN::deinterleave_ambe(uint8_t *d)
 	memcpy(d, ambe_data, 7);
 }
 
-unsigned char NXDN::get_lich_fct(uint8_t lich)
+uint8_t NXDN::get_lich_fct(uint8_t lich)
 {
 	return (lich >> 4) & 0x03U;
 }
@@ -639,7 +639,7 @@ void NXDN::encode_crc6(uint8_t *d, uint8_t len)
 {
 	uint8_t crc = 0x3FU;
 
-	for (unsigned int i = 0U; i < len; i++) {
+	for (uint32_t i = 0U; i < len; i++) {
 		bool bit1 = READ_BIT1(d, i) != 0x00U;
 		bool bit2 = (crc & 0x20U) == 0x20U;
 		crc <<= 1;

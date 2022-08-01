@@ -22,7 +22,7 @@
 #include <cassert>
 #include <cstring>
 
-const unsigned char BIT_MASK_TABLE[] = {0x80U, 0x40U, 0x20U, 0x10U, 0x08U, 0x04U, 0x02U, 0x01U};
+const uint8_t BIT_MASK_TABLE[] = {0x80U, 0x40U, 0x20U, 0x10U, 0x08U, 0x04U, 0x02U, 0x01U};
 
 #define WRITE_BIT1(p,i,b) p[(i)>>3] = (b) ? (p[(i)>>3] | BIT_MASK_TABLE[(i)&7]) : (p[(i)>>3] & ~BIT_MASK_TABLE[(i)&7])
 #define READ_BIT1(p,i)    (p[(i)>>3] & BIT_MASK_TABLE[(i)&7])
@@ -30,10 +30,10 @@ const unsigned char BIT_MASK_TABLE[] = {0x80U, 0x40U, 0x20U, 0x10U, 0x08U, 0x04U
 const uint8_t BRANCH_TABLE1[] = {0U, 0U, 0U, 0U, 1U, 1U, 1U, 1U};
 const uint8_t BRANCH_TABLE2[] = {0U, 1U, 1U, 0U, 0U, 1U, 1U, 0U};
 
-const unsigned int NUM_OF_STATES_D2 = 8U;
-const unsigned int NUM_OF_STATES = 16U;
+const uint32_t NUM_OF_STATES_D2 = 8U;
+const uint32_t NUM_OF_STATES = 16U;
 const uint32_t     M = 2U;
-const unsigned int K = 5U;
+const uint32_t K = 5U;
 
 CYSFConvolution::CYSFConvolution() :
 m_metrics1(nullptr),
@@ -96,7 +96,7 @@ void CYSFConvolution::decode(uint8_t s0, uint8_t s1)
   m_newMetrics = tmp;
 }
 
-void CYSFConvolution::chainback(unsigned char* out, unsigned int nBits)
+void CYSFConvolution::chainback(uint8_t* out, uint32_t nBits)
 {
 	assert(out != NULL);
 
@@ -113,7 +113,7 @@ void CYSFConvolution::chainback(unsigned char* out, unsigned int nBits)
 	}
 }
 
-void CYSFConvolution::encode(const unsigned char* in, unsigned char* out, unsigned int nBits) const
+void CYSFConvolution::encode(const uint8_t* in, uint8_t* out, uint32_t nBits) const
 {
 	assert(in != NULL);
 	assert(out != NULL);
@@ -121,7 +121,7 @@ void CYSFConvolution::encode(const unsigned char* in, unsigned char* out, unsign
 
 	uint8_t d1 = 0U, d2 = 0U, d3 = 0U, d4 = 0U;
 	uint32_t k = 0U;
-	for (unsigned int i = 0U; i < nBits; i++) {
+	for (uint32_t i = 0U; i < nBits; i++) {
 		uint8_t d = READ_BIT1(in, i) ? 1U : 0U;
 
 		uint8_t g1 = (d + d3 + d4) & 1;

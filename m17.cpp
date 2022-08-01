@@ -26,7 +26,7 @@
 
 #define M17CHARACTERS " ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-/."
 
-#define DEBUG
+//#define DEBUG
 
 const uint8_t SCRAMBLER[] = {
 	0x00U, 0x00U, 0xD6U, 0xB5U, 0xE2U, 0x30U, 0x82U, 0xFFU, 0x84U, 0x62U, 0xBAU, 0x4EU, 0x96U, 0x90U, 0xD8U, 0x98U, 0xDDU,
@@ -1030,8 +1030,8 @@ void M17::combineFragmentLICH(uint32_t frag1, uint32_t frag2, uint32_t frag3, ui
 {
 	assert(data != NULL);
 
-	unsigned int offset = 0U;
-	unsigned int MASK = 0x800U;
+	uint32_t offset = 0U;
+	uint32_t MASK = 0x800U;
 	for (uint32_t i = 0U; i < (M17_LICH_FRAGMENT_LENGTH_BITS / 4U); i++, offset++, MASK >>= 1) {
 		bool b = (frag1 & MASK) == MASK;
 		WRITE_BIT(data, offset, b);

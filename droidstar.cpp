@@ -333,9 +333,6 @@ void DroidStar::process_connect()
 		m_modethread = new QThread;
 		m_mode->moveToThread(m_modethread);
 		m_mode->init(m_callsign, m_dmrid, m_module, m_refname, m_host, m_port, m_ipv6, vocoder, modem, m_capture, m_playback);
-		if(m_protocol == "DMR"){
-
-		}
 		m_mode->set_modem_flags(rxInvert, txInvert, pttInvert, useCOSAsLockout, duplex);
 		m_mode->set_modem_params(m_modemBaud.toUInt(), rxfreq, txfreq, m_modemTxDelay.toInt(), m_modemRxLevel.toFloat(), m_modemRFLevel.toFloat(), ysfTXHang, m_modemCWIdTxLevel.toFloat(), m_modemDstarTxLevel.toFloat(), m_modemDMRTxLevel.toFloat(), m_modemYSFTxLevel.toFloat(), m_modemP25TxLevel.toFloat(), m_modemNXDNTxLevel.toFloat(), pocsagTXLevel, m17TXLevel);
 
@@ -357,6 +354,12 @@ void DroidStar::process_connect()
 		connect(this, SIGNAL(rptr1_changed(QString)), m_mode, SLOT(rptr1_changed(QString)));
 		connect(this, SIGNAL(rptr2_changed(QString)), m_mode, SLOT(rptr2_changed(QString)));
 		connect(this, SIGNAL(usrtxt_changed(QString)), m_mode, SLOT(usrtxt_changed(QString)));
+		emit module_changed(m_module);
+		emit mycall_changed(m_mycall);
+		emit urcall_changed(m_urcall);
+		emit rptr1_changed(m_rptr1);
+		emit rptr2_changed(m_rptr2);
+		emit usrtxt_changed(m_dstarusertxt);
 
 		if(m_protocol == "DMR"){
 			QString dmrpass = sl.at(2).simplified();

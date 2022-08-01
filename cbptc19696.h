@@ -18,7 +18,7 @@
 
 #if !defined(BPTC19696_H)
 #define	BPTC19696_H
-#include <cinttypes>
+#include <cstdint>
 
 class CBPTC19696
 {

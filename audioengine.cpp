@@ -157,6 +157,7 @@ void AudioEngine::start_capture()
 	m_audioinq.clear();
 	if(m_in != nullptr){
 		m_indev = m_in->start();
+		if(MACHAK) m_srm = (float)(m_in->format().sampleRate()) / 8000.0;
 		connect(m_indev, SIGNAL(readyRead()), SLOT(input_data_received()));
 	}
 }
@@ -192,7 +193,7 @@ void AudioEngine::input_data_received()
 /*
 		fprintf(stderr, "AUDIOIN: ");
 		for(int i = 0; i < len; ++i){
-			fprintf(stderr, "%02x ", (unsigned char)data.data()[i]);
+			fprintf(stderr, "%02x ", (uint8_t)data.data()[i]);
 		}
 		fprintf(stderr, "\n");
 		fflush(stderr);

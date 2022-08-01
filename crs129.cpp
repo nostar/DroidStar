@@ -22,15 +22,15 @@
 #include <cassert>
 #include <cstring>
 
-const unsigned int NPAR = 3U;
+const uint32_t NPAR = 3U;
 
 /* Maximum degree of various polynomials. */
-//const unsigned int MAXDEG = NPAR * 2U;
+//const uint32_t MAXDEG = NPAR * 2U;
 
 /* Generator Polynomial */
-const unsigned char POLY[] = {64U, 56U, 14U, 1U, 0U, 0U, 0U, 0U, 0U, 0U, 0U, 0U};
+const uint8_t POLY[] = {64U, 56U, 14U, 1U, 0U, 0U, 0U, 0U, 0U, 0U, 0U, 0U};
 
-const unsigned char EXP_TABLE[] = {
+const uint8_t EXP_TABLE[] = {
     0x01U, 0x02U, 0x04U, 0x08U, 0x10U, 0x20U, 0x40U, 0x80U, 0x1DU, 0x3AU, 0x74U, 0xE8U, 0xCDU, 0x87U, 0x13U, 0x26U,
     0x4CU, 0x98U, 0x2DU, 0x5AU, 0xB4U, 0x75U, 0xEAU, 0xC9U, 0x8FU, 0x03U, 0x06U, 0x0CU, 0x18U, 0x30U, 0x60U, 0xC0U,
     0x9DU, 0x27U, 0x4EU, 0x9CU, 0x25U, 0x4AU, 0x94U, 0x35U, 0x6AU, 0xD4U, 0xB5U, 0x77U, 0xEEU, 0xC1U, 0x9FU, 0x23U,
@@ -64,7 +64,7 @@ const unsigned char EXP_TABLE[] = {
     0x24U, 0x48U, 0x90U, 0x3DU, 0x7AU, 0xF4U, 0xF5U, 0xF7U, 0xF3U, 0xFBU, 0xEBU, 0xCBU, 0x8BU, 0x0BU, 0x16U, 0x2CU,
     0x58U, 0xB0U, 0x7DU, 0xFAU, 0xE9U, 0xCFU, 0x83U, 0x1BU, 0x36U, 0x6CU, 0xD8U, 0xADU, 0x47U, 0x8EU, 0x01U, 0x00U};
 
-const unsigned char LOG_TABLE[] = {
+const uint8_t LOG_TABLE[] = {
     0x00U, 0x00U, 0x01U, 0x19U, 0x02U, 0x32U, 0x1AU, 0xC6U, 0x03U, 0xDFU, 0x33U, 0xEEU, 0x1BU, 0x68U, 0xC7U, 0x4BU,
     0x04U, 0x64U, 0xE0U, 0x0EU, 0x34U, 0x8DU, 0xEFU, 0x81U, 0x1CU, 0xC1U, 0x69U, 0xF8U, 0xC8U, 0x08U, 0x4CU, 0x71U,
     0x05U, 0x8AU, 0x65U, 0x2FU, 0xE1U, 0x24U, 0x0FU, 0x21U, 0x35U, 0x93U, 0x8EU, 0xDAU, 0xF0U, 0x12U, 0x82U, 0x45U,
@@ -83,13 +83,14 @@ const unsigned char LOG_TABLE[] = {
     0x4FU, 0xAEU, 0xD5U, 0xE9U, 0xE6U, 0xE7U, 0xADU, 0xE8U, 0x74U, 0xD6U, 0xF4U, 0xEAU, 0xA8U, 0x50U, 0x58U, 0xAFU};
 
 /* multiplication using logarithms */
-static unsigned char gmult(unsigned char a, unsigned char b)
+static uint8_t gmult(uint8_t a, uint8_t b)
 {
-    if (a == 0U || b == 0U)
+	if (a == 0U || b == 0U){
         return 0U;
+	}
     
-    unsigned int i = LOG_TABLE[a];
-    unsigned int j = LOG_TABLE[b];
+	uint32_t i = LOG_TABLE[a];
+	uint32_t j = LOG_TABLE[b];
     
     return EXP_TABLE[i + j];
 }
@@ -99,16 +100,16 @@ static unsigned char gmult(unsigned char a, unsigned char b)
  *
  * The parity bytes are deposited into parity.
  */
-void CRS129::encode(const unsigned char* msg, unsigned int nbytes, unsigned char* parity)
+void CRS129::encode(const uint8_t* msg, uint32_t nbytes, uint8_t* parity)
 {
     assert(msg != NULL);
     assert(parity != NULL);
     
-    for (unsigned int i = 0U; i < NPAR + 1U; i++)
+	for (uint32_t i = 0U; i < NPAR + 1U; i++)
         parity[i] = 0x00U;
     
-    for (unsigned int i = 0U; i < nbytes; i++) {
-        unsigned char dbyte = msg[i] ^ parity[NPAR - 1U];
+	for (uint32_t i = 0U; i < nbytes; i++) {
+		uint8_t dbyte = msg[i] ^ parity[NPAR - 1U];
         
         for (int j = NPAR - 1; j > 0; j--)
             parity[j] = parity[j - 1] ^ ::gmult(POLY[j], dbyte);
@@ -118,11 +119,11 @@ void CRS129::encode(const unsigned char* msg, unsigned int nbytes, unsigned char
 }
 
 // Reed-Solomon (12,9) check
-bool CRS129::check(const unsigned char* in)
+bool CRS129::check(const uint8_t* in)
 {
     assert(in != NULL);
     
-    unsigned char parity[4U];
+	uint8_t parity[4U];
     encode(in, 9U, parity);
     
     return in[9U] == parity[2U] && in[10U] == parity[1U] && in[11U] == parity[0U];

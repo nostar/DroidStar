@@ -18,18 +18,19 @@
 
 #ifndef Golay24128_H
 #define Golay24128_H
+#include <cstdint>
 
 class CGolay24128 {
 public:
-	static unsigned int encode23127(unsigned int data);
-	static unsigned int encode24128(unsigned int data);
+	static uint32_t encode23127(uint32_t data);
+	static uint32_t encode24128(uint32_t data);
 
-	static unsigned int decode23127(unsigned int code);
-	static unsigned int decode24128(unsigned int code);
-	static unsigned int decode24128(unsigned char* bytes);
-	static bool decode24128(unsigned int in, unsigned int& out);
-	static bool decode24128(unsigned char* in, unsigned int& out);
-	static unsigned int countBits(unsigned int v);
+	static uint32_t decode23127(uint32_t code);
+	static uint32_t decode24128(uint32_t code);
+	static uint32_t decode24128(uint8_t* bytes);
+	static bool decode24128(uint32_t in, uint32_t& out);
+	static bool decode24128(uint8_t* in, uint32_t& out);
+	static uint32_t countBits(uint32_t v);
 };
 
 #endif

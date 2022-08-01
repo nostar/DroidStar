@@ -22,7 +22,7 @@
 #else
 #include <arpa/inet.h>
 #endif
-#define DEBUG
+//#define DEBUG
 
 #ifdef USE_FLITE
 extern "C" {

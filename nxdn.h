@@ -27,8 +27,8 @@ class NXDN : public Mode
 public:
 	NXDN();
 	~NXDN();
-	unsigned char * get_frame();
-	unsigned char * get_eot(){m_eot = true; return get_frame();}
+	uint8_t * get_frame();
+	uint8_t * get_eot(){m_eot = true; return get_frame();}
 	void set_hwtx(bool hw){m_hwtx = hw;}
 private slots:
 	void process_udp();

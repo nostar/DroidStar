@@ -330,7 +330,7 @@ private:
 	int m_iaxport;
 	bool m_settings_processed;
 	bool m_modelchange;
-	const unsigned char header[5] = {0x80,0x44,0x53,0x56,0x54}; //DVSI packet header
+	const uint8_t header[5] = {0x80,0x44,0x53,0x56,0x54}; //DVSI packet header
 	uint16_t m_outlevel;
 	QString m_errortxt;
 	bool m_xrf2ref;

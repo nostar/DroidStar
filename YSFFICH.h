@@ -19,49 +19,50 @@
 
 #if !defined(YSFFICH_H)
 #define  YSFFICH_H
+#include <cstdint>
 
 class CYSFFICH {
 public:
 	CYSFFICH();
 	~CYSFFICH();
 
-	bool decode(const unsigned char* bytes);
+	bool decode(const uint8_t* bytes);
 
-	void encode(unsigned char* bytes);
+	void encode(uint8_t* bytes);
 
-	unsigned char getFI() const;
-	unsigned char getCS() const;
-	unsigned char getCM() const;
-	unsigned char getBN() const;
-	unsigned char getBT() const;
-	unsigned char getFN() const;
-	unsigned char getFT() const;
-	unsigned char getDT() const;
-	unsigned char getMR() const;
+	uint8_t getFI() const;
+	uint8_t getCS() const;
+	uint8_t getCM() const;
+	uint8_t getBN() const;
+	uint8_t getBT() const;
+	uint8_t getFN() const;
+	uint8_t getFT() const;
+	uint8_t getDT() const;
+	uint8_t getMR() const;
 	bool getVoIP() const;
 	bool getDev() const;
 	bool getSQL() const;
-	unsigned char getSQ() const;
+	uint8_t getSQ() const;
 
-	void setFI(unsigned char fi);
-	void setCS(unsigned char cs);
-	void setCM(unsigned char cm);
-	void setFN(unsigned char fn);
-	void setFT(unsigned char ft);
-	void setBN(unsigned char bn);
-	void setBT(unsigned char bt);
-	void setDT(unsigned char dt);
-	void setMR(unsigned char mr);
+	void setFI(uint8_t fi);
+	void setCS(uint8_t cs);
+	void setCM(uint8_t cm);
+	void setFN(uint8_t fn);
+	void setFT(uint8_t ft);
+	void setBN(uint8_t bn);
+	void setBT(uint8_t bt);
+	void setDT(uint8_t dt);
+	void setMR(uint8_t mr);
 	void setVoIP(bool set);
 	void setDev(bool set);
 	void setSQL(bool set);
-	void setSQ(unsigned char sq);
+	void setSQ(uint8_t sq);
 
-	void load(const unsigned char* fich);
+	void load(const uint8_t* fich);
 
 private:
-	unsigned char m_fich[6U];
-	//m_fich  = new unsigned char[6U];
+	uint8_t m_fich[6U];
+	//m_fich  = new uint8_t[6U];
 };
 
 #endif

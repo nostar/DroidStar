@@ -119,6 +119,7 @@ void Mode::init(QString callsign, uint32_t dmrid, char module, QString refname, 
 #else
 	m_rxtimerint = 20;
 #endif
+	m_txtimerint = 19;
 #ifdef USE_FLITE
 	flite_init();
 	voice_slt = register_cmu_us_slt(nullptr);

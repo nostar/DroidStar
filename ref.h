@@ -26,7 +26,7 @@ class REF : public Mode
 public:
 	REF();
 	~REF();
-	unsigned char * get_frame(unsigned char *ambe);
+	uint8_t * get_frame(uint8_t *ambe);
 private:
 	uint8_t packet_size;
 private slots:

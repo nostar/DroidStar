@@ -23,9 +23,9 @@
 #include <cstring>
 #include <cstdlib>
 
-const unsigned int PUNCTURE_LIST_LINK_SETUP_COUNT = 60U;
+const uint32_t PUNCTURE_LIST_LINK_SETUP_COUNT = 60U;
 
-const unsigned int PUNCTURE_LIST_LINK_SETUP[] = {
+const uint32_t PUNCTURE_LIST_LINK_SETUP[] = {
 	  2U,   6U,  10U,  14U,  18U,  22U,  26U,  30U,  34U,  38U,  42U,  46U,  50U,  54U,  58U,  63U,  67U,  71U,  75U,  79U,  83U,
 	 87U,  91U,  95U,  99U, 103U, 107U, 111U, 115U, 119U, 124U, 128U, 132U, 136U, 140U, 144U, 148U, 152U, 156U, 160U, 164U, 168U,
 	172U, 176U, 180U, 185U, 189U, 193U, 197U, 201U, 205U, 209U, 213U, 217U, 221U, 225U, 229U, 233U, 237U, 241U, 246U, 250U, 254U,
@@ -33,13 +33,13 @@ const unsigned int PUNCTURE_LIST_LINK_SETUP[] = {
 	343U, 347U, 351U, 355U, 359U, 363U, 368U, 372U, 376U, 380U, 384U, 388U, 392U, 396U, 400U, 404U, 408U, 412U, 416U, 420U, 424U,
 	429U, 433U, 437U, 441U, 445U, 449U, 453U, 457U, 461U, 465U, 469U, 473U, 477U, 481U, 485U};
 
-const unsigned int PUNCTURE_LIST_DATA_COUNT = 12U;
+const uint32_t PUNCTURE_LIST_DATA_COUNT = 12U;
 
-const unsigned int PUNCTURE_LIST_DATA[] = {
+const uint32_t PUNCTURE_LIST_DATA[] = {
 	 11U,  23U,  35U,  47U,  59U,  71U,  83U,  95U, 107U, 119U, 131U, 143U, 155U, 167U, 179U, 191U, 203U, 215U, 227U, 239U, 251U,
 	263U, 275U, 287U};
 
-const unsigned char BIT_MASK_TABLE[] = {0x80U, 0x40U, 0x20U, 0x10U, 0x08U, 0x04U, 0x02U, 0x01U};
+const uint8_t BIT_MASK_TABLE[] = {0x80U, 0x40U, 0x20U, 0x10U, 0x08U, 0x04U, 0x02U, 0x01U};
 
 #define WRITE_BIT1(p,i,b) p[(i)>>3] = (b) ? (p[(i)>>3] | BIT_MASK_TABLE[(i)&7]) : (p[(i)>>3] & ~BIT_MASK_TABLE[(i)&7])
 #define READ_BIT1(p,i)    (p[(i)>>3] & BIT_MASK_TABLE[(i)&7])
@@ -47,10 +47,10 @@ const unsigned char BIT_MASK_TABLE[] = {0x80U, 0x40U, 0x20U, 0x10U, 0x08U, 0x04U
 const uint8_t BRANCH_TABLE1[] = {0U, 0U, 0U, 0U, 2U, 2U, 2U, 2U};
 const uint8_t BRANCH_TABLE2[] = {0U, 2U, 2U, 0U, 0U, 2U, 2U, 0U};
 
-const unsigned int NUM_OF_STATES_D2 = 8U;
-const unsigned int NUM_OF_STATES = 16U;
+const uint32_t NUM_OF_STATES_D2 = 8U;
+const uint32_t NUM_OF_STATES = 16U;
 const uint32_t     M = 4U;
-const unsigned int K = 5U;
+const uint32_t K = 5U;
 
 CM17Convolution::CM17Convolution() :
 m_metrics1(NULL),
@@ -72,21 +72,21 @@ CM17Convolution::~CM17Convolution()
 	delete[] m_decisions;
 }
 
-void CM17Convolution::encodeLinkSetup(const unsigned char* in, unsigned char* out) const
+void CM17Convolution::encodeLinkSetup(const uint8_t* in, uint8_t* out) const
 {
 	assert(in != NULL);
 	assert(out != NULL);
 
-	unsigned char temp1[31U];
+	uint8_t temp1[31U];
 	::memset(temp1, 0x00U, 31U);
 	::memcpy(temp1, in, 30U);
 
-	unsigned char temp2[61U];
+	uint8_t temp2[61U];
 	encode(temp1, temp2, 244U);
 
-	unsigned int n = 0U;
-	unsigned int index = 0U;
-	for (unsigned int i = 0U; i < 488U; i++) {
+	uint32_t n = 0U;
+	uint32_t index = 0U;
+	for (uint32_t i = 0U; i < 488U; i++) {
 		if (i != PUNCTURE_LIST_LINK_SETUP[index]) {
 			bool b = READ_BIT1(temp2, i);
 			WRITE_BIT1(out, n, b);
@@ -97,21 +97,21 @@ void CM17Convolution::encodeLinkSetup(const unsigned char* in, unsigned char* ou
 	}
 }
 
-void CM17Convolution::encodeData(const unsigned char* in, unsigned char* out) const
+void CM17Convolution::encodeData(const uint8_t* in, uint8_t* out) const
 {
 	assert(in != NULL);
 	assert(out != NULL);
 
-	unsigned char temp1[19U];
+	uint8_t temp1[19U];
 	::memset(temp1, 0x00U, 19U);
 	::memcpy(temp1, in, 18U);
 
-	unsigned char temp2[37U];
+	uint8_t temp2[37U];
 	encode(temp1, temp2, 148U);
 
-	unsigned int n = 0U;
-	unsigned int index = 0U;
-	for (unsigned int i = 0U; i < 296U; i++) {
+	uint32_t n = 0U;
+	uint32_t index = 0U;
+	for (uint32_t i = 0U; i < 296U; i++) {
 		if (i != PUNCTURE_LIST_DATA[index]) {
 			bool b = READ_BIT1(temp2, i);
 			WRITE_BIT1(out, n, b);
@@ -122,7 +122,7 @@ void CM17Convolution::encodeData(const unsigned char* in, unsigned char* out) co
 	}
 }
 
-unsigned int CM17Convolution::decodeLinkSetup(const unsigned char* in, unsigned char* out)
+uint32_t CM17Convolution::decodeLinkSetup(const uint8_t* in, uint8_t* out)
 {
 	assert(in != NULL);
 	assert(out != NULL);
@@ -130,9 +130,9 @@ unsigned int CM17Convolution::decodeLinkSetup(const unsigned char* in, unsigned 
 	uint8_t temp[500U];
 	::memset(temp, 0x00U, 500U);
 
-	unsigned int n = 0U;
-	unsigned int index = 0U;
-	for (unsigned int i = 0U; i < 368U; i++) {
+	uint32_t n = 0U;
+	uint32_t index = 0U;
+	for (uint32_t i = 0U; i < 368U; i++) {
 		if (n == PUNCTURE_LIST_LINK_SETUP[index]) {
 			temp[n++] = 1U;
 			index++;
@@ -145,7 +145,7 @@ unsigned int CM17Convolution::decodeLinkSetup(const unsigned char* in, unsigned 
 	start();
 
 	n = 0U;
-	for (unsigned int i = 0U; i < 244U; i++) {
+	for (uint32_t i = 0U; i < 244U; i++) {
 		uint8_t s0 = temp[n++];
 		uint8_t s1 = temp[n++];
 
@@ -155,7 +155,7 @@ unsigned int CM17Convolution::decodeLinkSetup(const unsigned char* in, unsigned 
 	return chainback(out, 240U) - PUNCTURE_LIST_LINK_SETUP_COUNT;
 }
 
-unsigned int CM17Convolution::decodeData(const unsigned char* in, unsigned char* out)
+uint32_t CM17Convolution::decodeData(const uint8_t* in, uint8_t* out)
 {
 	assert(in != NULL);
 	assert(out != NULL);
@@ -163,9 +163,9 @@ unsigned int CM17Convolution::decodeData(const unsigned char* in, unsigned char*
 	uint8_t temp[300U];
 	::memset(temp, 0x00U, 300U);
 
-	unsigned int n = 0U;
-	unsigned int index = 0U;
-	for (unsigned int i = 0U; i < 272U; i++) {
+	uint32_t n = 0U;
+	uint32_t index = 0U;
+	for (uint32_t i = 0U; i < 272U; i++) {
 		if (n == PUNCTURE_LIST_DATA[index]) {
 			temp[n++] = 1U;
 			index++;
@@ -178,7 +178,7 @@ unsigned int CM17Convolution::decodeData(const unsigned char* in, unsigned char*
 	start();
 
 	n = 0U;
-	for (unsigned int i = 0U; i < 148U; i++) {
+	for (uint32_t i = 0U; i < 148U; i++) {
 		uint8_t s0 = temp[n++];
 		uint8_t s1 = temp[n++];
 
@@ -229,7 +229,7 @@ void CM17Convolution::decode(uint8_t s0, uint8_t s1)
   m_newMetrics = tmp;
 }
 
-unsigned int CM17Convolution::chainback(unsigned char* out, unsigned int nBits)
+uint32_t CM17Convolution::chainback(uint8_t* out, uint32_t nBits)
 {
 	assert(out != NULL);
 
@@ -245,9 +245,9 @@ unsigned int CM17Convolution::chainback(unsigned char* out, unsigned int nBits)
 		WRITE_BIT1(out, nBits, bit != 0U);
 	}
 
-	unsigned int minCost = m_oldMetrics[0];
+	uint32_t minCost = m_oldMetrics[0];
 
-	for (unsigned int i = 0U; i < NUM_OF_STATES; i++) {
+	for (uint32_t i = 0U; i < NUM_OF_STATES; i++) {
 		if (m_oldMetrics[i] < minCost)
 			minCost = m_oldMetrics[i];
 	}
@@ -255,7 +255,7 @@ unsigned int CM17Convolution::chainback(unsigned char* out, unsigned int nBits)
 	return minCost / (M >> 1);
 }
 
-void CM17Convolution::encode(const unsigned char* in, unsigned char* out, unsigned int nBits) const
+void CM17Convolution::encode(const uint8_t* in, uint8_t* out, uint32_t nBits) const
 {
 	assert(in != NULL);
 	assert(out != NULL);
@@ -263,7 +263,7 @@ void CM17Convolution::encode(const unsigned char* in, unsigned char* out, unsign
 
 	uint8_t d1 = 0U, d2 = 0U, d3 = 0U, d4 = 0U;
 	uint32_t k = 0U;
-	for (unsigned int i = 0U; i < nBits; i++) {
+	for (uint32_t i = 0U; i < nBits; i++) {
 		uint8_t d = READ_BIT1(in, i) ? 1U : 0U;
 
 		uint8_t g1 = (d + d3 + d4) & 1;

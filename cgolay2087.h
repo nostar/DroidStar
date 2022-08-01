@@ -18,15 +18,16 @@
 
 #ifndef Golay2087_H
 #define Golay2087_H
+#include <cstdint>
 
 class CGolay2087 {
 public:
-    static void encode(unsigned char* data);
+	static void encode(uint8_t * data);
     
-    static unsigned char decode(const unsigned char* data);
+	static uint8_t decode(const uint8_t* data);
     
 private:
-    static unsigned int getSyndrome1987(unsigned int pattern);
+	static uint32_t getSyndrome1987(uint32_t pattern);
 };
 
 #endif

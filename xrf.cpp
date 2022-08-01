@@ -46,7 +46,7 @@ void XRF::process_udp()
 #ifdef DEBUG
 	fprintf(stderr, "RECV: ");
 	for(int i = 0; i < buf.size(); ++i){
-		fprintf(stderr, "%02x ", (unsigned char)buf.data()[i]);
+		fprintf(stderr, "%02x ", (uint8_t)buf.data()[i]);
 	}
 	fprintf(stderr, "\n");
 	fflush(stderr);
@@ -266,7 +266,7 @@ void XRF::hostname_lookup(QHostInfo i)
 #ifdef DEBUG
 		fprintf(stderr, "CONN: ");
 		for(int i = 0; i < out.size(); ++i){
-			fprintf(stderr, "%02x ", (unsigned char)out.data()[i]);
+			fprintf(stderr, "%02x ", (uint8_t)out.data()[i]);
 		}
 		fprintf(stderr, "\n");
 		fflush(stderr);
@@ -284,7 +284,7 @@ void XRF::send_ping()
 #ifdef DEBUG
 	fprintf(stderr, "PING: ");
 	for(int i = 0; i < out.size(); ++i){
-		fprintf(stderr, "%02x ", (unsigned char)out.data()[i]);
+		fprintf(stderr, "%02x ", (uint8_t)out.data()[i]);
 	}
 	fprintf(stderr, "\n");
 	fflush(stderr);
@@ -303,7 +303,7 @@ void XRF::send_disconnect()
 #ifdef DEBUG
 	fprintf(stderr, "SEND: ");
 	for(int i = 0; i < out.size(); ++i){
-		fprintf(stderr, "%02x ", (unsigned char)out.data()[i]);
+		fprintf(stderr, "%02x ", (uint8_t)out.data()[i]);
 	}
 	fprintf(stderr, "\n");
 	fflush(stderr);
@@ -370,7 +370,7 @@ void XRF::start_tx()
 
 void XRF::transmit()
 {
-	unsigned char ambe[9];
+	uint8_t ambe[9];
 	uint8_t ambe_frame[72];
 	int16_t pcm[160];
 	memset(ambe_frame, 0, 72);
@@ -563,7 +563,7 @@ void XRF::send_frame(uint8_t *ambe)
 #ifdef DEBUG
 	fprintf(stderr, "SEND:%d: ", txdata.size());
 	for(int i = 0; i < txdata.size(); ++i){
-		fprintf(stderr, "%02x ", (unsigned char)txdata.data()[i]);
+		fprintf(stderr, "%02x ", (uint8_t)txdata.data()[i]);
 	}
 	fprintf(stderr, "\n");
 	fflush(stderr);

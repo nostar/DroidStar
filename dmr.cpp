@@ -24,7 +24,7 @@
 #include "CRCenc.h"
 #include "MMDVMDefines.h"
 
-#define DEBUG
+//#define DEBUG
 
 const uint32_t ENCODING_TABLE_1676[] =
 	{0x0000U, 0x0273U, 0x04E5U, 0x0696U, 0x09C9U, 0x0BBAU, 0x0D2CU, 0x0F5FU, 0x11E2U, 0x1391U, 0x1507U, 0x1774U,
@@ -88,7 +88,7 @@ void DMR::process_udp()
 #ifdef DEBUG
 	fprintf(stderr, "RECV: ");
 	for(int i = 0; i < buf.size(); ++i){
-		fprintf(stderr, "%02x ", (unsigned char)buf.data()[i]);
+		fprintf(stderr, "%02x ", (uint8_t)buf.data()[i]);
 	}
 	fprintf(stderr, "\n");
 	fflush(stderr);
@@ -119,7 +119,7 @@ void DMR::process_udp()
 			out[5] = (m_essid >> 16) & 0xff;
 			out[6] = (m_essid >> 8) & 0xff;
 			out[7] = (m_essid >> 0) & 0xff;
-			sha256.buffer((unsigned char *)in.data(), (unsigned int)(m_password.size() + sizeof(uint32_t)), (unsigned char *)out.data() + 8U);
+			sha256.buffer((uint8_t *)in.data(), (uint32_t)(m_password.size() + sizeof(uint32_t)), (uint8_t *)out.data() + 8U);
 			break;
 		case DMR_AUTH:
 			out.clear();
@@ -284,7 +284,7 @@ void DMR::process_udp()
 	if(out.size() > 0){
 		fprintf(stderr, "SEND: ");
 		for(int i = 0; i < out.size(); ++i){
-			fprintf(stderr, "%02x ", (unsigned char)out.data()[i]);
+			fprintf(stderr, "%02x ", (uint8_t)out.data()[i]);
 		}
 		fprintf(stderr, "\n");
 		fflush(stderr);
@@ -352,7 +352,7 @@ void DMR::hostname_lookup(QHostInfo i)
 #ifdef DEBUG
 		fprintf(stderr, "CONN: ");
 		for(int i = 0; i < out.size(); ++i){
-			fprintf(stderr, "%02x ", (unsigned char)out.data()[i]);
+			fprintf(stderr, "%02x ", (uint8_t)out.data()[i]);
 		}
 		fprintf(stderr, "\n");
 		fflush(stderr);
@@ -373,7 +373,7 @@ void DMR::send_ping()
 #ifdef DEBUG
 	fprintf(stderr, "PING: ");
 	for(int i = 0; i < out.size(); ++i){
-		fprintf(stderr, "%02x ", (unsigned char)out.data()[i]);
+		fprintf(stderr, "%02x ", (uint8_t)out.data()[i]);
 	}
 	fprintf(stderr, "\n");
 	fflush(stderr);
@@ -396,7 +396,7 @@ void DMR::send_disconnect()
 #ifdef DEBUG
 	fprintf(stderr, "SEND: ");
 	for(int i = 0; i < out.size(); ++i){
-		fprintf(stderr, "%02x ", (unsigned char)out.data()[i]);
+		fprintf(stderr, "%02x ", (uint8_t)out.data()[i]);
 	}
 	fprintf(stderr, "\n");
 	fflush(stderr);
@@ -440,7 +440,7 @@ void DMR::process_modem_data(QByteArray d)
 #ifdef DEBUG
 	fprintf(stderr, "SEND:%d: ", txdata.size());
 	for(int i = 0; i < txdata.size(); ++i){
-		fprintf(stderr, "%02x ", (unsigned char)txdata.data()[i]);
+		fprintf(stderr, "%02x ", (uint8_t)txdata.data()[i]);
 	}
 	fprintf(stderr, "\n");
 	fflush(stderr);
@@ -560,14 +560,14 @@ void DMR::send_frame()
 #ifdef DEBUG
 	fprintf(stderr, "SEND:%d: ", txdata.size());
 	for(int i = 0; i < txdata.size(); ++i){
-		fprintf(stderr, "%02x ", (unsigned char)txdata.data()[i]);
+		fprintf(stderr, "%02x ", (uint8_t)txdata.data()[i]);
 	}
 	fprintf(stderr, "\n");
 	fflush(stderr);
 #endif
 }
 
-unsigned char * DMR::get_eot()
+uint8_t * DMR::get_eot()
 {
 	encode_header(DT_TERMINATOR_WITH_LC);
 	m_dmrcnt = 0;
@@ -625,7 +625,7 @@ void DMR::encode_header(uint8_t t)
 
 void DMR::encode_data()
 {
-	unsigned int n_dmr = (m_dmrcnt - 1) % 6U;
+	uint32_t n_dmr = (m_dmrcnt - 1) % 6U;
 
 	if (!n_dmr) {
 		m_dataType = DT_VOICE_SYNC;

@@ -37,7 +37,7 @@
 
 /* This array contains the bytes used to pad the buffer to the next
    64-byte boundary.  */
-static const unsigned char fillbuf[64] = { 0x80, 0 /* , 0, 0, ...  */ };
+static const uint8_t fillbuf[64] = { 0x80, 0 /* , 0, 0, ...  */ };
 
 
 /*
@@ -83,7 +83,7 @@ void CSHA256::init()
 /* Copy the value from v into the memory location pointed to by *cp,
    If your architecture allows unaligned access this is equivalent to
    * (uint32_t *) cp = v  */
-static inline void set_uint32(unsigned char* cp, uint32_t v)
+static inline void set_uint32(uint8_t* cp, uint32_t v)
 {
 	assert(cp != NULL);
 
@@ -92,11 +92,11 @@ static inline void set_uint32(unsigned char* cp, uint32_t v)
 
 /* Put result from CTX in first 32 bytes following RESBUF.  The result
    must be in little endian byte order.  */
-unsigned char* CSHA256::read(unsigned char* resbuf)
+uint8_t* CSHA256::read(uint8_t* resbuf)
 {
 	assert(resbuf != NULL);
 
-	for (unsigned int i = 0U; i < 8U; i++)
+	for (uint32_t i = 0U; i < 8U; i++)
 		set_uint32(resbuf + i * sizeof(m_state[0]), SWAP(m_state[i]));
 
 	return resbuf;
@@ -107,8 +107,8 @@ unsigned char* CSHA256::read(unsigned char* resbuf)
 void CSHA256::conclude()
 {
 	/* Take yet unprocessed bytes into account.  */
-	unsigned int bytes = m_buflen;
-	unsigned int size = (bytes < 56) ? 64 / 4 : 64 * 2 / 4;
+	uint32_t bytes = m_buflen;
+	uint32_t size = (bytes < 56) ? 64 / 4 : 64 * 2 / 4;
 
 	/* Now count remaining bytes.  */
 	m_total[0] += bytes;
@@ -118,16 +118,16 @@ void CSHA256::conclude()
 	/* Put the 64-bit file length in *bits* at the end of the buffer.
 	   Use set_uint32 rather than a simple assignment, to avoid risk of
 	   unaligned access.  */
-	set_uint32((unsigned char*)&m_buffer[size - 2], SWAP((m_total[1] << 3) | (m_total[0] >> 29)));
-	set_uint32((unsigned char*)&m_buffer[size - 1], SWAP(m_total[0] << 3));
+	set_uint32((uint8_t*)&m_buffer[size - 2], SWAP((m_total[1] << 3) | (m_total[0] >> 29)));
+	set_uint32((uint8_t*)&m_buffer[size - 1], SWAP(m_total[0] << 3));
 
 	::memcpy(&((char*)m_buffer)[bytes], fillbuf, (size - 2) * 4 - bytes);
 
 	/* Process last bytes.  */
-	processBlock((unsigned char*)m_buffer, size * 4);
+	processBlock((uint8_t*)m_buffer, size * 4);
 }
 
-unsigned char* CSHA256::finish(unsigned char* resbuf)
+uint8_t* CSHA256::finish(uint8_t* resbuf)
 {
 	assert(resbuf != NULL);
 
@@ -140,7 +140,7 @@ unsigned char* CSHA256::finish(unsigned char* resbuf)
    result is always in little endian byte order, so that a byte-wise
    output yields to the wanted ASCII representation of the message
    digest.  */
-unsigned char* CSHA256::buffer(const unsigned char* buffer, unsigned int len, unsigned char* resblock)
+uint8_t* CSHA256::buffer(const uint8_t* buffer, uint32_t len, uint8_t* resblock)
 {
 	assert(buffer != NULL);
 	assert(resblock != NULL);
@@ -155,21 +155,21 @@ unsigned char* CSHA256::buffer(const unsigned char* buffer, unsigned int len, un
 	return finish(resblock);
 }
 
-void CSHA256::processBytes(const unsigned char* buffer, unsigned int len)
+void CSHA256::processBytes(const uint8_t* buffer, uint32_t len)
 {
 	assert(buffer != NULL);
 
 	/* When we already have some bits in our internal buffer concatenate
 	   both inputs first.  */
 	if (m_buflen != 0U) {
-		unsigned int left_over = m_buflen;
-		unsigned int add = 128U - left_over > len ? len : 128U - left_over;
+		uint32_t left_over = m_buflen;
+		uint32_t add = 128U - left_over > len ? len : 128U - left_over;
 
 		::memcpy(&((char*)m_buffer)[left_over], buffer, add);
 		m_buflen += add;
 
 		if (m_buflen > 64U) {
-			processBlock((unsigned char*)m_buffer, m_buflen & ~63U);
+			processBlock((uint8_t*)m_buffer, m_buflen & ~63U);
 
 			m_buflen &= 63U;
 
@@ -185,11 +185,11 @@ void CSHA256::processBytes(const unsigned char* buffer, unsigned int len)
 	if (len >= 64U) {
 //#if !_STRING_ARCH_unaligned
 //# define alignof(type) offsetof (struct { char c; type x; }, x)
-//# define UNALIGNED_P(p) (((unsigned int) p) % alignof (uint32_t) != 0)
+//# define UNALIGNED_P(p) (((uint32_t) p) % alignof (uint32_t) != 0)
 //		if (UNALIGNED_P (buffer)) {
 //			while (len > 64U) {
 //				::memcpy(m_buffer, buffer, 64U);
-//				processBlock((unsigned char*)m_buffer, 64U);
+//				processBlock((uint8_t*)m_buffer, 64U);
 //				buffer += 64U;
 //				len -= 64U;
 //			}
@@ -204,13 +204,13 @@ void CSHA256::processBytes(const unsigned char* buffer, unsigned int len)
 
 	/* Move remaining bytes in internal buffer.  */
 	if (len > 0U) {
-		unsigned int left_over = m_buflen;
+		uint32_t left_over = m_buflen;
 
 		::memcpy(&((char*)m_buffer)[left_over], buffer, len);
 		left_over += len;
 
 		if (left_over >= 64U) {
-			processBlock((unsigned char*)m_buffer, 64U);
+			processBlock((uint8_t*)m_buffer, 64U);
 			left_over -= 64U;
 			::memcpy(m_buffer, &m_buffer[16], left_over);
 		}
@@ -250,12 +250,12 @@ static const uint32_t roundConstants[64] = {
    It is assumed that LEN % 64 == 0.
    Most of this code comes from GnuPG's cipher/sha1.c.  */
 
-void CSHA256::processBlock(const unsigned char* buffer, unsigned int len)
+void CSHA256::processBlock(const uint8_t* buffer, uint32_t len)
 {
 	assert(buffer != NULL);
 
 	const uint32_t* words = (uint32_t*)buffer;
-	unsigned int nwords = len / sizeof(uint32_t);
+	uint32_t nwords = len / sizeof(uint32_t);
 	const uint32_t* endp = words + nwords;
 	uint32_t x[16];
 	uint32_t a = m_state[0];
@@ -291,7 +291,7 @@ void CSHA256::processBlock(const unsigned char* buffer, unsigned int len)
 		uint32_t tm;
 		uint32_t t0, t1;
 		/* FIXME: see sha1.c for a better implementation.  */
-		for (unsigned int t = 0U; t < 16U; t++) {
+		for (uint32_t t = 0U; t < 16U; t++) {
 			x[t] = SWAP(*words);
 			words++;
 		}

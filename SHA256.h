@@ -35,35 +35,35 @@ public:
 	   initialization function update the context for the next LEN bytes
 	   starting at BUFFER.
 	   It is necessary that LEN is a multiple of 64!!! */
-	void processBlock(const unsigned char* buffer, unsigned int len);
+	void processBlock(const uint8_t* buffer, uint32_t len);
 
 	/* Starting with the result of former calls of this function (or the
 	   initialization function update the context for the next LEN bytes
 	   starting at BUFFER.
 	   It is NOT required that LEN is a multiple of 64.  */
-	void processBytes(const unsigned char* buffer, unsigned int len);
+	void processBytes(const uint8_t* buffer, uint32_t len);
 
 	/* Process the remaining bytes in the buffer and put result from CTX
 	   in first 32 bytes following RESBUF.  The result is always in little
 	   endian byte order, so that a byte-wise output yields to the wanted
 	   ASCII representation of the message digest.  */
-	unsigned char* finish(unsigned char* resbuf);
+	uint8_t* finish(uint8_t* resbuf);
 
 	/* Put result from CTX in first 32 bytes following RESBUF.  The result is
 	   always in little endian byte order, so that a byte-wise output yields
 	   to the wanted ASCII representation of the message digest.  */
-	unsigned char* read(unsigned char* resbuf);
+	uint8_t* read(uint8_t* resbuf);
 
 	/* Compute SHA256 message digest for LEN bytes beginning at BUFFER.  The
 	   result is always in little endian byte order, so that a byte-wise
 	   output yields to the wanted ASCII representation of the message
 	   digest.  */
-	unsigned char* buffer(const unsigned char* buffer, unsigned int len, unsigned char* resblock);
+	uint8_t* buffer(const uint8_t* buffer, uint32_t len, uint8_t* resblock);
 
 private:
 	uint32_t*    m_state;
 	uint32_t*    m_total;
-	unsigned int m_buflen;
+	uint32_t m_buflen;
 	uint32_t*    m_buffer;
 
 	void init();

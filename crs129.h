@@ -18,13 +18,13 @@
 
 #if !defined(RS129_H)
 #define	RS129_H
+#include <cstdint>
 
 class CRS129
 {
 public:
-    static bool check(const unsigned char* in);
-    
-    static void encode(const unsigned char* msg, unsigned int nbytes, unsigned char* parity);
+	static bool check(const uint8_t* in);
+	static void encode(const uint8_t* msg, uint32_t nbytes, uint8_t* parity);
 };
 
 #endif

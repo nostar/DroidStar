@@ -26,7 +26,7 @@ class XRF : public Mode
 public:
 	XRF();
 	~XRF();
-	unsigned char * get_frame(unsigned char *ambe);
+	uint8_t * get_frame(uint8_t *ambe);
 private:
 	QString m_txusrtxt;
 	uint8_t packet_size;
