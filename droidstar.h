@@ -19,7 +19,6 @@
 #define DROIDSTAR_H
 
 #include <QObject>
-#include <QTimer>
 #include "mode.h"
 
 class DroidStar : public QObject

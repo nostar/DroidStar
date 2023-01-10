@@ -329,10 +329,12 @@ void DroidStar::process_connect()
 
 		emit update_log("Connecting to " + m_host + ":" + QString::number(m_port) + "...");
 
+		uint16_t nxdnid = m_nxdnids.key(m_callsign);
+
 		m_mode = Mode::create_mode(m_protocol);
 		m_modethread = new QThread;
 		m_mode->moveToThread(m_modethread);
-		m_mode->init(m_callsign, m_dmrid, m_module, m_refname, m_host, m_port, m_ipv6, vocoder, modem, m_capture, m_playback);
+		m_mode->init(m_callsign, m_dmrid, nxdnid, m_module, m_refname, m_host, m_port, m_ipv6, vocoder, modem, m_capture, m_playback);
 		m_mode->set_modem_flags(rxInvert, txInvert, pttInvert, useCOSAsLockout, duplex);
 		m_mode->set_modem_params(m_modemBaud.toUInt(), rxfreq, txfreq, m_modemTxDelay.toInt(), m_modemRxLevel.toFloat(), m_modemRFLevel.toFloat(), ysfTXHang, m_modemCWIdTxLevel.toFloat(), m_modemDstarTxLevel.toFloat(), m_modemDMRTxLevel.toFloat(), m_modemYSFTxLevel.toFloat(), m_modemP25TxLevel.toFloat(), m_modemNXDNTxLevel.toFloat(), pocsagTXLevel, m17TXLevel);
 
@@ -702,7 +704,7 @@ void DroidStar::process_ref_hosts()
 			}
 
 			m_customhosts = m_localhosts.split('\n');
-			for (const auto& i : m_customhosts){
+			for (const auto& i : qAsConst(m_customhosts)){
 				QStringList line = i.simplified().split(' ');
 
 				if(line.at(0) == "REF"){
@@ -743,7 +745,7 @@ void DroidStar::process_dcs_hosts()
 			}
 
 			m_customhosts = m_localhosts.split('\n');
-			for (const auto& i : m_customhosts){
+			for (const auto& i : qAsConst(m_customhosts)){
 				QStringList line = i.simplified().split(' ');
 
 				if(line.at(0) == "DCS"){
@@ -784,7 +786,7 @@ void DroidStar::process_xrf_hosts()
 			}
 
 			m_customhosts = m_localhosts.split('\n');
-			for (const auto& i : m_customhosts){
+			for (const auto& i : qAsConst(m_customhosts)){
 				QStringList line = i.simplified().split(' ');
 
 				if(line.at(0) == "XRF"){
@@ -825,7 +827,7 @@ void DroidStar::process_ysf_hosts()
 			}
 
 			m_customhosts = m_localhosts.split('\n');
-			for (const auto& i : m_customhosts){
+			for (const auto& i : qAsConst(m_customhosts)){
 				QStringList line = i.simplified().split(' ');
 
 				if(line.at(0) == "YSF"){
@@ -869,7 +871,7 @@ void DroidStar::process_fcs_rooms()
 			}
 
 			m_customhosts = m_localhosts.split('\n');
-			for (const auto& i : m_customhosts){
+			for (const auto& i : qAsConst(m_customhosts)){
 				QStringList line = i.simplified().split(' ');
 
 				if(line.at(0) == "FCS"){
@@ -915,7 +917,7 @@ void DroidStar::process_dmr_hosts()
 			}
 
 			m_customhosts = m_localhosts.split('\n');
-			for (const auto& i : m_customhosts){
+			for (const auto& i : qAsConst(m_customhosts)){
 				QStringList line = i.simplified().split(' ');
 
 				if(line.at(0) == "DMR"){
@@ -956,7 +958,7 @@ void DroidStar::process_p25_hosts()
 			}
 
 			m_customhosts = m_localhosts.split('\n');
-			for (const auto& i : m_customhosts){
+			for (const auto& i : qAsConst(m_customhosts)){
 				QStringList line = i.simplified().split(' ');
 
 				if(line.at(0) == "P25"){
@@ -997,7 +999,7 @@ void DroidStar::process_nxdn_hosts()
 			}
 
 			m_customhosts = m_localhosts.split('\n');
-			for (const auto& i : m_customhosts){
+			for (const auto& i : qAsConst(m_customhosts)){
 				QStringList line = i.simplified().split(' ');
 
 				if(line.at(0) == "NXDN"){
@@ -1040,7 +1042,7 @@ void DroidStar::process_m17_hosts()
 			}
 
 			m_customhosts = m_localhosts.split('\n');
-			for (const auto& i : m_customhosts){
+			for (const auto& i : qAsConst(m_customhosts)){
 				QStringList line = i.simplified().split(' ');
 
 				if(line.at(0) == "M17"){
@@ -1259,6 +1261,13 @@ void DroidStar::update_data(Mode::MODEINFO info)
 		if(m_urcall.isEmpty()) set_urcall("CQCQCQ");
 		if(m_rptr1.isEmpty()) set_rptr1(m_callsign + " " + m_module);
 		emit update_log("Connected to " + m_protocol + " " + m_refname + " " + m_host + ":" + QString::number(m_port));
+
+		if(info.sw_vocoder_loaded){
+			emit update_log("Vocoder plugin loaded");
+		}
+		else{
+			emit update_log("Vocoder plugin not loaded");
+		}
 	}
 
 	m_netstatustxt = "Connected ping cnt: " + QString::number(info.count);
@@ -1297,7 +1306,7 @@ void DroidStar::update_data(Mode::MODEINFO info)
 	}
 	else if (m_protocol == "YSF" || m_protocol == "FCS"){
 		m_data1 = info.gw;
-		m_data2 =info.src;
+		m_data2 = info.src;
 		m_data3 = info.dst;
 
 		if(info.type == 0){

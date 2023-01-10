@@ -82,9 +82,10 @@ Mode::~Mode()
 {
 }
 
-void Mode::init(QString callsign, uint32_t dmrid, char module, QString refname, QString host, int port, bool ipv6, QString vocoder, QString modem, QString audioin, QString audioout)
+void Mode::init(QString callsign, uint32_t dmrid, uint16_t nxdnid, char module, QString refname, QString host, int port, bool ipv6, QString vocoder, QString modem, QString audioin, QString audioout)
 {
 	m_dmrid = dmrid;
+	m_nxdnid = nxdnid;
 	m_module = module;
 	m_refname = refname;
 	m_ipv6 = ipv6;

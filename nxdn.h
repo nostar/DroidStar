@@ -34,13 +34,12 @@ private slots:
 	void process_udp();
 	void process_rx_data();
 	void get_ambe();
-	void send_ping();
-	void send_disconnect();
+	void send_ping(bool disconnect = false);
+	void send_disconnect() {send_ping(true);}
 	void transmit();
 	void hostname_lookup(QHostInfo i);
 	void send_frame();
 private:
-	uint16_t m_nxdnid;
 	bool m_eot;
 	uint8_t m_nxdnframe[55];
 	uint8_t m_lich;

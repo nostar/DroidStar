@@ -42,7 +42,7 @@ public:
 	Mode();
 	~Mode();
 	static Mode* create_mode(QString);
-	void init(QString callsign, uint32_t dmrid, char module, QString refname, QString host, int port, bool ipv6, QString vocoder, QString modem, QString audioin, QString audioout);
+	void init(QString callsign, uint32_t dmrid, uint16_t nxdnid, char module, QString refname, QString host, int port, bool ipv6, QString vocoder, QString modem, QString audioin, QString audioout);
 	void set_modem_flags(bool rxInvert, bool txInvert, bool pttInvert, bool useCOSAsLockout, bool duplex)
 	{
 		m_rxInvert = rxInvert;
@@ -161,6 +161,7 @@ protected:
 	QHostAddress m_address;
 	char m_module;
 	uint32_t m_dmrid;
+	uint16_t m_nxdnid;
 	QString m_refname;
 	bool m_tx;
 	uint16_t m_txcnt;

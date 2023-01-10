@@ -210,39 +210,22 @@ void NXDN::interleave(uint8_t *ambe)
 void NXDN::hostname_lookup(QHostInfo i)
 {
 	if (!i.addresses().isEmpty()) {
-		QByteArray out;
-		out.append('N');
-		out.append('X');
-		out.append('D');
-		out.append('N');
-		out.append('P');
-		out.append(m_modeinfo.callsign.toUtf8());
-		out.append(10 - m_modeinfo.callsign.size(), ' ');
-		out.append((m_modeinfo.gwid >> 8) & 0xff);
-		out.append((m_modeinfo.gwid >> 0) & 0xff);
 		m_address = i.addresses().first();
 		m_udp = new QUdpSocket(this);
 		connect(m_udp, SIGNAL(readyRead()), this, SLOT(process_udp()));
-		m_udp->writeDatagram(out, m_address, m_modeinfo.port);
-#ifdef DEBUG
-		fprintf(stderr, "CONN: ");
-		for(int i = 0; i < out.size(); ++i){
-			fprintf(stderr, "%02x ", (uint8_t)out.data()[i]);
-		}
-		fprintf(stderr, "\n");
-		fflush(stderr);
-#endif
+		m_modeinfo.gwid = m_refname.toUInt();
+		send_ping();
 	}
 }
 
-void NXDN::send_ping()
+void NXDN::send_ping(bool disconnect)
 {
 	QByteArray out;
 	out.append('N');
 	out.append('X');
 	out.append('D');
 	out.append('N');
-	out.append('P');
+	disconnect ? out.append('U') : out.append('P');
 	out.append(m_modeinfo.callsign.toUtf8());
 	out.append(10 - m_modeinfo.callsign.size(), ' ');
 	out.append((m_modeinfo.gwid >> 8) & 0xff);
@@ -250,29 +233,6 @@ void NXDN::send_ping()
 	m_udp->writeDatagram(out, m_address, m_modeinfo.port);
 #ifdef DEBUG
 	fprintf(stderr, "PING: ");
-	for(int i = 0; i < out.size(); ++i){
-		fprintf(stderr, "%02x ", (uint8_t)out.data()[i]);
-	}
-	fprintf(stderr, "\n");
-	fflush(stderr);
-#endif
-}
-
-void NXDN::send_disconnect()
-{
-	QByteArray out;
-	out.append('N');
-	out.append('X');
-	out.append('D');
-	out.append('N');
-	out.append('U');
-	out.append(m_modeinfo.callsign.toUtf8());
-	out.append(10 - m_modeinfo.callsign.size(), ' ');
-	out.append((m_modeinfo.gwid >> 8) & 0xff);
-	out.append((m_modeinfo.gwid >> 0) & 0xff);
-	m_udp->writeDatagram(out, m_address, m_modeinfo.port);
-#ifdef DEBUG
-	fprintf(stderr, "SEND: ");
 	for(int i = 0; i < out.size(); ++i){
 		fprintf(stderr, "%02x ", (uint8_t)out.data()[i]);
 	}

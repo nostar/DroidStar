@@ -91,7 +91,6 @@ M17::M17() :
 	m_txtimerint = 30; // Qt timers on windows seem to be slower than desired value
 
 #else
-	m_txtimerint = 36;
 	m_txcan = 0;
 #endif
 	m_attenuation = 1;
@@ -725,6 +724,7 @@ void M17::toggle_tx(bool tx)
 
 void M17::start_tx()
 {
+	m_txtimerint = 38;
 	set_mode(m_txrate);
 	Mode::start_tx();
 }

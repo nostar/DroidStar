@@ -198,6 +198,11 @@ void YSF::process_udp()
 	if((buf.size() == 155) && (::memcmp(buf.data(), "YSFD", 4U) == 0)){
 		memcpy(ysftag, buf.data() + 4, 10);ysftag[10] = '\0';
 		m_modeinfo.gw = QString(ysftag);
+		//memcpy(ysftag, buf.data() + 14, 10);ysftag[10] = '\0';
+		//m_modeinfo.src = QString(ysftag);
+		//memcpy(ysftag, buf.data() + 24, 10);ysftag[10] = '\0';
+		//m_modeinfo.dst = QString(ysftag);
+
 		p_data = (uint8_t *)buf.data() + 35;
 		if(m_modem){
 			m_rxmodemq.append(MMDVM_FRAME_START);
@@ -245,6 +250,7 @@ void YSF::process_udp()
 					m_audio->start_playback();
 					m_rxtimer->start(m_rxtimerint);
 				}
+				decode_header(p_data);
 				qDebug() << "New YSF stream from gw" << m_modeinfo.gw;
 			}
 			else if(m_fi == YSF_FI_TERMINATOR){
@@ -378,6 +384,60 @@ void YSF::send_disconnect()
 	fprintf(stderr, "\n");
 	fflush(stderr);
 #endif
+}
+
+void YSF::decode_header(uint8_t* data)
+{
+	assert(data != NULL);
+
+	data += YSF_SYNC_LENGTH_BYTES + YSF_FICH_LENGTH_BYTES;
+
+	uint8_t* source = NULL;
+	uint8_t* dest = NULL;
+	uint8_t dch[45U];
+
+	uint8_t* p1 = data;
+	uint8_t* p2 = dch;
+	for (uint32_t i = 0U; i < 5U; i++) {
+		::memcpy(p2, p1, 9U);
+		p1 += 18U; p2 += 9U;
+	}
+
+	CYSFConvolution conv;
+	conv.start();
+
+	for (uint32_t i = 0U; i < 180U; i++) {
+		uint32_t n = INTERLEAVE_TABLE_9_20[i];
+		uint8_t s0 = READ_BIT(dch, n) ? 1U : 0U;
+
+		n++;
+		uint8_t s1 = READ_BIT(dch, n) ? 1U : 0U;
+
+		conv.decode(s0, s1);
+	}
+
+	uint8_t output[23U];
+	conv.chainback(output, 176U);
+
+	bool valid = CCRC::checkCCITT162(output, 22U);
+	if (valid) {
+		for (uint32_t i = 0U; i < 20U; i++)
+			output[i] ^= WHITENING_DATA[i];
+
+		if (dest == NULL) {
+			dest = new uint8_t[YSF_CALLSIGN_LENGTH];
+			::memcpy(dest, output + 0U, YSF_CALLSIGN_LENGTH);
+		}
+
+		if (source == NULL) {
+			source = new uint8_t[YSF_CALLSIGN_LENGTH];
+			::memcpy(source, output + YSF_CALLSIGN_LENGTH, YSF_CALLSIGN_LENGTH);
+		}
+
+		m_modeinfo.src = QString::fromUtf8((const char *)source);
+		m_modeinfo.dst = QString::fromUtf8((const char *)dest);
+		m_modeinfo.gw2 = QString::fromUtf8((const char *)dest);
+	}
 }
 
 void YSF::decode_vw(uint8_t* data)

@@ -31,7 +31,6 @@ private:
 	int m_p25cnt;
 	uint8_t imbe[11U];
 	int m_dstid;
-	uint32_t m_dmrid;
 	uint32_t m_txdstid;
 private slots:
 	void process_udp();

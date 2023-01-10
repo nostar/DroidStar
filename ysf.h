@@ -72,6 +72,7 @@ private slots:
 	void rate_changed(int r) { m_txfullrate = r;}
 	void process_modem_data(QByteArray);
 private:
+	void decode_header(uint8_t* data);
 	void decode_dn(uint8_t* data);
 	void decode_vw(uint8_t* data);
 	void encode_header(bool eot = 0);
