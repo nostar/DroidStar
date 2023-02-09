@@ -19,10 +19,17 @@
 #define AUDIOENGINE_H
 
 #include <QObject>
+#if QT_VERSION < QT_VERSION_CHECK(6, 3, 0)
 #include <QAudio>
 #include <QAudioFormat>
-#include <QAudioOutput>
 #include <QAudioInput>
+#else
+#include <QAudioDevice>
+#include <QAudioSink>
+#include <QAudioSource>
+#include <QMediaDevices>
+#endif
+#include <QAudioOutput>
 #include <QQueue>
 
 #define AUDIO_OUT 1
@@ -56,8 +63,13 @@ signals:
 private:
 	QString m_outputdevice;
 	QString m_inputdevice;
+#if QT_VERSION < QT_VERSION_CHECK(6, 3, 0)
 	QAudioOutput *m_out;
 	QAudioInput *m_in;
+#else
+	QAudioSink *m_out;
+	QAudioSource *m_in;
+#endif
 	QIODevice *m_outdev;
 	QIODevice *m_indev;
 	QQueue<int16_t> m_audioinq;

@@ -18,7 +18,12 @@
 #include "droidstar.h"
 #include "httpmanager.h"
 #ifdef Q_OS_ANDROID
+#if QT_VERSION < QT_VERSION_CHECK(6, 3, 0)
 #include <QtAndroidExtras>
+#else
+#include <QCoreApplication>
+#include <QJniObject>
+#endif
 #endif
 #ifdef Q_OS_IOS
 #include "micpermission.h"
@@ -52,15 +57,7 @@ DroidStar::DroidStar(QObject *parent) :
 #endif
 #if defined(Q_OS_ANDROID)
 	keepScreenOn();
-	const QString permission("android.permission.READ_EXTERNAL_STORAGE");
-	if(QtAndroid::checkPermission(permission) != QtAndroid::PermissionResult::Granted){
-		auto resultHash = QtAndroid::requestPermissionsSync(QStringList({permission}));
-		if(resultHash[permission] == QtAndroid::PermissionResult::Denied){
-			qDebug() << "Storage read permissions denied";
-		}
-	}
 #endif
-
 	check_host_files();
 	discover_devices();
 	process_settings();
@@ -81,6 +78,7 @@ DroidStar::~DroidStar()
 }
 
 #ifdef Q_OS_ANDROID
+#if QT_VERSION < QT_VERSION_CHECK(6, 3, 0)
 void DroidStar::keepScreenOn()
 {
 	char const * const action = "addFlags";
@@ -95,7 +93,22 @@ void DroidStar::keepScreenOn()
 		}
 	}});
 }
+#else
+void DroidStar::keepScreenOn()
+{
+	char const * const action = "addFlags";
+	QNativeInterface::QAndroidApplication::runOnAndroidMainThread([action](){
+	QJniObject activity = QNativeInterface::QAndroidApplication::context();
+	if (activity.isValid()) {
+		QJniObject window = activity.callObjectMethod("getWindow", "()Landroid/view/Window;");
 
+		if (window.isValid()) {
+			const int FLAG_KEEP_SCREEN_ON = 128;
+			window.callMethod<void>("addFlags", "(I)V", FLAG_KEEP_SCREEN_ON);
+		}
+	}});
+}
+#endif
 void DroidStar::reset_connect_status()
 {
 	if(connect_status == Mode::CONNECTED_RW){
@@ -1267,6 +1280,7 @@ void DroidStar::update_data(Mode::MODEINFO info)
 		}
 		else{
 			emit update_log("Vocoder plugin not loaded");
+			emit open_vocoder_dialog();
 		}
 	}
 

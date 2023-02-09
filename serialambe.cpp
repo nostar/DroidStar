@@ -80,13 +80,9 @@ QMap<QString, QString> SerialAMBE::discover_devices()
 				+ "Manufacturer: " + (!serialPortInfo.manufacturer().isEmpty() ? serialPortInfo.manufacturer() : blankString) + ENDLINE
 				+ "Serial number: " + (!serialPortInfo.serialNumber().isEmpty() ? serialPortInfo.serialNumber() : blankString) + ENDLINE
 				+ "Vendor Identifier: " + (serialPortInfo.hasVendorIdentifier() ? QByteArray::number(serialPortInfo.vendorIdentifier(), 16) : blankString) + ENDLINE
-				+ "Product Identifier: " + (serialPortInfo.hasProductIdentifier() ? QByteArray::number(serialPortInfo.productIdentifier(), 16) : blankString) + ENDLINE
-				+ "Busy: " + (serialPortInfo.isBusy() ? "Yes" : "No") + ENDLINE;
+				+ "Product Identifier: " + (serialPortInfo.hasProductIdentifier() ? QByteArray::number(serialPortInfo.productIdentifier(), 16) : blankString) + ENDLINE;
 			fprintf(stderr, "%s", out.toStdString().c_str());fflush(stderr);
-			if(!serialPortInfo.isBusy()){
-				//devlist[serialPortInfo.systemLocation()] = serialPortInfo.portName() + " - " + serialPortInfo.manufacturer() + " " + serialPortInfo.description() + " - " + serialPortInfo.serialNumber();
-				devlist[serialPortInfo.systemLocation()] = serialPortInfo.description() + ":" + serialPortInfo.systemLocation();
-			}
+			devlist[serialPortInfo.systemLocation()] = serialPortInfo.description() + ":" + serialPortInfo.systemLocation();
 		}
 	}
 #else
@@ -113,8 +109,7 @@ void SerialAMBE::connect_to_serial(QString p)
 			+ "Manufacturer: " + (!info.manufacturer().isEmpty() ? info.manufacturer() : blankString) + ENDLINE
 			+ "Serial number: " + (!info.serialNumber().isEmpty() ? info.serialNumber() : blankString) + ENDLINE
 			+ "Vendor Identifier: " + (info.hasVendorIdentifier() ? QByteArray::number(info.vendorIdentifier(), 16) : blankString) + ENDLINE
-			+ "Product Identifier: " + (info.hasProductIdentifier() ? QByteArray::number(info.productIdentifier(), 16) : blankString) + ENDLINE
-			+ "Busy: " + (info.isBusy() ? "Yes" : "No") + ENDLINE;
+			+ "Product Identifier: " + (info.hasProductIdentifier() ? QByteArray::number(info.productIdentifier(), 16) : blankString) + ENDLINE;
 		fprintf(stderr, "%s", out.toStdString().c_str());fflush(stderr);
 		m_description = info.description();
 
@@ -457,7 +452,6 @@ bool SerialAMBE::get_audio(int16_t *audio)
 			m_serialdata.dequeue();
 			m_serialdata.dequeue();
 			m_serialdata.dequeue();
-			//qDebug() << "Found header, deleting.....................................................................";
 			for(int i = 0; i < 160; i++){
 				//Byte swap BE to LE
 				audio[i] =  ((m_serialdata.dequeue() << 8) & 0xff00) | (m_serialdata.dequeue() & 0xff);
@@ -466,7 +460,6 @@ bool SerialAMBE::get_audio(int16_t *audio)
 			r = true;
 		}
 		else{
-			qDebug() << "Header not found..............................................................................." ;
 			while( (m_serialdata.size() > 5) && (
 				((uint8_t)m_serialdata[0] != header[0]) ||
 				((uint8_t)m_serialdata[1] != header[1]) ||
@@ -475,7 +468,6 @@ bool SerialAMBE::get_audio(int16_t *audio)
 				((uint8_t)m_serialdata[4] != header[4]) ||
 				((uint8_t)m_serialdata[5] != header[5]))){
 					m_serialdata.dequeue();
-					//qDebug() << "Finding start of audio frame";
 			}
 		}
 	}

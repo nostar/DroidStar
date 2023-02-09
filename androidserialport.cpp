@@ -14,7 +14,7 @@
 	You should have received a copy of the GNU General Public License
 	along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
-
+#include <QDebug>
 #include "androidserialport.h"
 
 #ifdef Q_OS_ANDROID
@@ -41,7 +41,11 @@ QStringList AndroidSerialPort::discover_devices()
 	QStringList l;
 	l.clear();
 	qDebug() << "AndroidSerialPort::discover_devices()";
+#if QT_VERSION < QT_VERSION_CHECK(6, 3, 0)
 	QAndroidJniObject d = serialJavaObject.callObjectMethod("discover_devices", "(Landroid/content/Context;)[Ljava/lang/String;", QtAndroid::androidContext().object());
+#else
+	QAndroidJniObject d = serialJavaObject.callObjectMethod("discover_devices", "(Landroid/content/Context;)[Ljava/lang/String;", QNativeInterface::QAndroidApplication::context());
+#endif
 	jobjectArray devices = d.object<jobjectArray>();
 	int size = env->GetArrayLength(devices);
 
@@ -54,7 +58,11 @@ QStringList AndroidSerialPort::discover_devices()
 
 int AndroidSerialPort::open(int p)
 {
+#if QT_VERSION < QT_VERSION_CHECK(6, 3, 0)
 	qDebug() << serialJavaObject.callObjectMethod("setup_serial", "(Landroid/content/Context;)Ljava/lang/String;", QtAndroid::androidContext().object()).toString();
+#else
+	serialJavaObject.callObjectMethod("setup_serial", "(Landroid/content/Context;)Ljava/lang/String;", QNativeInterface::QAndroidApplication::context());
+#endif
 	return p;
 }
 

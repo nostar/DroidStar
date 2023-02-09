@@ -1,7 +1,6 @@
 QT += quick quickcontrols2 network multimedia
 android:QT += androidextras
-linux:QT += serialport
-unix:QT += serialport
+unix:!ios:QT += serialport
 CONFIG += c++11
 LFLAGS +=
 android:INCLUDEPATH += $$(HOME)/Android/android-build/include
@@ -15,7 +14,6 @@ win32:QMAKE_LFLAGS += -static
 QMAKE_LFLAGS_WINDOWS += --enable-stdcall-fixup
 RC_ICONS = images/droidstar.ico
 ICON = images/droidstar.icns
-macx:QT += serialport
 macx::INCLUDEPATH += /usr/local/include
 macx:LIBS += -L/usr/local/lib -framework AVFoundation
 macx:QMAKE_MACOSX_DEPLOYMENT_TARGET = 10.14
@@ -24,6 +22,9 @@ ios:LIBS += -lvocoder -framework AVFoundation
 ios:QMAKE_TARGET_BUNDLE_PREFIX = com.dudetronics
 ios:QMAKE_BUNDLE = droidstar
 ios:VERSION = 0.43.20
+ios:Q_ENABLE_BITCODE.name = ENABLE_BITCODE
+ios:Q_ENABLE_BITCODE.value = NO
+ios:QMAKE_MAC_XCODE_SETTINGS += Q_ENABLE_BITCODE
 ios:QMAKE_ASSET_CATALOGS += Images.xcassets
 ios:QMAKE_INFO_PLIST = Info.plist
 VERSION_BUILD='$(shell cd $$PWD;git rev-parse --short HEAD)'
@@ -150,9 +151,10 @@ contains(ANDROID_TARGET_ARCH,arm64-v8a) {
 	LIBS += -L$$(HOME)/Android/local/lib64
 	ANDROID_PACKAGE_SOURCE_DIR = $$PWD/android
 	OTHER_FILES += android/src
+	#ANDROID_ABIS = arm64-v8a
 }
 
-ANDROID_ABIS = armeabi-v7a arm64-v8a
+#ANDROID_ABIS = armeabi-v7a arm64-v8a
 
 contains(DEFINES, USE_FLITE){
 	LIBS += -lflite_cmu_us_slt -lflite_cmu_us_kal16 -lflite_cmu_us_awb -lflite_cmu_us_rms -lflite_usenglish -lflite_cmulex -lflite -lasound

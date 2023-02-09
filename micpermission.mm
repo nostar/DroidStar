@@ -18,9 +18,15 @@
 #include "micpermission.h"
 //#import <Foundation/NSUserNotification.h>
 //#import <Foundation/NSString.h>
+#ifdef Q_OS_IOS
+#import <UIKit/UIKit.h>
+#endif
 #import <AVFoundation/AVCaptureDevice.h>
 int MicPermission::check_permission()
 {
+#ifdef Q_OS_IOS
+	[UIApplication sharedApplication].idleTimerDisabled = YES;
+#endif
 	[UIApplication sharedApplication].idleTimerDisabled = YES;
     AVAuthorizationStatus status = [AVCaptureDevice authorizationStatusForMediaType:AVMediaTypeAudio];
     if(status != AVAuthorizationStatusAuthorized){

@@ -20,7 +20,12 @@
 
 #include <QObject>
 #ifdef Q_OS_ANDROID
+#if QT_VERSION < QT_VERSION_CHECK(6, 3, 0)
 #include <QtAndroidExtras>
+#else
+#include <QCoreApplication>
+#include <QJniObject>
+#endif
 
 class AndroidSerialPort : public QObject
 {
@@ -51,7 +56,13 @@ signals:
 private:
 	explicit AndroidSerialPort(QObject * parent = nullptr);
 	static void java_data_received(JNIEnv *env, jobject t, jbyteArray data);
+#if QT_VERSION < QT_VERSION_CHECK(6, 3, 0)
 	QAndroidJniObject serialJavaObject;
+#else
+	QJniObject serialJavaObject;
+	typedef QJniObject QAndroidJniObject;
+	typedef QJniEnvironment QAndroidJniEnvironment;
+#endif
 	QByteArray m_received;
 };
 #endif
