@@ -86,6 +86,7 @@ void P25::process_udp()
 			m_ping_timer->start(5000);
 			m_audio = new AudioEngine(m_audioin, m_audioout);
 			m_audio->init();
+			m_modeinfo.sw_vocoder_loaded = true;
 		}
 		if((m_modeinfo.stream_state == STREAM_LOST) || (m_modeinfo.stream_state == STREAM_END) ){
 			m_modeinfo.stream_state = STREAM_IDLE;

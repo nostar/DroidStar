@@ -245,6 +245,7 @@ void M17::process_udp()
 			m_ping_timer->start(8000);
 			m_audio = new AudioEngine(m_audioin, m_audioout);
 			m_audio->init();
+			m_modeinfo.sw_vocoder_loaded = true;
 		}
 		emit update(m_modeinfo);
 	}

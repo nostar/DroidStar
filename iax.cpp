@@ -632,6 +632,7 @@ void IAX::process_udp()
 			m_audio->set_input_buffer_size(640);
 			m_audio->start_capture();
 			//m_txtimer->start(19);
+			m_modeinfo.sw_vocoder_loaded = true;
 		}
 		++m_rxframes;
 		m_dcallno = (((buf.data()[0] & 0x7f) << 8) | ((uint8_t)buf.data()[1]));
