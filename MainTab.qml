@@ -182,6 +182,7 @@ Item {
 			droidstar.set_slot(_comboSlot.currentIndex);
 
 		}
+        visible: false
 	}
 	ComboBox {
 		id: _comboCC
@@ -201,6 +202,7 @@ Item {
 		onCurrentTextChanged: {
 			droidstar.set_cc(_comboCC.currentIndex);
 		}
+        visible: false
 	}
 	Button {
 		id: _connectbutton
@@ -319,6 +321,7 @@ Item {
 			droidstar.set_dmr_pc(privateBox.checked)
 			//console.log("screen size ", parent.width, " x ", parent.height);
 		}
+        visible: false
 	}
 	Text {
 		id: _dtmflabel
@@ -330,6 +333,7 @@ Item {
 		color: "white"
 		font.pixelSize: parent.height / 30;
 		verticalAlignment: Text.AlignVCenter
+        visible: false
 	}
 	TextField {
 		id: _editIAXDTMF
@@ -339,6 +343,7 @@ Item {
 		height: parent.height / rows;
 		font.pixelSize: parent.height / 35
 		//inputMethodHints: "ImhPreferNumbers"
+        visible: false
 	}
 	Button {
 		id: _dtmfsendbutton
@@ -351,6 +356,7 @@ Item {
 		onClicked: {
 			droidstar.dtmf_send_clicked(editIAXDTMF.text);
 		}
+        visible: false
 	}
 	Text {
 		id: _element3
@@ -362,6 +368,7 @@ Item {
 		color: "white"
 		font.pixelSize: parent.height / 30;
 		verticalAlignment: Text.AlignVCenter
+        visible: false
 	}
 	TextField {
 		visible: false
