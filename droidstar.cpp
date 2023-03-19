@@ -116,6 +116,7 @@ void DroidStar::reset_connect_status()
 		process_connect();
 	}
 }
+
 #endif
 
 void DroidStar::discover_devices()
@@ -254,14 +255,6 @@ void DroidStar::process_connect()
 #ifdef Q_OS_IOS
 		MicPermission::check_permission();
 #endif
-
-		if( (m_callsign.size() < 4) ||
-			(m_dmrid < 250000) ||
-			(m_callsign != m_dmrids[m_dmrid]))
-		{
-			emit connect_status_changed(4);
-			return;
-		}
 
 		if(m_protocol == "REF"){
 			m_refname = m_saved_refhost;
@@ -644,7 +637,7 @@ void DroidStar::process_settings()
 	m_latitude = m_settings->value("DMRLAT", "0").toString().simplified();
 	m_longitude = m_settings->value("DMRLONG", "0").toString().simplified();
 	m_location = m_settings->value("DMRLOC").toString().simplified();
-	m_description = m_settings->value("DMRDESC", "DroidStar").toString().simplified();
+	m_description = m_settings->value("DMRDESC", "").toString().simplified();
 	m_freq = m_settings->value("DMRFREQ", "438800000").toString().simplified();
 	m_url = m_settings->value("DMRURL", "www.qrz.com").toString().simplified();
 	m_swid = m_settings->value("DMRSWID", "20200922").toString().simplified();
@@ -1410,14 +1403,27 @@ void DroidStar::update_data(Mode::MODEINFO info)
 
 	}
 	QString t = QDateTime::fromMSecsSinceEpoch(info.ts).toString("yyyy.MM.dd hh:mm:ss.zzz");
-	if(info.stream_state == Mode::STREAM_NEW){
-		emit update_log(t + " " + m_protocol + " RX started id: " + QString::number(info.streamid, 16) + " src: " + info.src + " dst: " + info.gw2);
+	if((m_protocol == "DMR") || (m_protocol == "P25") || (m_protocol == "NXDN")){
+		if(info.stream_state == Mode::STREAM_NEW){
+			emit update_log(t + " " + m_protocol + " RX started id: " + " srcid: " + QString::number(info.srcid) + " dstid: " + QString::number(info.dstid));
+		}
+		if(info.stream_state == Mode::STREAM_END){
+			emit update_log(t + " " + m_protocol + " RX ended id: " + " srcid: " + QString::number(info.srcid) + " dstid: " + QString::number(info.dstid));
+		}
+		if(info.stream_state == Mode::STREAM_LOST){
+			emit update_log(t + " " + m_protocol + " RX lost id: " + " srcid: " + QString::number(info.srcid) + " dstid: " + QString::number(info.dstid));
+		}
 	}
-	if(info.stream_state == Mode::STREAM_END){
-		emit update_log(t + " " + m_protocol + " RX ended id: " + QString::number(info.streamid, 16) + " src: " + info.src + " dst: " + info.gw2);
-	}
-	if(info.stream_state == Mode::STREAM_LOST){
-		emit update_log(t + " " + m_protocol + " RX lost id: " + QString::number(info.streamid, 16) + " src: " + info.src + " dst: " + info.gw2);
+	else{
+		if(info.stream_state == Mode::STREAM_NEW){
+			emit update_log(t + " " + m_protocol + " RX started id: " + QString::number(info.streamid, 16) + " src: " + info.src + " dst: " + info.gw2);
+		}
+		if(info.stream_state == Mode::STREAM_END){
+			emit update_log(t + " " + m_protocol + " RX ended id: " + QString::number(info.streamid, 16) + " src: " + info.src + " dst: " + info.gw2);
+		}
+		if(info.stream_state == Mode::STREAM_LOST){
+			emit update_log(t + " " + m_protocol + " RX lost id: " + QString::number(info.streamid, 16) + " src: " + info.src + " dst: " + info.gw2);
+		}
 	}
 	emit update_data();
 }

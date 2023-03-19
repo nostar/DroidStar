@@ -18,6 +18,8 @@
 package DroidStar;
 import java.util.Arrays;
 import java.util.List;
+import android.content.Intent;
+import android.app.PendingIntent;
 import android.content.Context;
 import android.hardware.usb.UsbManager;
 import android.hardware.usb.UsbDeviceConnection;
@@ -40,6 +42,10 @@ public class USBSerialWrapper implements SerialInputOutputManagerTest.Listener {
 	
     UsbSerialPort m_port;
     SerialInputOutputManagerTest usbIoManager;
+    private static final String ACTION_USB_PERMISSION = "org.dudetronics.droidstar.USB_PERMISSION";
+    //private final ArrayBlockingQueue<PendingUsbPermission> queuedPermissions = new ArrayBlockingQueue<>(100);
+    //private volatile boolean processingPermission = false;
+    //private PendingUsbPermission currentPendingPermission;
 
     public USBSerialWrapper() {
         this.id = counter;
@@ -146,6 +152,9 @@ public class USBSerialWrapper implements SerialInputOutputManagerTest.Listener {
 		
 		if (connection == null) {
 			// add UsbManager.requestPermission(driver.getDevice(), ..) handling here
+			
+			PendingIntent mPendingIntent = PendingIntent.getBroadcast(c, 0, new Intent(ACTION_USB_PERMISSION), PendingIntent.FLAG_MUTABLE);
+			manager.requestPermission(driver.getDevice(), mPendingIntent);
 			return "No connection, need permission?";
 		}
 

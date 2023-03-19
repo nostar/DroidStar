@@ -41,11 +41,6 @@ ApplicationWindow {
 	palette.highlight: "steelblue"
 
 	MessageDialog {
-		id: idcheckDialog
-		title: "Invalid credentials"
-		text: "A valid callsign and DMR ID are required to use Dudestar on any mode, and they must match. If you have entered a valid DMR ID that matches the entered callsign, and you are still seeing this message, then you either have to click update ID files button or wait until your DMR ID is added to the ID file and try again."
-	}
-	MessageDialog {
 		id: errorDialog
 		title: "Error"
 	}

@@ -459,7 +459,7 @@ void DMR::transmit()
 				pcm[i] = 0;
 			}
 			else{
-				pcm[i] = tts_audio->samples[m_ttscnt*2] / 2;
+				pcm[i] = tts_audio->samples[m_ttscnt*2] / 8;
 				m_ttscnt++;
 			}
 		}

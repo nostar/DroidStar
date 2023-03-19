@@ -255,7 +255,7 @@ void NXDN::transmit()
 				pcm[i] = 0;
 			}
 			else{
-				pcm[i] = tts_audio->samples[m_ttscnt*2] / 2;
+				pcm[i] = tts_audio->samples[m_ttscnt*2] / 8;
 				m_ttscnt++;
 			}
 		}
@@ -305,13 +305,14 @@ void NXDN::send_frame()
 		temp_nxdn = get_frame();
 		txdata.append((char *)temp_nxdn, 43);
 		m_udp->writeDatagram(txdata, m_address, m_modeinfo.port);
-
-		fprintf(stderr, "SEND:%d: ", txdata.size());
+#ifdef DEBUG
+		fprintf(stderr, "SEND:%lli: ", txdata.size());
 		for(int i = 0; i < txdata.size(); ++i){
 			fprintf(stderr, "%02x ", (uint8_t)txdata.data()[i]);
 		}
 		fprintf(stderr, "\n");
 		fflush(stderr);
+#endif
 	}
 	else{
 		fprintf(stderr, "NXDN TX stopped\n");

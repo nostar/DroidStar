@@ -1,5 +1,9 @@
 QT += quick quickcontrols2 network multimedia
-android:QT += androidextras
+
+equals(QT_MAJOR_VERSION, 5){
+	android:QT += androidextras
+	}
+
 unix:!ios:QT += serialport
 CONFIG += c++11
 LFLAGS +=
