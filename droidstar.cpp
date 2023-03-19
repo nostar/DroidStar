@@ -388,6 +388,7 @@ void DroidStar::process_connect()
 			connect(this, SIGNAL(dmrpc_state_changed(int)), m_mode, SLOT(dmrpc_state_changed(int)));
 			connect(this, SIGNAL(slot_changed(int)), m_mode, SLOT(slot_changed(int)));
 			connect(this, SIGNAL(cc_changed(int)), m_mode, SLOT(cc_changed(int)));
+			emit dmr_tgid_changed(m_dmr_destid);
 		}
 
 		if(m_protocol == "M17"){
