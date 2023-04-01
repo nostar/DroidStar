@@ -40,7 +40,7 @@ void HttpManager::doRequest()
 		m_qnam->get(QNetworkRequest(QUrl(m_filename)));
 	}
 	else{
-		m_qnam->get(QNetworkRequest(QUrl("http://www.dudetronics.com/ar-dns" + m_filename)));
+		m_qnam->get(QNetworkRequest(QUrl("https://www.dudetronics.com/ar-dns" + m_filename)));
 	}
 	//qDebug() << "doRequest() called m_filename == " << m_filename;
 }
