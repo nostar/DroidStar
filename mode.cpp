@@ -82,7 +82,7 @@ Mode::~Mode()
 {
 }
 
-void Mode::init(QString callsign, uint32_t dmrid, uint16_t nxdnid, char module, QString refname, QString host, int port, bool ipv6, QString vocoder, QString modem, QString audioin, QString audioout)
+void Mode::init(QString callsign, uint32_t dmrid, uint16_t nxdnid, char module, QString refname, QString host, int port, bool ipv6, QString vocoder, QString modem, QString audioin, QString audioout, bool mdirect)
 {
 	m_dmrid = dmrid;
 	m_nxdnid = nxdnid;
@@ -93,6 +93,7 @@ void Mode::init(QString callsign, uint32_t dmrid, uint16_t nxdnid, char module, 
 	m_modemport = modem;
 	m_audioin = audioin;
 	m_audioout = audioout;
+    m_mdirect = mdirect;
 
 	m_modem = nullptr;
 	m_ambedev = nullptr;
@@ -172,28 +173,62 @@ void Mode::out_audio_vol_changed(qreal v)
 
 void Mode::agc_state_changed(int s)
 {
-	qDebug() << "Codec::agc_state_changed() called s == " << s;
 	m_audio->set_agc(s);
 }
 
-void Mode::send_connect()
+void Mode::begin_connect()
 {
 	m_modeinfo.status = CONNECTING;
 
-	if(m_modeinfo.host == "MMDVM_DIRECT"){
-		mmdvm_direct_connect();
-	}
-	else if(m_ipv6 && (m_modeinfo.host != "none")){
-		qDebug() << "Host == " << m_modeinfo.host;
-		QList<QHostAddress> h;
-		QHostInfo i;
-		h.append(QHostAddress(m_modeinfo.host));
-		i.setAddresses(h);
-		hostname_lookup(i);
-	}
-	else{
-		QHostInfo::lookupHost(m_modeinfo.host, this, SLOT(hostname_lookup(QHostInfo)));
-	}
+    if((m_vocoder != "") && (m_mode != "M17")){
+        m_hwrx = true;
+        m_hwtx = true;
+        m_modeinfo.hw_vocoder_loaded = true;
+#if !defined(Q_OS_IOS)
+        m_ambedev = new SerialAMBE(m_mode);
+        connect(m_ambedev, SIGNAL(connected(bool)), this, SLOT(ambe_connect_status(bool)));
+        connect(m_ambedev, SIGNAL(data_ready()), this, SLOT(get_ambe()));
+        connect(m_ambedev, SIGNAL(ambedev_ready()), this, SLOT(host_lookup()));
+        m_ambedev->connect_to_serial(m_vocoder);
+#endif
+    }
+    else{
+        m_hwrx = false;
+        m_hwtx = false;
+        if(m_modemport == ""){
+            host_lookup();
+        }
+    }
+
+    if(m_modemport != ""){
+#if !defined(Q_OS_IOS)
+        m_modem = new SerialModem(m_mode);
+        m_modem->set_modem_flags(m_rxInvert, m_txInvert, m_pttInvert, m_useCOSAsLockout, m_duplex);
+        m_modem->set_modem_params(m_baud, m_rxfreq, m_txfreq, m_txDelay, m_rxLevel, m_rfLevel, m_ysfTXHang, m_cwIdTXLevel, m_dstarTXLevel, m_dmrTXLevel, m_ysfTXLevel, m_p25TXLevel, m_nxdnTXLevel, m_pocsagTXLevel, m_m17TXLevel);
+        connect(m_modem, SIGNAL(connected(bool)), this, SLOT(mmdvm_connect_status(bool)));
+        connect(m_modem, SIGNAL(modem_data_ready(QByteArray)), this, SLOT(process_modem_data(QByteArray)));
+        connect(m_modem, SIGNAL(modem_ready()), this, SLOT(host_lookup()));
+        m_modem->connect_to_serial(m_modemport);
+#endif
+    }
+}
+
+void Mode::host_lookup()
+{
+    if(m_mdirect && (m_mode == "M17")){ // MMDVM_DIRECT currently only supported by M17
+        mmdvm_direct_connect();
+    }
+    else if(m_ipv6 && (m_modeinfo.host != "none")){
+        qDebug() << "Host == " << m_modeinfo.host;
+        QList<QHostAddress> h;
+        QHostInfo i;
+        h.append(QHostAddress(m_modeinfo.host));
+        i.setAddresses(h);
+        hostname_lookup(i);
+    }
+    else{
+        QHostInfo::lookupHost(m_modeinfo.host, this, SLOT(hostname_lookup(QHostInfo)));
+    }
 }
 
 void Mode::toggle_tx(bool tx)

@@ -142,10 +142,10 @@ ApplicationWindow {
 		Component.onCompleted: {
 			mainTab.comboMode.loaded = true;
 			droidstar.process_settings();
-			settingsTab.comboVocoder.model = droidstar.get_vocoders();
-			settingsTab.comboModem.model = droidstar.get_modems();
-			settingsTab.comboPlayback.model = droidstar.get_playbacks();
-			settingsTab.comboCapture.model = droidstar.get_captures();
+            settingsTab.comboVocoder.model = droidstar.get_vocoders();
+            settingsTab.comboModem.model = droidstar.get_modems();
+            settingsTab.comboPlayback.model = droidstar.get_playbacks();
+            settingsTab.comboCapture.model = droidstar.get_captures();
 			mainTab.data1.font.family = droidstar.get_monofont();
 			mainTab.data2.font.family = droidstar.get_monofont();
 			mainTab.data3.font.family = droidstar.get_monofont();
@@ -173,6 +173,12 @@ ApplicationWindow {
 		function onRptr2_changed(s){
 			settingsTab.rptr2Edit.text = s;
 		}
+        function onUpdate_devices(){
+            settingsTab.comboVocoder.model = droidstar.get_vocoders();
+            settingsTab.comboModem.model = droidstar.get_modems();
+            settingsTab.comboPlayback.model = droidstar.get_playbacks();
+            settingsTab.comboCapture.model = droidstar.get_captures();
+        }
 
 		function onMode_changed() {
 			//console.log("onMode_changed ", mainTab.comboMode.find(droidstar.get_mode()), ":", droidstar.get_mode(), ":", droidstar.get_ref_host(), ":", droidstar.get_module());
@@ -494,6 +500,11 @@ ApplicationWindow {
 					settingsTab.m171600.checked = true;
 				}
 				if(mainTab.comboMode.currentText === "M17"){
+                    if(settingsTab.mmdvmBox.checked){
+                        mainTab.comboModule.enabled = true;
+                        mainTab.comboHost.enabled = true;
+                    }
+
 					settingsTab.m173200.checked = true;
 				}
 
@@ -509,6 +520,9 @@ ApplicationWindow {
 			}
 			if(c === 5){
 				errorDialog.text = droidstar.get_error_text();
+                if(errorDialog.text == ""){
+                    errorDialog.text = "Banned!"
+                }
 				errorDialog.open();
 				droidstar.onConnect_status_changed(0);
 			}

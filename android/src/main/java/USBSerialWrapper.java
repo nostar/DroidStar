@@ -16,9 +16,12 @@
 */
 
 package DroidStar;
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
+import android.content.BroadcastReceiver;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.hardware.usb.UsbManager;
@@ -43,14 +46,37 @@ public class USBSerialWrapper implements SerialInputOutputManagerTest.Listener {
     UsbSerialPort m_port;
     SerialInputOutputManagerTest usbIoManager;
     private static final String ACTION_USB_PERMISSION = "org.dudetronics.droidstar.USB_PERMISSION";
-    //private final ArrayBlockingQueue<PendingUsbPermission> queuedPermissions = new ArrayBlockingQueue<>(100);
-    //private volatile boolean processingPermission = false;
-    //private PendingUsbPermission currentPendingPermission;
+    IntentFilter m_filter = new IntentFilter(ACTION_USB_PERMISSION);
+    
+    UsbManager m_manager;
+    UsbSerialDriver m_driver;
+  
+    public BroadcastReceiver m_usbReceiver = new BroadcastReceiver() {
+		public void onReceive(Context context, Intent intent) {
+			String action = intent.getAction();
+			System.out.println("BroadcastReceiver() onReceive() action == " + action);
+			if (ACTION_USB_PERMISSION.equals(action)) {
+				if (intent.getBooleanExtra(UsbManager.EXTRA_PERMISSION_GRANTED, false)) {
+					System.out.println("USB Permission Granted");
+					if(open_device() > 0) device_open();
+				}
+				else {
+					System.out.println("USB Permission Denied");
+				}
+			}
+			if ( (UsbManager.ACTION_USB_DEVICE_ATTACHED.equals(action)) || (UsbManager.ACTION_USB_DEVICE_DETACHED.equals(action)) ) {
+				devices_changed();
+				System.out.println("USB devices changed");
+			}
+		}
+	};
 
     public USBSerialWrapper() {
         this.id = counter;
         System.out.println("Created USBSerialWrapper object with id: " + this.id);
         counter++;
+        m_filter.addAction(UsbManager.ACTION_USB_DEVICE_ATTACHED);
+		m_filter.addAction(UsbManager.ACTION_USB_DEVICE_DETACHED);
     }
     
     public void set_port_name(String d)
@@ -98,8 +124,8 @@ public class USBSerialWrapper implements SerialInputOutputManagerTest.Listener {
 	public String[] discover_devices(Context c)
 	{
 		System.out.println("Java: discover_devices()");
-		UsbManager manager = (UsbManager) c.getSystemService(Context.USB_SERVICE);
-		List<UsbSerialDriver> availableDrivers = UsbSerialProber.getDefaultProber().findAllDrivers(manager);
+		m_manager = (UsbManager) c.getSystemService(Context.USB_SERVICE);
+		List<UsbSerialDriver> availableDrivers = UsbSerialProber.getDefaultProber().findAllDrivers(m_manager);
 		String[] devices = new String[availableDrivers.size()];
 		
 		if (availableDrivers.isEmpty()) {
@@ -116,6 +142,7 @@ public class USBSerialWrapper implements SerialInputOutputManagerTest.Listener {
 				System.out.println("USB device getVendorId() == " + availableDrivers.get(i).getDevice().getVendorId());
 			}
 		}
+		c.registerReceiver(m_usbReceiver, m_filter);
 		return devices;
 	}
 	
@@ -123,8 +150,7 @@ public class USBSerialWrapper implements SerialInputOutputManagerTest.Listener {
     {
 		m_context = c;
 		int devicenum = 0;
-		UsbManager manager = (UsbManager) m_context.getSystemService(Context.USB_SERVICE);
-		List<UsbSerialDriver> availableDrivers = UsbSerialProber.getDefaultProber().findAllDrivers(manager);
+		List<UsbSerialDriver> availableDrivers = UsbSerialProber.getDefaultProber().findAllDrivers(m_manager);
 		
 		if (availableDrivers.isEmpty()) {
 			System.out.println("No drivers found");
@@ -138,7 +164,6 @@ public class USBSerialWrapper implements SerialInputOutputManagerTest.Listener {
 				System.out.println("USB device getProductId() == " + availableDrivers.get(i).getDevice().getProductId());
 				System.out.println("USB device getVendorId() == " + availableDrivers.get(i).getDevice().getVendorId());
 				
-				//if((availableDrivers.get(i).getDevice().getDeviceName()) == m_devicename){
 				if(m_devicename.equals(availableDrivers.get(i).getDevice().getDeviceName())){
 					devicenum = i;
 					System.out.println("Found device == " + devicenum);
@@ -147,18 +172,21 @@ public class USBSerialWrapper implements SerialInputOutputManagerTest.Listener {
 			}
 		}
 		
-		UsbSerialDriver driver = availableDrivers.get(devicenum);
-		UsbDeviceConnection connection = manager.openDevice(driver.getDevice());
+		m_driver = availableDrivers.get(devicenum);
+		PendingIntent mPendingIntent = PendingIntent.getBroadcast(c, 0, new Intent(ACTION_USB_PERMISSION), PendingIntent.FLAG_MUTABLE);
+		m_manager.requestPermission(m_driver.getDevice(), mPendingIntent);
+		return "Yipee!";
+	}
+	
+	public int open_device()
+	{
+		UsbDeviceConnection connection = m_manager.openDevice(m_driver.getDevice());
 		
 		if (connection == null) {
-			// add UsbManager.requestPermission(driver.getDevice(), ..) handling here
-			
-			PendingIntent mPendingIntent = PendingIntent.getBroadcast(c, 0, new Intent(ACTION_USB_PERMISSION), PendingIntent.FLAG_MUTABLE);
-			manager.requestPermission(driver.getDevice(), mPendingIntent);
-			return "No connection, need permission?";
+			return 0;
 		}
 
-		m_port = driver.getPorts().get(0); // Most devices have just one port (port 0)
+		m_port = m_driver.getPorts().get(0); // Most devices have just one port (port 0)
 		
 		try {
 			m_port.open(connection);
@@ -173,8 +201,7 @@ public class USBSerialWrapper implements SerialInputOutputManagerTest.Listener {
 		
 		usbIoManager = new SerialInputOutputManagerTest(m_port, this);
 		usbIoManager.start();
-		
-		return "Yipee!";
+		return 1;
 	}
 	
 	public void write(byte[] data)
@@ -201,6 +228,19 @@ public class USBSerialWrapper implements SerialInputOutputManagerTest.Listener {
 		return returnbytes;
 	}
 	
+	public void close(int c)
+	{
+		if(usbIoManager != null) {
+            usbIoManager.setListener(null);
+            usbIoManager.stop();
+        }
+        usbIoManager = null;
+        try {
+            m_port.close();
+        } catch (IOException ignored) {}
+        m_port = null;
+	}
+	
 	@Override
 	public void onNewData(byte[] data) {
 		data_received(data);
@@ -212,4 +252,6 @@ public class USBSerialWrapper implements SerialInputOutputManagerTest.Listener {
 	}
 	
 	private static native void data_received(byte[] data);
+	private static native void device_open();
+	private static native void devices_changed();
 }

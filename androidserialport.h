@@ -40,7 +40,7 @@ public:
 	QStringList discover_devices();
 
 	int open(int);
-	void close(){}
+    void close();
 	void setPortName(QString);
 	void setBaudRate(int);
 	void setDataBits(int);
@@ -53,9 +53,13 @@ public:
 signals:
 	void readyRead();
 	void data_received(QByteArray);
+    void device_ready();
+    void devices_changed();
 private:
 	explicit AndroidSerialPort(QObject * parent = nullptr);
 	static void java_data_received(JNIEnv *env, jobject t, jbyteArray data);
+    static void java_device_open(JNIEnv *env, jobject t);
+    static void java_devices_changed(JNIEnv *env, jobject t);
 #if QT_VERSION < QT_VERSION_CHECK(6, 3, 0)
 	QAndroidJniObject serialJavaObject;
 #else

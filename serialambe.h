@@ -45,6 +45,7 @@ public:
 private slots:
 	void process_serial();
 	void receive_serial(QByteArray);
+    void config_ambe();
 private:
 #ifndef Q_OS_ANDROID
 	QSerialPort *m_serial;
@@ -69,6 +70,7 @@ private:
 signals:
 	void connected(bool);
 	void data_ready();
+    void ambedev_ready();
 };
 
 #endif // SERIALAMBE_H

@@ -24,7 +24,7 @@
 #include "CRCenc.h"
 #include "MMDVMDefines.h"
 
-//#define DEBUG
+#define DEBUG
 
 const uint32_t ENCODING_TABLE_1676[] =
 	{0x0000U, 0x0273U, 0x04E5U, 0x0696U, 0x09C9U, 0x0BBAU, 0x0D2CU, 0x0F5FU, 0x11E2U, 0x1391U, 0x1507U, 0x1774U,
@@ -43,6 +43,7 @@ DMR::DMR() :
 	m_txslot(2),
 	m_txcc(1)
 {
+    m_mode = "DMR";
 	m_dmrcnt = 0;
 	m_flco = FLCO_GROUP;
 	m_attenuation = 5;
@@ -304,31 +305,6 @@ void DMR::setup_connection()
 	m_ping_timer = new QTimer();
 	connect(m_ping_timer, SIGNAL(timeout()), this, SLOT(send_ping()));
 	m_ping_timer->start(5000);
-	if(m_vocoder != ""){
-		m_hwrx = true;
-		m_hwtx = true;
-		m_modeinfo.hw_vocoder_loaded = true;
-#if !defined(Q_OS_IOS)
-		m_ambedev = new SerialAMBE("DMR");
-		m_ambedev->connect_to_serial(m_vocoder);
-		connect(m_ambedev, SIGNAL(connected(bool)), this, SLOT(ambe_connect_status(bool)));
-		connect(m_ambedev, SIGNAL(data_ready()), this, SLOT(get_ambe()));
-#endif
-	}
-	else{
-		m_hwrx = false;
-		m_hwtx = false;
-	}
-	if(m_modemport != ""){
-#if !defined(Q_OS_IOS)
-		m_modem = new SerialModem("DMR");
-		m_modem->set_modem_flags(m_rxInvert, m_txInvert, m_pttInvert, m_useCOSAsLockout, m_duplex);
-		m_modem->set_modem_params(m_baud, m_rxfreq, m_txfreq, m_txDelay, m_rxLevel, m_rfLevel, m_ysfTXHang, m_cwIdTXLevel, m_dstarTXLevel, m_dmrTXLevel, m_ysfTXLevel, m_p25TXLevel, m_nxdnTXLevel, m_pocsagTXLevel, m_m17TXLevel);
-		m_modem->connect_to_serial(m_modemport);
-		connect(m_modem, SIGNAL(connected(bool)), this, SLOT(mmdvm_connect_status(bool)));
-		connect(m_modem, SIGNAL(modem_data_ready(QByteArray)), this, SLOT(process_modem_data(QByteArray)));
-#endif
-	}
 	m_audio = new AudioEngine(m_audioin, m_audioout);
 	m_audio->init();
 }
@@ -438,7 +414,7 @@ void DMR::process_modem_data(QByteArray d)
 		++m_dmrcnt;
 	}
 #ifdef DEBUG
-	fprintf(stderr, "SEND:%d: ", txdata.size());
+    fprintf(stderr, "SEND:%lld: ", txdata.size());
 	for(int i = 0; i < txdata.size(); ++i){
 		fprintf(stderr, "%02x ", (uint8_t)txdata.data()[i]);
 	}
@@ -558,7 +534,7 @@ void DMR::send_frame()
 	emit update_output_level(m_audio->level() * 8);
 	emit update(m_modeinfo);
 #ifdef DEBUG
-	fprintf(stderr, "SEND:%d: ", txdata.size());
+    fprintf(stderr, "SEND:%lld: ", txdata.size());
 	for(int i = 0; i < txdata.size(); ++i){
 		fprintf(stderr, "%02x ", (uint8_t)txdata.data()[i]);
 	}
@@ -576,7 +552,7 @@ uint8_t * DMR::get_eot()
 
 void DMR::build_frame()
 {
-	//qDebug() << "DMR: slot:cc == " << m_txslot << ":" << m_txcc;
+	qDebug() << "DMR: slot:cc == " << m_txslot << ":" << m_txcc;
 	m_dmrFrame[0U]  = 'D';
 	m_dmrFrame[1U]  = 'M';
 	m_dmrFrame[2U]  = 'R';

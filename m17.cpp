@@ -93,6 +93,7 @@ M17::M17() :
 #else
 	m_txcan = 0;
 #endif
+    m_mode = "M17";
 	m_attenuation = 1;
 }
 
@@ -222,17 +223,6 @@ void M17::process_udp()
 	if((buf.size() == 4) && (::memcmp(buf.data(), "ACKN", 4U) == 0)){
 		if(m_modeinfo.status == CONNECTING){
 			m_modeinfo.status = CONNECTED_RW;
-
-			if(m_modemport != ""){
-#if !defined(Q_OS_IOS)
-				m_modem = new SerialModem("M17");
-				m_modem->set_modem_flags(m_rxInvert, m_txInvert, m_pttInvert, m_useCOSAsLockout, m_duplex);
-				m_modem->set_modem_params(m_baud, m_rxfreq, m_txfreq, m_txDelay, m_rxLevel, m_rfLevel, m_ysfTXHang, m_cwIdTXLevel, m_dstarTXLevel, m_dmrTXLevel, m_ysfTXLevel, m_p25TXLevel, m_nxdnTXLevel, m_pocsagTXLevel, m_m17TXLevel);
-				m_modem->connect_to_serial(m_modemport);
-				connect(m_modem, SIGNAL(connected(bool)), this, SLOT(mmdvm_connect_status(bool)));
-				connect(m_modem, SIGNAL(modem_data_ready(QByteArray)), this, SLOT(process_modem_data(QByteArray)));
-#endif
-			}
 #ifndef USE_EXTERNAL_CODEC2
 			m_c2 = new CCodec2(true);
 #endif
@@ -362,16 +352,9 @@ void M17::hostname_lookup(QHostInfo i)
 void M17::mmdvm_direct_connect()
 {
 	if(m_modemport != ""){
-#if !defined(Q_OS_IOS)
-		m_modem = new SerialModem("M17");
-		m_modem->set_modem_flags(m_rxInvert, m_txInvert, m_pttInvert, m_useCOSAsLockout, m_duplex);
-		m_modem->set_modem_params(m_baud, m_rxfreq, m_txfreq, m_txDelay, m_rxLevel, m_rfLevel, m_ysfTXHang, m_cwIdTXLevel, m_dstarTXLevel, m_dmrTXLevel, m_ysfTXLevel, m_p25TXLevel, m_nxdnTXLevel, m_pocsagTXLevel, m_m17TXLevel);
-		m_modem->connect_to_serial(m_modemport);
-		connect(m_modem, SIGNAL(connected(bool)), this, SLOT(mmdvm_connect_status(bool)));
-		connect(m_modem, SIGNAL(modem_data_ready(QByteArray)), this, SLOT(process_modem_data(QByteArray)));
-#endif
 		if(m_modeinfo.status == CONNECTING){
 			m_modeinfo.status = CONNECTED_RW;
+            m_modeinfo.sw_vocoder_loaded = true;
 		}
 	}
 	else{
@@ -417,7 +400,7 @@ void M17::send_ping()
 
 void M17::send_disconnect()
 {
-	if(m_modeinfo.host == "MMDVM_DIRECT"){
+    if(m_mdirect){
 		return;
 	}
 
@@ -452,11 +435,6 @@ void M17::send_modem_data(QByteArray d)
 	static uint8_t lsfcnt = 0;
 	uint8_t txframe[M17_FRAME_LENGTH_BYTES];
 	uint8_t tmp[M17_FRAME_LENGTH_BYTES];
-
-	// FIXME:  Hard code dst to "ALL      " until I better understand what to do here
-	::memset(&d.data()[6], 0, 4);
-	d.data()[10] = 0x4c;
-	d.data()[11] = 0xe1;
 
 	if(m_modeinfo.stream_state == STREAM_NEW){
 		::memcpy(lsf, &d.data()[6], M17_LSF_LENGTH_BYTES);
@@ -550,7 +528,7 @@ void M17::process_modem_data(QByteArray d)
 
 	if((d.data()[2] == MMDVM_M17_LOST) || (d.data()[2] == MMDVM_M17_EOT)){
 		txstreamid = 0;
-		if(m_modeinfo.host == "MMDVM_DIRECT"){
+        if(m_mdirect){
 			m_modeinfo.streamid = 0;
 			m_modeinfo.dst.clear();
 			m_modeinfo.src.clear();
@@ -568,7 +546,7 @@ void M17::process_modem_data(QByteArray d)
 		txstreamid = static_cast<uint16_t>((::rand() & 0xFFFF));
 		qDebug() << "M17 LSF received valid == " << validlsf << "ber: " << ber;
 
-		if(validlsf && (m_modeinfo.host == "MMDVM_DIRECT")){
+        if(validlsf && m_mdirect){
 			uint8_t cs[10];
 			::memcpy(cs, lsf, 6);
 			decode_callsign(cs);
@@ -615,7 +593,7 @@ void M17::process_modem_data(QByteArray d)
 			}
 		}
 
-		if(m_modeinfo.host == "MMDVM_DIRECT"){
+        if(m_mdirect){
 			if( !m_tx && (m_modeinfo.streamid == 0) ){
 				if(txstreamid == 0){
 					qDebug() << "No header, late entry...";
@@ -777,7 +755,7 @@ void M17::transmit()
 	if(m_tx){
 		if(txstreamid == 0){
 		   txstreamid = static_cast<uint16_t>((::rand() & 0xFFFF));
-		   if(!m_rxtimer->isActive() && (m_modeinfo.host == "MMDVM_DIRECT")){
+           if(!m_rxtimer->isActive() && m_mdirect){
 			   m_rxmodemq.clear();
 			   m_modeinfo.stream_state = STREAM_NEW;
 #ifdef Q_OS_WIN
@@ -789,7 +767,7 @@ void M17::transmit()
 
 		}
 		else{
-			if(m_modeinfo.host == "MMDVM_DIRECT"){
+            if(m_mdirect){
 				m_modeinfo.stream_state = STREAMING;
 			}
 		}
@@ -799,6 +777,7 @@ void M17::transmit()
 		uint8_t lsf[30];
 		memset(dst, ' ', 9);
 		memcpy(dst, m_refname.toLocal8Bit(), m_refname.size());
+
 		dst[8] =  m_module;
 		dst[9] = 0x00;
 		encode_callsign(dst);
@@ -831,7 +810,7 @@ void M17::transmit()
 		txframe.append(lsf[28]);
 		txframe.append(lsf[29]);
 
-		if(m_modeinfo.host == "MMDVM_DIRECT"){
+        if(m_mdirect){
 			send_modem_data(txframe);
 			m_rxwatchdog = 0;
 		}
@@ -842,6 +821,7 @@ void M17::transmit()
 		++tx_cnt;
 		m_modeinfo.src = m_modeinfo.callsign;
 		m_modeinfo.dst = m_refname;
+        m_modeinfo.module = m_module;
 		m_modeinfo.type = get_mode();
 		m_modeinfo.frame_number = tx_cnt;
 		m_modeinfo.streamid = txstreamid;
@@ -890,7 +870,7 @@ void M17::transmit()
 		txframe.append((char *)quiet, 8);
 		txframe.append(2, 0x00);
 
-		if(m_modeinfo.host == "MMDVM_DIRECT"){
+        if(m_mdirect){
 			send_modem_data(txframe);
 			m_modeinfo.stream_state = STREAM_END;
 		}

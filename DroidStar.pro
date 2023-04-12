@@ -2,7 +2,7 @@ QT += quick quickcontrols2 network multimedia
 
 equals(QT_MAJOR_VERSION, 5){
 	android:QT += androidextras
-	}
+}
 
 unix:!ios:QT += serialport
 CONFIG += c++11
@@ -34,6 +34,7 @@ ios:QMAKE_INFO_PLIST = Info.plist
 VERSION_BUILD='$(shell cd $$PWD;git rev-parse --short HEAD)'
 DEFINES += VERSION_NUMBER=\"\\\"$${VERSION_BUILD}\\\"\"
 DEFINES += QT_DEPRECATED_WARNINGS
+#DEFINES += QT_DEBUG_PLUGINS=1
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 DEFINES += VOCODER_PLUGIN
 #DEFINES += USE_FLITE

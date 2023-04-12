@@ -24,7 +24,7 @@
 #include <iostream>
 #include <cstring>
 
-//#define DEBUG
+#define DEBUG
 
 const uint32_t IMBE_INTERLEAVE[] = {
 	0,  7, 12, 19, 24, 31, 36, 43, 48, 55, 60, 67, 72, 79, 84, 91,  96, 103, 108, 115, 120, 127, 132, 139,
@@ -103,6 +103,7 @@ YSF::YSF() :
 	m_fcs(false),
 	m_txfullrate(false)
 {
+    m_mode = "YSF";
 	m_attenuation = 5;
 }
 
@@ -141,33 +142,6 @@ void YSF::process_udp()
 
 			m_rxtimer = new QTimer();
 			connect(m_rxtimer, SIGNAL(timeout()), this, SLOT(process_rx_data()));
-
-			if(m_vocoder != ""){
-				m_hwrx = true;
-				m_hwtx = true;
-				m_modeinfo.hw_vocoder_loaded = true;
-#if !defined(Q_OS_IOS)
-				m_ambedev = new SerialAMBE("YSF");
-				m_ambedev->connect_to_serial(m_vocoder);
-				connect(m_ambedev, SIGNAL(connected(bool)), this, SLOT(ambe_connect_status(bool)));
-				connect(m_ambedev, SIGNAL(data_ready()), this, SLOT(get_ambe()));
-#endif
-			}
-			else{
-				m_hwrx = false;
-				m_hwtx = false;
-			}
-
-			if(m_modemport != ""){
-#if !defined(Q_OS_IOS)
-				m_modem = new SerialModem("YSF");
-				m_modem->set_modem_flags(m_rxInvert, m_txInvert, m_pttInvert, m_useCOSAsLockout, m_duplex);
-				m_modem->set_modem_params(m_baud, m_rxfreq, m_txfreq, m_txDelay, m_rxLevel, m_rfLevel, m_ysfTXHang, m_cwIdTXLevel, m_dstarTXLevel, m_dmrTXLevel, m_ysfTXLevel, m_p25TXLevel, m_nxdnTXLevel, m_pocsagTXLevel, m_m17TXLevel);
-				m_modem->connect_to_serial(m_modemport);
-				connect(m_modem, SIGNAL(connected(bool)), this, SLOT(mmdvm_connect_status(bool)));
-				connect(m_modem, SIGNAL(modem_data_ready(QByteArray)), this, SLOT(process_modem_data(QByteArray)));
-#endif
-			}
 
 			m_audio = new AudioEngine(m_audioin, m_audioout);
 			m_audio->init();

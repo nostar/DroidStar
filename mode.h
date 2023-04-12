@@ -42,7 +42,7 @@ public:
 	Mode();
 	~Mode();
 	static Mode* create_mode(QString);
-	void init(QString callsign, uint32_t dmrid, uint16_t nxdnid, char module, QString refname, QString host, int port, bool ipv6, QString vocoder, QString modem, QString audioin, QString audioout);
+    void init(QString callsign, uint32_t dmrid, uint16_t nxdnid, char module, QString refname, QString host, int port, bool ipv6, QString vocoder, QString modem, QString audioin, QString audioout, bool mdirect);
 	void set_modem_flags(bool rxInvert, bool txInvert, bool pttInvert, bool useCOSAsLockout, bool duplex)
 	{
 		m_rxInvert = rxInvert;
@@ -97,6 +97,7 @@ public:
 		QString mmdvmdesc;
 		QString mmdvm;
 		QString host;
+        QString module;
 		int port;
 		bool path;
 		char type;
@@ -138,7 +139,7 @@ protected slots:
 
 	void ambe_connect_status(bool);
 	void mmdvm_connect_status(bool);
-	void send_connect();
+    void begin_connect();
 	void input_src_changed(int id, QString t) { m_ttsid = id; m_ttstext = t; }
 	void start_tx();
 	void stop_tx();
@@ -156,7 +157,10 @@ protected slots:
 	void rptr2_changed(QString r2) { m_txrptr2 = r2; }
 	void usrtxt_changed(QString t) { m_txusrtxt = t; }
 	void module_changed(char m) { m_module = m; m_modeinfo.streamid = 0; }
+    void dst_changed(QString dst){ m_refname = dst; }
+    void host_lookup();
 protected:
+    QString m_mode;
 	QUdpSocket *m_udp = nullptr;
 	QHostAddress m_address;
 	char m_module;
@@ -185,6 +189,7 @@ protected:
 	AudioEngine *m_audio;
 	QString m_audioin;
 	QString m_audioout;
+    bool m_mdirect;
 	uint32_t m_rxwatchdog;
 	uint8_t m_attenuation;
 	uint8_t m_rxtimerint;

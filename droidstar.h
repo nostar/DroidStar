@@ -60,6 +60,8 @@ signals:
 	void mycall_changed(QString);
 	void urcall_changed(QString);
 	void usrtxt_changed(QString);
+    void dst_changed(QString);
+    void update_devices();
 public slots:
 	void set_callsign(const QString &callsign) {  m_callsign = callsign.simplified(); save_settings(); }
 	void set_dmrtgid(const QString &dmrtgid) { m_dmr_destid = dmrtgid.simplified().toUInt(); save_settings(); }
@@ -114,7 +116,9 @@ public slots:
 	void set_swtx(bool swtx) { emit swtx_state_changed(swtx); }
 	void set_swrx(bool swrx) { emit swrx_state_changed(swrx); }
 	void set_agc(bool agc) { emit agc_state_changed(agc); }
+    void set_mmdvm_direct(bool mmdvm) { m_mdirect = mmdvm; process_mode_change(m_protocol); }
 	void set_iaxport(const QString &port){ m_iaxport = port.simplified().toUInt(); save_settings(); }
+    void set_dst(QString dst){emit dst_changed(dst);}
 
 	void set_modemRxFreq(QString m) { m_modemRxFreq = m; save_settings(); }
 	void set_modemTxFreq(QString m) { m_modemTxFreq = m; save_settings(); }
@@ -342,6 +346,7 @@ private:
 	QStringList m_modems;
 	QStringList m_playbacks;
 	QStringList m_captures;
+    bool m_mdirect;
 
 	int m_tts;
 	QString m_ttstxt;
@@ -367,6 +372,9 @@ private:
 	bool m_modemTxInvert;
 	bool m_modemRxInvert;
 	bool m_modemPTTInvert;
+#ifdef Q_OS_ANDROID
+    AndroidSerialPort *m_USBmonitor;
+#endif
 
 private slots:
 #ifdef Q_OS_ANDROID

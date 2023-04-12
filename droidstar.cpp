@@ -34,6 +34,7 @@
 #include <QDir>
 #include <QFont>
 #include <QFontDatabase>
+#include <cstring>
 #include <stdio.h>
 #include <fcntl.h>
 #include <iostream>
@@ -44,7 +45,8 @@ DroidStar::DroidStar(QObject *parent) :
 	m_essid(0),
 	m_dmr_destid(0),
 	m_outlevel(0),
-	m_tts(0)
+    m_mdirect(false),
+    m_tts(0)
 {
 	qRegisterMetaType<Mode::MODEINFO>("Mode::MODEINFO");
 	m_settings_processed = false;
@@ -57,6 +59,8 @@ DroidStar::DroidStar(QObject *parent) :
 #endif
 #if defined(Q_OS_ANDROID)
 	keepScreenOn();
+    m_USBmonitor = &AndroidSerialPort::GetInstance();
+    connect(m_USBmonitor, SIGNAL(devices_changed()), this, SLOT(discover_devices()));
 #endif
 	check_host_files();
 	discover_devices();
@@ -140,6 +144,7 @@ void DroidStar::discover_devices()
 		m_modems.append(i.value());
 		++i;
 	}
+    emit update_devices();
 #endif
 }
 
@@ -255,7 +260,6 @@ void DroidStar::process_connect()
 #ifdef Q_OS_IOS
 		MicPermission::check_permission();
 #endif
-
 		if(m_protocol == "REF"){
 			m_refname = m_saved_refhost;
 		}
@@ -282,7 +286,7 @@ void DroidStar::process_connect()
 		}
 		else if(m_protocol == "M17"){
 			m_refname = m_saved_m17host;
-		}
+        }
 
 		emit connect_status_changed(1);
 		connect_status = Mode::CONNECTING;
@@ -292,7 +296,7 @@ void DroidStar::process_connect()
 			m_host = m_hostmap[m_refname];
 			sl = m_host.split(',');
 
-			if( (m_protocol == "M17") && (m_refname != "MMDVM_DIRECT") && (m_ipv6) && (sl.size() > 2) && (sl.at(2) != "none") ){
+            if( (m_protocol == "M17") && !m_mdirect && (m_ipv6) && (sl.size() > 2) && (sl.at(2) != "none") ){
 				m_host = sl.at(2).simplified();
 				m_port = sl.at(1).toInt();
 			}
@@ -300,7 +304,7 @@ void DroidStar::process_connect()
 				m_host = sl.at(0).simplified();
 				m_port = sl.at(1).toInt();
 			}
-			else if( (m_protocol == "M17") && (m_refname == "MMDVM_DIRECT") ){
+            else if( (m_protocol == "M17") && m_mdirect ){
 				qDebug() << "Going MMDVM_DIRECT";
 			}
 			else{
@@ -340,14 +344,14 @@ void DroidStar::process_connect()
 		m_mode = Mode::create_mode(m_protocol);
 		m_modethread = new QThread;
 		m_mode->moveToThread(m_modethread);
-		m_mode->init(m_callsign, m_dmrid, nxdnid, m_module, m_refname, m_host, m_port, m_ipv6, vocoder, modem, m_capture, m_playback);
+        m_mode->init(m_callsign, m_dmrid, nxdnid, m_module, m_refname, m_host, m_port, m_ipv6, vocoder, modem, m_capture, m_playback, m_mdirect);
 		m_mode->set_modem_flags(rxInvert, txInvert, pttInvert, useCOSAsLockout, duplex);
 		m_mode->set_modem_params(m_modemBaud.toUInt(), rxfreq, txfreq, m_modemTxDelay.toInt(), m_modemRxLevel.toFloat(), m_modemRFLevel.toFloat(), ysfTXHang, m_modemCWIdTxLevel.toFloat(), m_modemDstarTxLevel.toFloat(), m_modemDMRTxLevel.toFloat(), m_modemYSFTxLevel.toFloat(), m_modemP25TxLevel.toFloat(), m_modemNXDNTxLevel.toFloat(), pocsagTXLevel, m17TXLevel);
 
 		connect(this, SIGNAL(module_changed(char)), m_mode, SLOT(module_changed(char)));
 		connect(m_mode, SIGNAL(update(Mode::MODEINFO)), this, SLOT(update_data(Mode::MODEINFO)));
 		connect(m_mode, SIGNAL(update_output_level(unsigned short)), this, SLOT(update_output_level(unsigned short)));
-		connect(m_modethread, SIGNAL(started()), m_mode, SLOT(send_connect()));
+        connect(m_modethread, SIGNAL(started()), m_mode, SLOT(begin_connect()));
 		connect(m_modethread, SIGNAL(finished()), m_mode, SLOT(deleteLater()));
 		connect(this, SIGNAL(input_source_changed(int,QString)), m_mode, SLOT(input_src_changed(int,QString)));
 		connect(this, SIGNAL(swrx_state_changed(int)), m_mode, SLOT(swrx_state_changed(int)));
@@ -394,6 +398,9 @@ void DroidStar::process_connect()
 		if(m_protocol == "M17"){
 			connect(this, SIGNAL(m17_rate_changed(int)), m_mode, SLOT(rate_changed(int)));
 			connect(this, SIGNAL(m17_can_changed(int)), m_mode, SLOT(can_changed(int)));
+            if(m_mdirect){
+                connect(this, SIGNAL(dst_changed(QString)), m_mode, SLOT(dst_changed(QString)));
+            }
 		}
 
 		if(m_protocol == "IAX"){
@@ -1031,7 +1038,6 @@ void DroidStar::process_m17_hosts()
 {
 	m_hostmap.clear();
 	m_hostsmodel.clear();
-	m_hostmap["MMDVM_DIRECT"] = "MMDVM_DIRECT";
 
 	QFileInfo check_file(config_path + "/M17Hosts-full.csv");
 	if(check_file.exists() && check_file.isFile()){
@@ -1056,7 +1062,12 @@ void DroidStar::process_m17_hosts()
 					m_hostmap[line.at(1).simplified()] = line.at(2).simplified() + "," + line.at(3).simplified();
 				}
 			}
-
+            if(m_mdirect){
+                m_hostmap["ALL"] = "ALL";
+                m_hostmap["UNLINK"] = "UNLINK";
+                m_hostmap["ECHO"] = "ECHO";
+                m_hostmap["INFO"] = "INFO";
+            }
 			QMap<QString, QString>::const_iterator i = m_hostmap.constBegin();
 			while (i != m_hostmap.constEnd()) {
 				m_hostsmodel.append(i.key());
@@ -1392,7 +1403,7 @@ void DroidStar::update_data(Mode::MODEINFO info)
 	}
 	else if(m_protocol == "M17"){
 		m_data1 = info.src;
-		m_data2 = info.dst;
+        m_data2 = info.dst + " " + info.module;
 		m_data3 = info.type ? "3200 Voice" : "1600 V/D";
 		if(info.frame_number){
 			QString n = QString("%1").arg(info.frame_number, 4, 16, QChar('0'));

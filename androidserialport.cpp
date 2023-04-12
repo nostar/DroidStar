@@ -19,13 +19,13 @@
 
 #ifdef Q_OS_ANDROID
 
-AndroidSerialPort::AndroidSerialPort(QObject * parent)
+AndroidSerialPort::AndroidSerialPort(QObject *)
 {
 	if(QAndroidJniObject::isClassAvailable("com.hoho.android.usbserial.driver/UsbSerialDriver")) {
 		qDebug() << "com.hoho.android.usbserial.driver/UsbSerialDriver available";
 		serialJavaObject = QAndroidJniObject("DroidStar/USBSerialWrapper");
-		QAndroidJniEnvironment env;
-		JNINativeMethod methods[] = { {"data_received", "([B)V", reinterpret_cast<void*>(java_data_received)} };
+        QAndroidJniEnvironment env;
+        JNINativeMethod methods[] = { {"data_received", "([B)V", reinterpret_cast<void*>(java_data_received)}, {"device_open", "()V", reinterpret_cast<void*>(java_device_open)}, {"devices_changed", "()V", reinterpret_cast<void*>(java_devices_changed)}};
 		jclass objectClass = env->GetObjectClass(serialJavaObject.object<jobject>());
 		env->RegisterNatives(objectClass, methods, sizeof(methods) / sizeof(methods[0]));
 		env->DeleteLocalRef(objectClass);
@@ -59,11 +59,17 @@ QStringList AndroidSerialPort::discover_devices()
 int AndroidSerialPort::open(int p)
 {
 #if QT_VERSION < QT_VERSION_CHECK(6, 3, 0)
-	qDebug() << serialJavaObject.callObjectMethod("setup_serial", "(Landroid/content/Context;)Ljava/lang/String;", QtAndroid::androidContext().object()).toString();
+	QString s = serialJavaObject.callObjectMethod("setup_serial", "(Landroid/content/Context;)Ljava/lang/String;", QtAndroid::androidContext().object()).toString();
+	qDebug() << s;
 #else
 	serialJavaObject.callObjectMethod("setup_serial", "(Landroid/content/Context;)Ljava/lang/String;", QNativeInterface::QAndroidApplication::context());
 #endif
 	return p;
+}
+
+void AndroidSerialPort::close()
+{
+    serialJavaObject.callMethod<void>("close", "(I)V", 1);
 }
 
 int AndroidSerialPort::write(char *data, int s)
@@ -141,4 +147,13 @@ void AndroidSerialPort::java_data_received(JNIEnv *env, jobject t, jbyteArray da
 	emit AndroidSerialPort::GetInstance().data_received(r);
 }
 
+void AndroidSerialPort::java_device_open(JNIEnv *, jobject)
+{
+    emit AndroidSerialPort::GetInstance().device_ready();
+
+}
+void AndroidSerialPort::java_devices_changed(JNIEnv *, jobject)
+{
+    emit AndroidSerialPort::GetInstance().devices_changed();
+}
 #endif

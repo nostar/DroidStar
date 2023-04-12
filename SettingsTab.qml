@@ -70,13 +70,14 @@ Item {
 	property alias modemP25TXLevelEdit: _modemP25TXLevelEdit
 	property alias modemNXDNTXLevelEdit: _modemNXDNTXLevelEdit
 	property alias modemBaudEdit: _modemBaudEdit
+    property alias mmdvmBox: _mmdvmBox
 
 	Flickable {
 		id: flickable
 		anchors.fill: parent
 		contentWidth: parent.width
-		contentHeight: _modemBaudLabel.y +
-					   _modemBaudLabel.height + 10
+        contentHeight: _mmdvmBox.y +
+                       _mmdvmBox.height + 10
 		flickableDirection: Flickable.VerticalFlick
 		clip: true
 		ScrollBar.vertical: ScrollBar {}
@@ -1067,5 +1068,16 @@ Item {
 			selectByMouse: true
 			inputMethodHints: "ImhPreferNumbers"
 		}
+        CheckBox {
+            id: _mmdvmBox
+            x: 10
+            y: 1360
+            width: parent.width
+            height: 25
+            text: qsTr("MMDVM_DIRECT")
+            onClicked:{
+                droidstar.set_mmdvm_direct(_mmdvmBox.checked)
+            }
+        }
 	}
 }

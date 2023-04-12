@@ -42,6 +42,7 @@ public:
 private slots:
 	void process_serial();
 	void receive_serial(QByteArray);
+    void config_modem();
 	void process_modem();
 	void set_freq();
 	void set_config();
@@ -105,6 +106,7 @@ signals:
 	void data_ready();
 	void modem_data_ready(QByteArray);
 	void connected(bool);
+    void modem_ready();
 };
 
 #endif // SERIALMODEM_H

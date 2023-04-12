@@ -180,7 +180,6 @@ Item {
 		}
 		onCurrentTextChanged: {
 			droidstar.set_slot(_comboSlot.currentIndex);
-
 		}
         visible: false
 	}
@@ -262,6 +261,7 @@ Item {
 			droidstar.set_modemP25TxLevel(settingsTab.modemYSFTXLevelEdit.text);
 			droidstar.set_modemNXDNTxLevel(settingsTab.modemNXDNTXLevelEdit.text);
 			droidstar.set_modemBaud(settingsTab.modemBaudEdit.text);
+            //droidstar.set_mmdvm_direct(settingsTab.mmdvmBox.checked)
 			droidstar.process_connect();
 		}
 	}
@@ -282,7 +282,10 @@ Item {
 			color: _comboHost.enabled ? "white" : "darkgrey"
 		}
 		onCurrentTextChanged: {
-			if(!droidstar.get_modelchange()){
+            if(settingsTab.mmdvmBox.checked){
+                droidstar.set_dst(_comboHost.currentText);
+            }
+            else if(!droidstar.get_modelchange()){
 				droidstar.process_host_change(_comboHost.currentText);
 			}
 		}
@@ -296,7 +299,7 @@ Item {
 		font.pixelSize: parent.height / 35
 		currentIndex: -1
 			displayText: currentIndex === -1 ? "Mod..." : currentText
-		model: ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z"]
+        model: [" ", "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z"]
 		contentItem: Text {
 			text: _comboModule.displayText
 			font: _comboModule.font
@@ -406,12 +409,11 @@ Item {
 			droidstar.set_modemM17CAN(_comboM17CAN.currentText);
 		}
 	}
-
 	CheckBox {
 		id: _swtxBox
 		x: (parent.width * 2 / 5) + 5
 		y: (parent.height / rows + 1) * 2;
-		width: parent.width / 4
+        width: parent.width / 4
 		height: parent.height / rows
 		font.pixelSize: parent.height / 40;
 		text: qsTr("SWTX")

@@ -103,43 +103,48 @@ void SerialModem::connect_to_serial(QString p)
 		m_serial = new QSerialPort;
 #else
 		m_serial = &AndroidSerialPort::GetInstance();
+        connect(m_serial, SIGNAL(device_ready()), this, SLOT(config_modem()));
 #endif
 	m_serial->setPortName(p);
 	m_serial->setBaudRate(m_baudrate);
 	m_serial->setDataBits(QSerialPort::Data8);
 	m_serial->setStopBits(QSerialPort::OneStop);
 	m_serial->setParity(QSerialPort::NoParity);
-		//out << "Baud rate == " << serial->baudRate() << endl;
+
 	if (m_serial->open(QIODevice::ReadWrite)) {
 		m_modemtimer = new QTimer();
 		connect(m_modemtimer, SIGNAL(timeout()), this, SLOT(process_modem()));
 		m_modemtimer->start(19);
 #ifndef Q_OS_ANDROID
 		connect(m_serial, &QSerialPort::readyRead, this, &SerialModem::process_serial);
+        config_modem();
 #else
-		//connect(m_serial, &AndroidSerialPort::readyRead, this, &SerialModem::process_serial);
 		connect(m_serial, SIGNAL(data_received(QByteArray)), this, SLOT(receive_serial(QByteArray)));
 #endif
-		//m_serial->setFlowControl(QSerialPort::HardwareControl);
 		m_serial->setRequestToSend(true);
-		QByteArray a;
-		a.clear();
-		a.append(MMDVM_FRAME_START);
-		a.append(3);
-		a.append(MMDVM_GET_VERSION);
-		m_serial->write(a);
-#ifdef DEBUGHW
-			fprintf(stderr, "MODEMTX %d:%d:", a.size(), m_serialdata.size());
-			for(int i = 0; i < a.size(); ++i){
-				//if((d.data()[i] == 0x61) && (data.data()[i+1] == 0x01) && (data.data()[i+2] == 0x42) && (data.data()[i+3] == 0x02)){
-				//	i+= 6;
-				//}
-				fprintf(stderr, "%02x ", (uint8_t)a.data()[i]);
-			}
-			fprintf(stderr, "\n");
-			fflush(stderr);
-#endif
 	}
+}
+
+void SerialModem::config_modem()
+{
+    QByteArray a;
+    a.clear();
+    a.append(MMDVM_FRAME_START);
+    a.append(3);
+    a.append(MMDVM_GET_VERSION);
+    m_serial->write(a);
+#ifdef DEBUGHW
+    fprintf(stderr, "MODEMTX %d:%d:", a.size(), m_serialdata.size());
+    for(int i = 0; i < a.size(); ++i){
+        //if((d.data()[i] == 0x61) && (data.data()[i+1] == 0x01) && (data.data()[i+2] == 0x42) && (data.data()[i+3] == 0x02)){
+        //	i+= 6;
+        //}
+        fprintf(stderr, "%02x ", (uint8_t)a.data()[i]);
+    }
+    fprintf(stderr, "\n");
+    fflush(stderr);
+#endif
+    emit modem_ready();
 }
 
 void SerialModem::receive_serial(QByteArray d)
@@ -147,7 +152,6 @@ void SerialModem::receive_serial(QByteArray d)
 	for(int i = 0; i < d.size(); i++){
 		m_serialdata.enqueue(d[i]);
 	}
-	//qDebug() << "SerialModem::process_serial()" << d.toHex();
 }
 
 void SerialModem::process_serial()
@@ -157,7 +161,6 @@ void SerialModem::process_serial()
 	for(int i = 0; i < d.size(); i++){
 		m_serialdata.enqueue(d[i]);
 	}
-	//qDebug() << "SerialModem::process_serial()" << d.toHex();
 #ifdef DEBUGHW
 	fprintf(stderr, "MODEMRX %d:%d:", d.size(), m_serialdata.size());
 	for(int i = 0; i < d.size(); ++i){
@@ -179,7 +182,6 @@ void SerialModem::process_modem()
 		return;
 	}
 
-	//qDebug() << "process_modem() " << (uint8_t)m_serialdata[0] << ":" << (uint8_t)m_serialdata[1] << ":" << m_serialdata.size();
 	if(((uint8_t)m_serialdata[0] == MMDVM_FRAME_START) && (m_serialdata.size() >= m_serialdata[1])){
 		const uint8_t r = (uint8_t)m_serialdata[2];
 		const uint8_t s = (uint8_t)m_serialdata[1];

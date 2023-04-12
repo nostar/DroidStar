@@ -41,6 +41,7 @@ const uint8_t BIT_MASK_TABLE[] = { 0x80U, 0x40U, 0x20U, 0x10U, 0x08U, 0x04U, 0x0
 
 NXDN::NXDN()
 {
+    m_mode = "NXDN";
 	m_txcnt = 0;
 	m_txtimerint = 19;
 	m_attenuation = 5;
@@ -78,21 +79,6 @@ void NXDN::process_udp()
 			connect(m_ping_timer, SIGNAL(timeout()), this, SLOT(send_ping()));
 			//m_mbeenc->set_gain_adjust(2.5);
 			m_modeinfo.sw_vocoder_loaded = load_vocoder_plugin();
-			if(m_vocoder != ""){
-				m_hwrx = true;
-				m_hwtx = true;
-				m_modeinfo.hw_vocoder_loaded = true;
-#if !defined(Q_OS_IOS)
-				m_ambedev = new SerialAMBE("NXDN");
-				m_ambedev->connect_to_serial(m_vocoder);
-				connect(m_ambedev, SIGNAL(connected(bool)), this, SLOT(ambe_connect_status(bool)));
-				connect(m_ambedev, SIGNAL(data_ready()), this, SLOT(get_ambe()));
-#endif
-			}
-			else{
-				m_hwrx = false;
-				m_hwtx = false;
-			}
 			m_audio = new AudioEngine(m_audioin, m_audioout);
 			m_audio->init();
 			m_ping_timer->start(1000);

@@ -119,75 +119,81 @@ void SerialAMBE::connect_to_serial(QString p)
 
 #else
 		m_serial = &AndroidSerialPort::GetInstance();
+        connect(m_serial, SIGNAL(device_ready()), this, SLOT(config_ambe()));
 #endif
 		m_serial->setPortName(p);
 		m_serial->setBaudRate(br);
 		m_serial->setDataBits(QSerialPort::Data8);
 		m_serial->setStopBits(QSerialPort::OneStop);
 		m_serial->setParity(QSerialPort::NoParity);
-		//out << "Baud rate == " << serial->baudRate() << endl;
+
 		if (m_serial->open(QIODevice::ReadWrite)) {
 #ifndef Q_OS_ANDROID
 			connect(m_serial, &QSerialPort::readyRead, this, &SerialAMBE::process_serial);
+            config_ambe();
 #else
-			//connect(m_serial, &AndroidSerialPort::readyRead, this, &SerialAMBE::process_serial);
 			connect(m_serial, SIGNAL(data_received(QByteArray)), this, SLOT(receive_serial(QByteArray)));
-#endif
-			QByteArray a;
-			a.clear();
-			if(m_description != "DV Dongle"){
-				m_serial->setFlowControl(QSerialPort::HardwareControl);
-				m_serial->setRequestToSend(true);
-				a.append(reinterpret_cast<const char*>(AMBE3000_PARITY_DISABLE), sizeof(AMBE3000_PARITY_DISABLE));
-				m_serial->write(a);
-				QThread::msleep(100);
-				a.clear();
-				a.append(reinterpret_cast<const char*>(AMBE3000_PRODID), sizeof(AMBE3000_PRODID));
-				m_serial->write(a);
-				QThread::msleep(100);
-				a.clear();
-				a.append(reinterpret_cast<const char*>(AMBE3000_VERSION), sizeof(AMBE3000_VERSION));
-				m_serial->write(a);
-				QThread::msleep(100);
-				a.clear();
-			}
-
-			if(m_protocol == "DMR"){
-				a.append(reinterpret_cast<const char*>(AMBE3000_2450_1150), sizeof(AMBE3000_2450_1150));
-				packet_size = 9;
-			}
-			else if( (m_protocol == "YSF") || (m_protocol == "NXDN") ){
-				a.append(reinterpret_cast<const char*>(AMBE3000_2450_0000), sizeof(AMBE3000_2450_0000));
-				packet_size = 7;
-			}
-			else if(m_protocol == "P25"){
-				a.append(reinterpret_cast<const char*>(AMBEP251_4400_2800), sizeof(AMBEP251_4400_2800));
-			}
-			else if(m_description != "DV Dongle"){ //D-Star with AMBE3000
-				a.append(reinterpret_cast<const char*>(AMBE2000_2400_1200), sizeof(AMBE2000_2400_1200));
-				packet_size = 9;
-			}
-			else{
-				a.append(reinterpret_cast<const char*>(AMBE2020), sizeof(AMBE2020));
-				packet_size = 9;
-			}
-			m_serial->write(a);
-#ifdef DEBUG
-			fprintf(stderr, "SENDHW %d:%d:", a.size(), m_serialdata.size());
-			for(int i = 0; i < a.size(); ++i){
-				//if((d.data()[i] == 0x61) && (data.data()[i+1] == 0x01) && (data.data()[i+2] == 0x42) && (data.data()[i+3] == 0x02)){
-				//	i+= 6;
-				//}
-				fprintf(stderr, "%02x ", (unsigned char)a.data()[i]);
-			}
-			fprintf(stderr, "\n");
-			fflush(stderr);
 #endif
 		}
 		else{
 			qDebug() << "Error: Failed to open device.";
 		}
 	}
+}
+
+void SerialAMBE::config_ambe()
+{
+    QByteArray a;
+    a.clear();
+    if(m_description != "DV Dongle"){
+        m_serial->setFlowControl(QSerialPort::HardwareControl);
+        m_serial->setRequestToSend(true);
+        a.append(reinterpret_cast<const char*>(AMBE3000_PARITY_DISABLE), sizeof(AMBE3000_PARITY_DISABLE));
+        m_serial->write(a);
+        QThread::msleep(100);
+        a.clear();
+        a.append(reinterpret_cast<const char*>(AMBE3000_PRODID), sizeof(AMBE3000_PRODID));
+        m_serial->write(a);
+        QThread::msleep(100);
+        a.clear();
+        a.append(reinterpret_cast<const char*>(AMBE3000_VERSION), sizeof(AMBE3000_VERSION));
+        m_serial->write(a);
+        QThread::msleep(100);
+        a.clear();
+    }
+
+    if(m_protocol == "DMR"){
+        a.append(reinterpret_cast<const char*>(AMBE3000_2450_1150), sizeof(AMBE3000_2450_1150));
+        packet_size = 9;
+    }
+    else if( (m_protocol == "YSF") || (m_protocol == "NXDN") ){
+        a.append(reinterpret_cast<const char*>(AMBE3000_2450_0000), sizeof(AMBE3000_2450_0000));
+        packet_size = 7;
+    }
+    else if(m_protocol == "P25"){
+        a.append(reinterpret_cast<const char*>(AMBEP251_4400_2800), sizeof(AMBEP251_4400_2800));
+    }
+    else if(m_description != "DV Dongle"){ //D-Star with AMBE3000
+        a.append(reinterpret_cast<const char*>(AMBE2000_2400_1200), sizeof(AMBE2000_2400_1200));
+        packet_size = 9;
+    }
+    else{
+        a.append(reinterpret_cast<const char*>(AMBE2020), sizeof(AMBE2020));
+        packet_size = 9;
+    }
+    m_serial->write(a);
+#ifdef DEBUG
+    fprintf(stderr, "SENDHW %d:%d:", a.size(), m_serialdata.size());
+    for(int i = 0; i < a.size(); ++i){
+        //if((d.data()[i] == 0x61) && (data.data()[i+1] == 0x01) && (data.data()[i+2] == 0x42) && (data.data()[i+3] == 0x02)){
+        //	i+= 6;
+        //}
+        fprintf(stderr, "%02x ", (unsigned char)a.data()[i]);
+    }
+    fprintf(stderr, "\n");
+    fflush(stderr);
+#endif
+    emit ambedev_ready();
 }
 
 void SerialAMBE::receive_serial(QByteArray d)
@@ -445,7 +451,6 @@ bool SerialAMBE::get_audio(int16_t *audio)
 			 ((uint8_t)m_serialdata[3] == header[3]) &&
 			 ((uint8_t)m_serialdata[4] == header[4]) &&
 			 ((uint8_t)m_serialdata[5] == header[5])){
-			//m_serialdata.erase(m_serialdata.begin(), m_serialdata.begin() + 6);
 			m_serialdata.dequeue();
 			m_serialdata.dequeue();
 			m_serialdata.dequeue();
