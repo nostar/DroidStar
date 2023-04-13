@@ -285,7 +285,7 @@ Item {
             if(settingsTab.mmdvmBox.checked){
                 droidstar.set_dst(_comboHost.currentText);
             }
-            else if(!droidstar.get_modelchange()){
+            if(!droidstar.get_modelchange()){
 				droidstar.process_host_change(_comboHost.currentText);
 			}
 		}
