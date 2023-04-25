@@ -42,12 +42,11 @@ void HttpManager::doRequest()
 	else{
 		m_qnam->get(QNetworkRequest(QUrl("http://www.dudetronics.com/ar-dns" + m_filename)));
 	}
-	//qDebug() << "doRequest() called m_filename == " << m_filename;
 }
 
 void HttpManager::http_finished(QNetworkReply *reply)
 {
-	qDebug() << "http_finished() called";
+    //qDebug() << "http_finished() called";
 	if (reply->error()) {
 		reply->deleteLater();
 		reply = nullptr;
@@ -59,11 +58,10 @@ void HttpManager::http_finished(QNetworkReply *reply)
 			QStringList l = m_filename.split('/');
 			m_filename = "/" + l.at(l.size() - 1);
 		}
+        //qDebug() << "m_config_path + m_filename = " << m_config_path + m_filename;
         QStringList l = m_filename.split('_');
-		qDebug() << "m_filename = " << m_filename;
-        if(l.at(0) != "vocoder") return;
+        if((l.at(0) != "/vocoder") && (l.size() > 1)) return;
 		QFile *hosts_file = new QFile(m_config_path + m_filename);
-		qDebug() << "m_config_path + m_filename = " << m_config_path + m_filename;
 		hosts_file->open(QIODevice::WriteOnly);
 		QFileInfo fileInfo(hosts_file->fileName());
 		QString filename(fileInfo.fileName());
@@ -72,7 +70,6 @@ void HttpManager::http_finished(QNetworkReply *reply)
 		hosts_file->close();
 		delete hosts_file;
 		emit file_downloaded(filename);
-		//fprintf(stderr, "Downloaded %s\n", filename.toStdString().c_str());fflush(stderr);
 	}
 	QThread::currentThread()->quit();
 }
