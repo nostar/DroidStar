@@ -24,7 +24,6 @@
 #include <iostream>
 #include <cstring>
 
-//#define DEBUG
 
 const uint32_t IMBE_INTERLEAVE[] = {
 	0,  7, 12, 19, 24, 31, 36, 43, 48, 55, 60, 67, 72, 79, 84, 91,  96, 103, 108, 115, 120, 127, 132, 139,
@@ -114,21 +113,24 @@ YSF::~YSF()
 void YSF::process_udp()
 {
 	QByteArray buf;
-	QByteArray out;
+    QByteArray out;
 	QHostAddress sender;
 	quint16 senderPort;
 	char ysftag[11];
 	buf.resize(m_udp->pendingDatagramSize());
 	int p = 5000;
 	m_udp->readDatagram(buf.data(), buf.size(), &sender, &senderPort);
-#ifdef DEBUG
-	fprintf(stderr, "RECV: ");
-	for(int i = 0; i < buf.size(); ++i){
-		fprintf(stderr, "%02x ", (uint8_t)buf.data()[i]);
-	}
-	fprintf(stderr, "\n");
-	fflush(stderr);
-#endif
+
+    if(m_debug){
+        QDebug debug = qDebug();
+        debug.noquote();
+        QString s = "RECV:";
+        for(int i = 0; i < buf.size(); ++i){
+            s += " " + QString("%1").arg((uint8_t)buf.data()[i], 2, 16, QChar('0'));
+        }
+        debug << s;
+    }
+
 	if(((buf.size() == 14) && (m_refname.left(3) != "FCS")) || ((buf.size() == 7) && (m_refname.left(3) == "FCS"))){
 		if(m_modeinfo.status == CONNECTING){
 			m_modeinfo.status = CONNECTED_RW;
@@ -287,14 +289,16 @@ void YSF::hostname_lookup(QHostInfo i)
 		m_udp = new QUdpSocket(this);
 		connect(m_udp, SIGNAL(readyRead()), this, SLOT(process_udp()));
 		m_udp->writeDatagram(out, m_address, m_modeinfo.port);
-#ifdef DEBUG
-		fprintf(stderr, "CONN: ");
-		for(int i = 0; i < out.size(); ++i){
-			fprintf(stderr, "%02x ", (uint8_t)out.data()[i]);
-		}
-		fprintf(stderr, "\n");
-		fflush(stderr);
-#endif
+
+        if(m_debug){
+            QDebug debug = qDebug();
+            debug.noquote();
+            QString s = "CONN:";
+            for(int i = 0; i < out.size(); ++i){
+                s += " " + QString("%1").arg((uint8_t)out.data()[i], 2, 16, QChar('0'));
+            }
+            debug << s;
+        }
 	}
 }
 
@@ -320,14 +324,16 @@ void YSF::send_ping()
 		out.append(10 - m_modeinfo.callsign.size(), ' ');
 	}
 	m_udp->writeDatagram(out, m_address, m_modeinfo.port);
-#ifdef DEBUG
-	fprintf(stderr, "PING: ");
-	for(int i = 0; i < out.size(); ++i){
-		fprintf(stderr, "%02x ", (uint8_t)out.data()[i]);
-	}
-	fprintf(stderr, "\n");
-	fflush(stderr);
-#endif
+
+    if(m_debug){
+        QDebug debug = qDebug();
+        debug.noquote();
+        QString s = "PING:";
+        for(int i = 0; i < out.size(); ++i){
+            s += " " + QString("%1").arg((uint8_t)out.data()[i], 2, 16, QChar('0'));
+        }
+        debug << s;
+    }
 }
 
 void YSF::send_disconnect()
@@ -350,14 +356,16 @@ void YSF::send_disconnect()
 		out.append(10 - m_modeinfo.callsign.size(), ' ');
 	}
 	m_udp->writeDatagram(out, m_address, m_modeinfo.port);
-#ifdef DEBUG
-	fprintf(stderr, "SEND: ");
-	for(int i = 0; i < out.size(); ++i){
-		fprintf(stderr, "%02x ", (uint8_t)out.data()[i]);
-	}
-	fprintf(stderr, "\n");
-	fflush(stderr);
-#endif
+
+    if(m_debug){
+        QDebug debug = qDebug();
+        debug.noquote();
+        QString s = "DISC:";
+        for(int i = 0; i < out.size(); ++i){
+            s += " " + QString("%1").arg((uint8_t)out.data()[i], 2, 16, QChar('0'));
+        }
+        debug << s;
+    }
 }
 
 void YSF::decode_header(uint8_t* data)
@@ -687,14 +695,16 @@ void YSF::process_modem_data(QByteArray d)
 	++m_txcnt;
 	m_udp->writeDatagram(d, m_address, m_modeinfo.port);
 	qDebug() << "Sending modem to network.....................................................";
-#ifdef DEBUG
-		fprintf(stderr, "SEND:%d: ", d.size());
-		for(int i = 0; i < d.size(); ++i){
-			fprintf(stderr, "%02x ", (uint8_t)d.data()[i]);
-		}
-		fprintf(stderr, "\n");
-		fflush(stderr);
-#endif
+
+    if(m_debug){
+        QDebug debug = qDebug();
+        debug.noquote();
+        QString s = "SEND:";
+        for(int i = 0; i < d.size(); ++i){
+            s += " " + QString("%1").arg((uint8_t)d.data()[i], 2, 16, QChar('0'));
+        }
+        debug << s;
+    }
 }
 
 void YSF::transmit()
@@ -781,14 +791,16 @@ void YSF::send_frame()
 		txdata.append((char *)m_ysfFrame, frame_size);
 		m_udp->writeDatagram(txdata, m_address, m_modeinfo.port);
 		++m_txcnt;
-#ifdef DEBUG
-		fprintf(stderr, "SEND:%d: ", txdata.size());
-		for(int i = 0; i < txdata.size(); ++i){
-			fprintf(stderr, "%02x ", (uint8_t)txdata.data()[i]);
-		}
-		fprintf(stderr, "\n");
-		fflush(stderr);
-#endif
+
+        if(m_debug){
+            QDebug debug = qDebug();
+            debug.noquote();
+            QString s = "SEND:";
+            for(int i = 0; i < txdata.size(); ++i){
+                s += " " + QString("%1").arg((uint8_t)txdata.data()[i], 2, 16, QChar('0'));
+            }
+            debug << s;
+        }
 	}
 	else{
 		fprintf(stderr, "YSF TX stopped\n");

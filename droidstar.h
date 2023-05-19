@@ -89,8 +89,8 @@ public slots:
 	void set_url(const QString &url){ m_url = url; save_settings(); }
 	void set_swid(const QString &swid){ m_swid = swid; save_settings(); }
 	void set_pkgid(const QString &pkgid){ m_pkgid = pkgid; save_settings(); }
-	void set_dmr_options(const QString &dmropts) { m_dmropts = dmropts; save_settings(); }
-	void set_dmr_pc(int pc) { emit dmrpc_state_changed(pc); }
+    void set_dmr_options(const QString &dmropts) { m_dmropts = dmropts; save_settings(); }
+    void set_dmr_pc(int pc) { m_pc = pc; emit dmrpc_state_changed(m_pc); }
 	//void set_host(const QString &host) { m_host = host; save_settings(); }
 	void set_module(const QString &module) { m_module = module.toStdString()[0]; save_settings(); emit module_changed(m_module);}
 	void set_protocol(const QString &protocol) { m_protocol = protocol; save_settings(); }
@@ -101,9 +101,9 @@ public slots:
 	void set_iaxnode(const QString &node){ m_iaxnode = node; save_settings(); }
 	void set_iaxhost(const QString &host){ m_iaxhost = host; save_settings(); }
 	void set_mycall(const QString &mycall) { m_mycall = mycall; save_settings(); emit mycall_changed(mycall); }
-	void set_urcall(const QString &urcall) { m_urcall = urcall; save_settings(); emit urcall_changed(urcall); }
-	void set_rptr1(const QString &rptr1) { m_rptr1 = rptr1; save_settings(); emit rptr1_changed(rptr1); }
-	void set_rptr2(const QString &rptr2) { m_rptr2 = rptr2; save_settings(); emit rptr2_changed(rptr2); }
+    void set_urcall(const QString &urcall) { m_urcall = urcall; save_settings(); emit urcall_changed(urcall); }
+    void set_rptr1(const QString &rptr1) { m_rptr1 = rptr1; save_settings(); emit rptr1_changed(rptr1); qDebug() << "rpt1 == " << m_rptr1; }
+    void set_rptr2(const QString &rptr2) { m_rptr2 = rptr2; save_settings(); emit rptr2_changed(rptr2); qDebug() << "rpt2 == " << m_rptr2; }
 	void set_usrtxt(const QString &usrtxt) { m_dstarusertxt = usrtxt; save_settings(); emit usrtxt_changed(usrtxt); }
 	void set_txtimeout(const QString &t) { m_txtimeout = t.simplified().toUInt(); save_settings();}
 	void set_toggletx(bool x) { m_toggletx = x; save_settings(); }
@@ -279,6 +279,7 @@ private:
 	QString m_swid;
 	QString m_pkgid;
 	QString m_dmropts;
+    int m_pc;
 	QString m_saved_refhost;
 	QString m_saved_dcshost;
 	QString m_saved_xrfhost;
@@ -381,9 +382,7 @@ private slots:
 	void keepScreenOn();
 #endif
 	void discover_devices();
-	void process_ref_hosts();
-	void process_dcs_hosts();
-	void process_xrf_hosts();
+    void process_dstar_hosts(QString);
 	void process_ysf_hosts();
 	void process_fcs_rooms();
 	void process_dmr_hosts();

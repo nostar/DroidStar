@@ -230,6 +230,7 @@ Item {
 			droidstar.set_swid(settingsTab.swidEdit.text);
 			droidstar.set_pkgid(settingsTab.pkgidEdit.text);
 			droidstar.set_dmr_options(settingsTab.dmroptsEdit.text);
+            droidstar.set_dmr_pc(mainTab.privateBox.checked);
 			droidstar.set_iaxuser(settingsTab.iaxuserEdit.text);
 			droidstar.set_iaxpass(settingsTab.iaxpassEdit.text);
 			droidstar.set_iaxnode(settingsTab.iaxnodeEdit.text);

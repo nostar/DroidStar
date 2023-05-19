@@ -174,13 +174,13 @@ void DroidStar::file_downloaded(QString filename)
 	emit update_log("Updated " + filename);
 	{
 		if(filename == "dplus.txt" && m_protocol == "REF"){
-			process_ref_hosts();
+            process_dstar_hosts(m_protocol);
 		}
 		else if(filename == "dextra.txt" && m_protocol == "XRF"){
-			process_xrf_hosts();
+            process_dstar_hosts(m_protocol);
 		}
 		else if(filename == "dcs.txt" && m_protocol == "DCS"){
-			process_dcs_hosts();
+            process_dstar_hosts(m_protocol);
 		}
 		else if(filename == "YSFHosts.txt" && m_protocol == "YSF"){
 			process_ysf_hosts();
@@ -344,7 +344,16 @@ void DroidStar::process_connect()
 		m_mode = Mode::create_mode(m_protocol);
 		m_modethread = new QThread;
 		m_mode->moveToThread(m_modethread);
-        m_mode->init(m_callsign, m_dmrid, nxdnid, m_module, m_refname, m_host, m_port, m_ipv6, vocoder, modem, m_capture, m_playback, m_mdirect);
+
+        if(m_protocol == "IAX"){
+            m_mode->set_iax_params(m_iaxuser, m_iaxpassword, m_iaxnode, m_iaxhost, m_iaxport);
+            m_mode->init(m_callsign, m_dmrid, nxdnid, m_module, m_refname, m_iaxhost, m_iaxport, m_ipv6, vocoder, modem, m_capture, m_playback, m_mdirect);
+            connect(this, SIGNAL(send_dtmf(QByteArray)), m_mode, SLOT(send_dtmf(QByteArray)));
+        }
+        else{
+            m_mode->init(m_callsign, m_dmrid, nxdnid, m_module, m_refname, m_host, m_port, m_ipv6, vocoder, modem, m_capture, m_playback, m_mdirect);
+        }
+
 		m_mode->set_modem_flags(rxInvert, txInvert, pttInvert, useCOSAsLockout, duplex);
 		m_mode->set_modem_params(m_modemBaud.toUInt(), rxfreq, txfreq, m_modemTxDelay.toInt(), m_modemRxLevel.toFloat(), m_modemRFLevel.toFloat(), ysfTXHang, m_modemCWIdTxLevel.toFloat(), m_modemDstarTxLevel.toFloat(), m_modemDMRTxLevel.toFloat(), m_modemYSFTxLevel.toFloat(), m_modemP25TxLevel.toFloat(), m_modemNXDNTxLevel.toFloat(), pocsagTXLevel, m17TXLevel);
 
@@ -393,6 +402,7 @@ void DroidStar::process_connect()
 			connect(this, SIGNAL(slot_changed(int)), m_mode, SLOT(slot_changed(int)));
 			connect(this, SIGNAL(cc_changed(int)), m_mode, SLOT(cc_changed(int)));
 			emit dmr_tgid_changed(m_dmr_destid);
+            emit dmrpc_state_changed(m_pc);
 		}
 
 		if(m_protocol == "M17"){
@@ -401,11 +411,6 @@ void DroidStar::process_connect()
             if(m_mdirect){
                 connect(this, SIGNAL(dst_changed(QString)), m_mode, SLOT(dst_changed(QString)));
             }
-		}
-
-		if(m_protocol == "IAX"){
-			m_mode->set_iax_params(m_iaxuser, m_iaxpassword, m_iaxnode, m_iaxhost, m_iaxport);
-			connect(this, SIGNAL(send_dtmf(QByteArray)), m_mode, SLOT(send_dtmf(QByteArray)));
 		}
 
 		m_modethread->start();
@@ -461,34 +466,16 @@ void DroidStar::process_host_change(const QString &h)
 
 void DroidStar::process_mode_change(const QString &m)
 {
-	m_protocol = m;
-	if(m == "REF"){
-		process_ref_hosts();
-		m_label1 = "MYCALL";
-		m_label2 = "URCALL";
-		m_label3 = "RPTR1";
-		m_label4 = "RPTR2";
-		m_label5 = "Stream ID";
-		m_label6 = "User txt";
-	}
-	if(m == "DCS"){
-		process_dcs_hosts();
-		m_label1 = "MYCALL";
-		m_label2 = "URCALL";
-		m_label3 = "RPTR1";
-		m_label4 = "RPTR2";
-		m_label5 = "Stream ID";
-		m_label6 = "User txt";
-	}
-	if(m == "XRF"){
-		process_xrf_hosts();
-		m_label1 = "MYCALL";
-		m_label2 = "URCALL";
-		m_label3 = "RPTR1";
-		m_label4 = "RPTR2";
-		m_label5 = "Stream ID";
-		m_label6 = "User txt";
-	}
+    m_protocol = m;
+    if((m == "REF") || (m == "DCS") || (m == "XRF")){
+        process_dstar_hosts(m);
+        m_label1 = "MYCALL";
+        m_label2 = "URCALL";
+        m_label3 = "RPTR1";
+        m_label4 = "RPTR2";
+        m_label5 = "Stream ID";
+        m_label6 = "User txt";
+    }
 	if(m == "YSF"){
 		process_ysf_hosts();
 		m_label1 = "Gateway";
@@ -697,128 +684,60 @@ void DroidStar::update_custom_hosts(QString h)
 	m_localhosts = m_settings->value("LOCALHOSTS").toString();
 }
 
-void DroidStar::process_ref_hosts()
+void DroidStar::process_dstar_hosts(QString m)
 {
-	m_hostmap.clear();
-	m_hostsmodel.clear();
-	QFileInfo check_file(config_path + "/dplus.txt");
+    m_hostmap.clear();
+    m_hostsmodel.clear();
+    QString filename, port;
+    if(m == "REF"){
+        filename = "dplus.txt";
+        port = "20001";
+    }
+    else if(m == "DCS"){
+        filename = "dcs.txt";
+        port = "30051";
+    }
+    else if(m == "XRF"){
+        filename = "dextra.txt";
+        port = "30001";
+    }
 
-	if(check_file.exists() && check_file.isFile()){
-		QFile f(config_path + "/dplus.txt");
-		if(f.open(QIODevice::ReadOnly)){
-			while(!f.atEnd()){
-				QString l = f.readLine();
-				if(l.at(0) == '#'){
-					continue;
-				}
-				QStringList ll = l.split('\t');
-				if(ll.size() > 1){
-					m_hostmap[ll.at(0).simplified()] = ll.at(1).simplified() + ",20001";
-				}
-			}
+    QFileInfo check_file(config_path + "/" + filename);
 
-			m_customhosts = m_localhosts.split('\n');
-			for (const auto& i : qAsConst(m_customhosts)){
-				QStringList line = i.simplified().split(' ');
+    if(check_file.exists() && check_file.isFile()){
+        QFile f(config_path + "/" + filename);
+        if(f.open(QIODevice::ReadOnly)){
+            while(!f.atEnd()){
+                QString l = f.readLine();
+                if(l.at(0) == '#'){
+                    continue;
+                }
+                QStringList ll = l.split('\t');
+                if(ll.size() > 1){
+                    m_hostmap[ll.at(0).simplified()] = ll.at(1).simplified() + "," + port;
+                }
+            }
 
-				if(line.at(0) == "REF"){
-					m_hostmap[line.at(1).simplified()] = line.at(2).simplified() + "," + line.at(3).simplified();
-				}
-			}
+            m_customhosts = m_localhosts.split('\n');
+            for (const auto& i : qAsConst(m_customhosts)){
+                QStringList line = i.simplified().split(' ');
 
-			QMap<QString, QString>::const_iterator i = m_hostmap.constBegin();
-			while (i != m_hostmap.constEnd()) {
-				m_hostsmodel.append(i.key());
-				++i;
-			}
-		}
-		f.close();
-	}
-	else{
-		download_file("/dplus.txt");
-	}
-}
+                if(line.at(0) == m){
+                    m_hostmap[line.at(1).simplified()] = line.at(2).simplified() + "," + line.at(3).simplified();
+                }
+            }
 
-void DroidStar::process_dcs_hosts()
-{
-	m_hostmap.clear();
-	m_hostsmodel.clear();
-	QFileInfo check_file(config_path + "/dcs.txt");
-	if(check_file.exists() && check_file.isFile()){
-		QFile f(config_path + "/dcs.txt");
-		if(f.open(QIODevice::ReadOnly)){
-			while(!f.atEnd()){
-				QString l = f.readLine();
-				if(l.at(0) == '#'){
-					continue;
-				}
-				QStringList ll = l.split('\t');
-				if(ll.size() > 1){
-					m_hostmap[ll.at(0).simplified()] = ll.at(1).simplified() + ",30051";
-				}
-			}
-
-			m_customhosts = m_localhosts.split('\n');
-			for (const auto& i : qAsConst(m_customhosts)){
-				QStringList line = i.simplified().split(' ');
-
-				if(line.at(0) == "DCS"){
-					m_hostmap[line.at(1).simplified()] = line.at(2).simplified() + "," + line.at(3).simplified();
-				}
-			}
-
-			QMap<QString, QString>::const_iterator i = m_hostmap.constBegin();
-			while (i != m_hostmap.constEnd()) {
-				m_hostsmodel.append(i.key());
-				++i;
-			}
-		}
-		f.close();
-	}
-	else{
-		download_file("/dcs.txt");
-	}
-}
-
-void DroidStar::process_xrf_hosts()
-{
-	m_hostmap.clear();
-	m_hostsmodel.clear();
-	QFileInfo check_file(config_path + "/dextra.txt");
-	if(check_file.exists() && check_file.isFile()){
-		QFile f(config_path + "/dextra.txt");
-		if(f.open(QIODevice::ReadOnly)){
-			while(!f.atEnd()){
-				QString l = f.readLine();
-				if(l.at(0) == '#'){
-					continue;
-				}
-				QStringList ll = l.split('\t');
-				if(ll.size() > 1){
-					m_hostmap[ll.at(0).simplified()] = ll.at(1).simplified() + ",30001";
-				}
-			}
-
-			m_customhosts = m_localhosts.split('\n');
-			for (const auto& i : qAsConst(m_customhosts)){
-				QStringList line = i.simplified().split(' ');
-
-				if(line.at(0) == "XRF"){
-					m_hostmap[line.at(1).simplified()] = line.at(2).simplified() + "," + line.at(3).simplified();
-				}
-			}
-
-			QMap<QString, QString>::const_iterator i = m_hostmap.constBegin();
-			while (i != m_hostmap.constEnd()) {
-				m_hostsmodel.append(i.key());
-				++i;
-			}
-		}
-		f.close();
-	}
-	else{
-		download_file("/dextra.txt");
-	}
+            QMap<QString, QString>::const_iterator i = m_hostmap.constBegin();
+            while (i != m_hostmap.constEnd()) {
+                m_hostsmodel.append(i.key());
+                ++i;
+            }
+        }
+        f.close();
+    }
+    else{
+        download_file("/" + filename);
+    }
 }
 
 void DroidStar::process_ysf_hosts()
@@ -856,7 +775,6 @@ void DroidStar::process_ysf_hosts()
 			}
 		}
 		f.close();
-		//process_fcs_rooms();
 	}
 	else{
 		download_file("/YSFHosts.txt");

@@ -18,8 +18,6 @@
 #include "nxdn.h"
 #include <cstring>
 
-//#define DEBUG
-
 const int dvsi_interleave[49] = {
 	0, 3, 6,  9, 12, 15, 18, 21, 24, 27, 30, 33, 36, 39, 41, 43, 45, 47,
 	1, 4, 7, 10, 13, 16, 19, 22, 25, 28, 31, 34, 37, 40, 42, 44, 46, 48,
@@ -60,14 +58,16 @@ void NXDN::process_udp()
 
 	buf.resize(m_udp->pendingDatagramSize());
 	m_udp->readDatagram(buf.data(), buf.size(), &sender, &senderPort);
-#ifdef DEBUG
-	fprintf(stderr, "RECV: ");
-	for(int i = 0; i < buf.size(); ++i){
-		fprintf(stderr, "%02x ", (uint8_t)buf.data()[i]);
-	}
-	fprintf(stderr, "\n");
-	fflush(stderr);
-#endif
+
+    if(m_debug){
+        QDebug debug = qDebug();
+        debug.noquote();
+        QString s = "RECV:";
+        for(int i = 0; i < buf.size(); ++i){
+            s += " " + QString("%1").arg((uint8_t)buf.data()[i], 2, 16, QChar('0'));
+        }
+        debug << s;
+    }
 	if(buf.size() == 17){
 		if(m_modeinfo.status == CONNECTING){
 			m_modeinfo.status = CONNECTED_RW;
@@ -217,14 +217,16 @@ void NXDN::send_ping(bool disconnect)
 	out.append((m_modeinfo.gwid >> 8) & 0xff);
 	out.append((m_modeinfo.gwid >> 0) & 0xff);
 	m_udp->writeDatagram(out, m_address, m_modeinfo.port);
-#ifdef DEBUG
-	fprintf(stderr, "PING: ");
-	for(int i = 0; i < out.size(); ++i){
-		fprintf(stderr, "%02x ", (uint8_t)out.data()[i]);
-	}
-	fprintf(stderr, "\n");
-	fflush(stderr);
-#endif
+
+    if(m_debug){
+        QDebug debug = qDebug();
+        debug.noquote();
+        QString s = "PING:";
+        for(int i = 0; i < out.size(); ++i){
+            s += " " + QString("%1").arg((uint8_t)out.data()[i], 2, 16, QChar('0'));
+        }
+        debug << s;
+    }
 }
 
 void NXDN::transmit()
@@ -291,14 +293,16 @@ void NXDN::send_frame()
 		temp_nxdn = get_frame();
 		txdata.append((char *)temp_nxdn, 43);
 		m_udp->writeDatagram(txdata, m_address, m_modeinfo.port);
-#ifdef DEBUG
-		fprintf(stderr, "SEND:%lli: ", txdata.size());
-		for(int i = 0; i < txdata.size(); ++i){
-			fprintf(stderr, "%02x ", (uint8_t)txdata.data()[i]);
-		}
-		fprintf(stderr, "\n");
-		fflush(stderr);
-#endif
+
+        if(m_debug){
+            QDebug debug = qDebug();
+            debug.noquote();
+            QString s = "SEND:";
+            for(int i = 0; i < txdata.size(); ++i){
+                s += " " + QString("%1").arg((uint8_t)txdata.data()[i], 2, 16, QChar('0'));
+            }
+            debug << s;
+        }
 	}
 	else{
 		fprintf(stderr, "NXDN TX stopped\n");

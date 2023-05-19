@@ -24,8 +24,6 @@
 #include "CRCenc.h"
 #include "MMDVMDefines.h"
 
-//#define DEBUG
-
 const uint32_t ENCODING_TABLE_1676[] =
 	{0x0000U, 0x0273U, 0x04E5U, 0x0696U, 0x09C9U, 0x0BBAU, 0x0D2CU, 0x0F5FU, 0x11E2U, 0x1391U, 0x1507U, 0x1774U,
 	 0x182BU, 0x1A58U, 0x1CCEU, 0x1EBDU, 0x21B7U, 0x23C4U, 0x2552U, 0x2721U, 0x287EU, 0x2A0DU, 0x2C9BU, 0x2EE8U,
@@ -86,14 +84,17 @@ void DMR::process_udp()
 
 	buf.resize(m_udp->pendingDatagramSize());
 	m_udp->readDatagram(buf.data(), buf.size(), &sender, &senderPort);
-#ifdef DEBUG
-	fprintf(stderr, "RECV: ");
-	for(int i = 0; i < buf.size(); ++i){
-		fprintf(stderr, "%02x ", (uint8_t)buf.data()[i]);
-	}
-	fprintf(stderr, "\n");
-	fflush(stderr);
-#endif
+
+    if(m_debug){
+        QDebug debug = qDebug();
+        debug.noquote();
+        QString s = "RECV:";
+        for(int i = 0; i < buf.size(); ++i){
+            s += " " + QString("%1").arg((uint8_t)buf.data()[i], 2, 16, QChar('0'));
+        }
+        debug << s;
+    }
+
 	if((m_modeinfo.status != CONNECTED_RW) && (::memcmp(buf.data() + 3, "NAK", 3U) == 0)){
 		m_modeinfo.status = DISCONNECTED;
 	}
@@ -281,16 +282,16 @@ void DMR::process_udp()
 		//uint32_t id = (uint32_t)((buf.data()[5] << 16) | ((buf.data()[6] << 8) & 0xff00) | (buf.data()[7] & 0xff));
 	}
 	emit update(m_modeinfo);
-#ifdef DEBUG
-	if(out.size() > 0){
-		fprintf(stderr, "SEND: ");
-		for(int i = 0; i < out.size(); ++i){
-			fprintf(stderr, "%02x ", (uint8_t)out.data()[i]);
-		}
-		fprintf(stderr, "\n");
-		fflush(stderr);
-	}
-#endif
+
+    if(m_debug && out.size() > 0){
+        QDebug debug = qDebug();
+        debug.noquote();
+        QString s = "SEND:";
+        for(int i = 0; i < out.size(); ++i){
+            s += " " + QString("%1").arg((uint8_t)out.data()[i], 2, 16, QChar('0'));
+        }
+        debug << s;
+    }
 }
 
 void DMR::setup_connection()
@@ -325,14 +326,16 @@ void DMR::hostname_lookup(QHostInfo i)
 		m_udp = new QUdpSocket(this);
 		connect(m_udp, SIGNAL(readyRead()), this, SLOT(process_udp()));
 		m_udp->writeDatagram(out, m_address, m_modeinfo.port);
-#ifdef DEBUG
-		fprintf(stderr, "CONN: ");
-		for(int i = 0; i < out.size(); ++i){
-			fprintf(stderr, "%02x ", (uint8_t)out.data()[i]);
-		}
-		fprintf(stderr, "\n");
-		fflush(stderr);
-#endif
+
+        if(m_debug){
+            QDebug debug = qDebug();
+            debug.noquote();
+            QString s = "CONN:";
+            for(int i = 0; i < out.size(); ++i){
+                s += " " + QString("%1").arg((uint8_t)out.data()[i], 2, 16, QChar('0'));
+            }
+            debug << s;
+        }
 	}
 }
 
@@ -346,14 +349,16 @@ void DMR::send_ping()
 	out.append((m_essid >> 8) & 0xff);
 	out.append((m_essid >> 0) & 0xff);
 	m_udp->writeDatagram(out, m_address, m_modeinfo.port);
-#ifdef DEBUG
-	fprintf(stderr, "PING: ");
-	for(int i = 0; i < out.size(); ++i){
-		fprintf(stderr, "%02x ", (uint8_t)out.data()[i]);
-	}
-	fprintf(stderr, "\n");
-	fflush(stderr);
-#endif
+
+    if(m_debug){
+        QDebug debug = qDebug();
+        debug.noquote();
+        QString s = "PING:";
+        for(int i = 0; i < out.size(); ++i){
+            s += " " + QString("%1").arg((uint8_t)out.data()[i], 2, 16, QChar('0'));
+        }
+        debug << s;
+    }
 }
 
 void DMR::send_disconnect()
@@ -369,14 +374,16 @@ void DMR::send_disconnect()
 	out.append((m_essid >> 8) & 0xff);
 	out.append((m_essid >> 0) & 0xff);
 	m_udp->writeDatagram(out, m_address, m_modeinfo.port);
-#ifdef DEBUG
-	fprintf(stderr, "SEND: ");
-	for(int i = 0; i < out.size(); ++i){
-		fprintf(stderr, "%02x ", (uint8_t)out.data()[i]);
-	}
-	fprintf(stderr, "\n");
-	fflush(stderr);
-#endif
+
+    if(m_debug){
+        QDebug debug = qDebug();
+        debug.noquote();
+        QString s = "SEND:";
+        for(int i = 0; i < out.size(); ++i){
+            s += " " + QString("%1").arg((uint8_t)out.data()[i], 2, 16, QChar('0'));
+        }
+        debug << s;
+    }
 }
 
 void DMR::process_modem_data(QByteArray d)
@@ -413,14 +420,16 @@ void DMR::process_modem_data(QByteArray d)
 		m_udp->writeDatagram(txdata, m_address, m_modeinfo.port);
 		++m_dmrcnt;
 	}
-#ifdef DEBUG
-    fprintf(stderr, "SEND:%lld: ", txdata.size());
-	for(int i = 0; i < txdata.size(); ++i){
-		fprintf(stderr, "%02x ", (uint8_t)txdata.data()[i]);
-	}
-	fprintf(stderr, "\n");
-	fflush(stderr);
-#endif
+
+    if(m_debug){
+        QDebug debug = qDebug();
+        debug.noquote();
+        QString s = "SEND:";
+        for(int i = 0; i < txdata.size(); ++i){
+            s += " " + QString("%1").arg((uint8_t)txdata.data()[i], 2, 16, QChar('0'));
+        }
+        debug << s;
+    }
 }
 
 void DMR::transmit()
@@ -517,7 +526,6 @@ void DMR::send_frame()
 */
 	}
 	else{
-		//fprintf(stderr, "DMR TX stopped\n");
 		get_eot();
 		build_frame();
 		m_ttscnt = 0;
@@ -533,14 +541,16 @@ void DMR::send_frame()
 	}
 	emit update_output_level(m_audio->level() * 8);
 	emit update(m_modeinfo);
-#ifdef DEBUG
-    fprintf(stderr, "SEND:%lld: ", txdata.size());
-	for(int i = 0; i < txdata.size(); ++i){
-		fprintf(stderr, "%02x ", (uint8_t)txdata.data()[i]);
-	}
-	fprintf(stderr, "\n");
-	fflush(stderr);
-#endif
+
+    if(m_debug){
+        QDebug debug = qDebug();
+        debug.noquote();
+        QString s = "SEND:";
+        for(int i = 0; i < txdata.size(); ++i){
+            s += " " + QString("%1").arg((uint8_t)txdata.data()[i], 2, 16, QChar('0'));
+        }
+        debug << s;
+    }
 }
 
 uint8_t * DMR::get_eot()
@@ -552,7 +562,7 @@ uint8_t * DMR::get_eot()
 
 void DMR::build_frame()
 {
-	qDebug() << "DMR: slot:cc == " << m_txslot << ":" << m_txcc;
+    //qDebug() << "DMR: slot:cc:flco == " << m_txslot << ":" << m_txcc << ":" << m_flco;
 	m_dmrFrame[0U]  = 'D';
 	m_dmrFrame[1U]  = 'M';
 	m_dmrFrame[2U]  = 'R';

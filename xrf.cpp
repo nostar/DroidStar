@@ -21,8 +21,6 @@
 #include "CRCenc.h"
 #include "MMDVMDefines.h"
 
-//#define DEBUG
-
 XRF::XRF()
 {
     m_mode = "XRF";
@@ -44,14 +42,17 @@ void XRF::process_udp()
 
 	buf.resize(m_udp->pendingDatagramSize());
 	m_udp->readDatagram(buf.data(), buf.size(), &sender, &senderPort);
-#ifdef DEBUG
-	fprintf(stderr, "RECV: ");
-	for(int i = 0; i < buf.size(); ++i){
-		fprintf(stderr, "%02x ", (uint8_t)buf.data()[i]);
-	}
-	fprintf(stderr, "\n");
-	fflush(stderr);
-#endif
+
+    if(m_debug){
+        QDebug debug = qDebug();
+        debug.noquote();
+        QString s = "RECV:";
+        for(int i = 0; i < buf.size(); ++i){
+            s += " " + QString("%1").arg((uint8_t)buf.data()[i], 2, 16, QChar('0'));
+        }
+        debug << s;
+    }
+
 	if(buf.size() == 9){
 		m_modeinfo.count++;
 		if( (m_modeinfo.stream_state == STREAM_LOST) || (m_modeinfo.stream_state == STREAM_END) ){
@@ -243,14 +244,16 @@ void XRF::hostname_lookup(QHostInfo i)
 		m_udp = new QUdpSocket(this);
 		connect(m_udp, SIGNAL(readyRead()), this, SLOT(process_udp()));
 		m_udp->writeDatagram(out, m_address, m_modeinfo.port);
-#ifdef DEBUG
-		fprintf(stderr, "CONN: ");
-		for(int i = 0; i < out.size(); ++i){
-			fprintf(stderr, "%02x ", (uint8_t)out.data()[i]);
-		}
-		fprintf(stderr, "\n");
-		fflush(stderr);
-#endif
+
+        if(m_debug){
+            QDebug debug = qDebug();
+            debug.noquote();
+            QString s = "CONN:";
+            for(int i = 0; i < out.size(); ++i){
+                s += " " + QString("%1").arg((uint8_t)out.data()[i], 2, 16, QChar('0'));
+            }
+            debug << s;
+        }
 	}
 }
 
@@ -261,14 +264,16 @@ void XRF::send_ping()
 	out.append(8 - m_modeinfo.callsign.size(), ' ');
 	out.append('\x00');
 	m_udp->writeDatagram(out, m_address, m_modeinfo.port);
-#ifdef DEBUG
-	fprintf(stderr, "PING: ");
-	for(int i = 0; i < out.size(); ++i){
-		fprintf(stderr, "%02x ", (uint8_t)out.data()[i]);
-	}
-	fprintf(stderr, "\n");
-	fflush(stderr);
-#endif
+
+    if(m_debug){
+        QDebug debug = qDebug();
+        debug.noquote();
+        QString s = "PING:";
+        for(int i = 0; i < out.size(); ++i){
+            s += " " + QString("%1").arg((uint8_t)out.data()[i], 2, 16, QChar('0'));
+        }
+        debug << s;
+    }
 }
 
 void XRF::send_disconnect()
@@ -280,14 +285,16 @@ void XRF::send_disconnect()
 	out.append(' ');
 	out.append('\x00');
 	m_udp->writeDatagram(out, m_address, m_modeinfo.port);
-#ifdef DEBUG
-	fprintf(stderr, "SEND: ");
-	for(int i = 0; i < out.size(); ++i){
-		fprintf(stderr, "%02x ", (uint8_t)out.data()[i]);
-	}
-	fprintf(stderr, "\n");
-	fflush(stderr);
-#endif
+
+    if(m_debug){
+        QDebug debug = qDebug();
+        debug.noquote();
+        QString s = "DISC:";
+        for(int i = 0; i < out.size(); ++i){
+            s += " " + QString("%1").arg((uint8_t)out.data()[i], 2, 16, QChar('0'));
+        }
+        debug << s;
+    }
 }
 
 void XRF::format_callsign(QString &s)
@@ -429,12 +436,12 @@ void XRF::send_frame(uint8_t *ambe)
 		txdata[15] = 0x00;
 		txdata[16] = 0x00;
 		txdata[17] = 0x00;
-		txdata.replace(18, 8, m_txrptr2.toLocal8Bit().data());
-		txdata.replace(26, 8, m_txrptr1.toLocal8Bit().data());
-		txdata.replace(34, 8, m_txurcall.toLocal8Bit().data());
-		txdata.replace(42, 8, m_txmycall.toLocal8Bit().data());
-		txdata.replace(50, 4, "AMBE");
-		CCRC::addCCITT161((uint8_t *)txdata.data() + 15, 41);
+        txdata.replace(18, 8, m_txrptr2.toLocal8Bit().data());
+        txdata.replace(26, 8, m_txrptr1.toLocal8Bit().data());
+        txdata.replace(34, 8, m_txurcall.toLocal8Bit().data());
+        txdata.replace(42, 8, m_txmycall.toLocal8Bit().data());
+        txdata.replace(50, 4, "AMBE");
+        CCRC::addCCITT161((uint8_t *)txdata.data() + 15, 41);
 
 		m_modeinfo.src = m_txmycall;
 		m_modeinfo.dst = m_txurcall;
@@ -540,14 +547,16 @@ void XRF::send_frame(uint8_t *ambe)
 	m_udp->writeDatagram(txdata, m_address, m_modeinfo.port);
 	emit update_output_level(m_audio->level() * 2);
 	update(m_modeinfo);
-#ifdef DEBUG
-	fprintf(stderr, "SEND:%d: ", txdata.size());
-	for(int i = 0; i < txdata.size(); ++i){
-		fprintf(stderr, "%02x ", (uint8_t)txdata.data()[i]);
-	}
-	fprintf(stderr, "\n");
-	fflush(stderr);
-#endif
+
+    if(m_debug){
+        QDebug debug = qDebug();
+        debug.noquote();
+        QString s = "SEND:";
+        for(int i = 0; i < txdata.size(); ++i){
+            s += " " + QString("%1").arg((uint8_t)txdata.data()[i], 2, 16, QChar('0'));
+        }
+        debug << s;
+    }
 }
 
 void XRF::get_ambe()

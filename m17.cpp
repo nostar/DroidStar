@@ -26,8 +26,6 @@
 
 #define M17CHARACTERS " ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-/."
 
-//#define DEBUG
-
 const uint8_t SCRAMBLER[] = {
 	0x00U, 0x00U, 0xD6U, 0xB5U, 0xE2U, 0x30U, 0x82U, 0xFFU, 0x84U, 0x62U, 0xBAU, 0x4EU, 0x96U, 0x90U, 0xD8U, 0x98U, 0xDDU,
 	0x5DU, 0x0CU, 0xC8U, 0x52U, 0x43U, 0x91U, 0x1DU, 0xF8U, 0x6EU, 0x68U, 0x2FU, 0x35U, 0xDAU, 0x14U, 0xEAU, 0xCDU, 0x76U,
@@ -209,14 +207,16 @@ void M17::process_udp()
 
 	buf.resize(m_udp->pendingDatagramSize());
 	m_udp->readDatagram(buf.data(), buf.size(), &sender, &senderPort);
-#ifdef DEBUG
-	fprintf(stderr, "RECV: ");
-	for(int i = 0; i < buf.size(); ++i){
-		fprintf(stderr, "%02x ", (uint8_t)buf.data()[i]);
-	}
-	fprintf(stderr, "\n");
-	fflush(stderr);
-#endif
+
+    if(m_debug){
+        QDebug debug = qDebug();
+        debug.noquote();
+        QString s = "RECV:";
+        for(int i = 0; i < buf.size(); ++i){
+            s += " " + QString("%1").arg((uint8_t)buf.data()[i], 2, 16, QChar('0'));
+        }
+        debug << s;
+    }
 	if((m_modeinfo.status != CONNECTED_RW) && (buf.size() == 4) && (::memcmp(buf.data(), "NACK", 4U) == 0)){
 		m_modeinfo.status = DISCONNECTED;
 	}
@@ -338,14 +338,16 @@ void M17::hostname_lookup(QHostInfo i)
 		m_udp = new QUdpSocket(this);
 		connect(m_udp, SIGNAL(readyRead()), this, SLOT(process_udp()));
 		m_udp->writeDatagram(out, m_address, m_modeinfo.port);
-#ifdef DEBUG
-		fprintf(stderr, "CONN: ");
-		for(int i = 0; i < out.size(); ++i){
-			fprintf(stderr, "%02x ", (uint8_t)out.data()[i]);
-		}
-		fprintf(stderr, "\n");
-		fflush(stderr);
-#endif
+
+        if(m_debug){
+            QDebug debug = qDebug();
+            debug.noquote();
+            QString s = "CONN:";
+            for(int i = 0; i < out.size(); ++i){
+                s += " " + QString("%1").arg((uint8_t)out.data()[i], 2, 16, QChar('0'));
+            }
+            debug << s;
+        }
 	}
 }
 
@@ -396,6 +398,15 @@ void M17::send_ping()
 	fprintf(stderr, "\n");
 	fflush(stderr);
 #endif
+    if(m_debug){
+        QDebug debug = qDebug();
+        debug.noquote();
+        QString s = "PING:";
+        for(int i = 0; i < out.size(); ++i){
+            s += " " + QString("%1").arg((uint8_t)out.data()[i], 2, 16, QChar('0'));
+        }
+        debug << s;
+    }
 }
 
 void M17::send_disconnect()
@@ -418,14 +429,16 @@ void M17::send_disconnect()
 	out.append('C');
 	out.append((char *)cs, 6);
 	m_udp->writeDatagram(out, m_address, m_modeinfo.port);
-#ifdef DEBUG
-	fprintf(stderr, "SEND: ");
-	for(int i = 0; i < out.size(); ++i){
-		fprintf(stderr, "%02x ", (uint8_t)out.data()[i]);
-	}
-	fprintf(stderr, "\n");
-	fflush(stderr);
-#endif
+
+    if(m_debug){
+        QDebug debug = qDebug();
+        debug.noquote();
+        QString s = "SEND:";
+        for(int i = 0; i < out.size(); ++i){
+            s += " " + QString("%1").arg((uint8_t)out.data()[i], 2, 16, QChar('0'));
+        }
+        debug << s;
+    }
 }
 
 void M17::send_modem_data(QByteArray d)
@@ -683,14 +696,16 @@ void M17::process_modem_data(QByteArray d)
 			txframe.append((char *)&netframe[30], 16);
 			txframe.append(2, 0x00);
 			m_udp->writeDatagram(txframe, m_address, m_modeinfo.port);
-#ifdef DEBUG
-			fprintf(stderr, "SEND:%02x:", (uint8_t)txframe.size());
-			for(int i = 0; i < txframe.size(); ++i){
-				fprintf(stderr, "%02x ", (uint8_t)txframe.data()[i]);
-			}
-			fprintf(stderr, "\n");
-			fflush(stderr);
-#endif
+
+            if(m_debug){
+                QDebug debug = qDebug();
+                debug.noquote();
+                QString s = "SEND:";
+                for(int i = 0; i < txframe.size(); ++i){
+                    s += " " + QString("%1").arg((uint8_t)txframe.data()[i], 2, 16, QChar('0'));
+                }
+                debug << s;
+            }
 		}
 	}
 }
@@ -834,6 +849,15 @@ void M17::transmit()
 		fprintf(stderr, "\n");
 		fflush(stderr);
 #endif
+        if(m_debug){
+            QDebug debug = qDebug();
+            debug.noquote();
+            QString s = "SEND:";
+            for(int i = 0; i < txframe.size(); ++i){
+                s += " " + QString("%1").arg((uint8_t)txframe.data()[i], 2, 16, QChar('0'));
+            }
+            debug << s;
+        }
 	}
 	else{
 		const uint8_t quiet3200[] = { 0x00, 0x01, 0x43, 0x09, 0xe4, 0x9c, 0x08, 0x21 };
@@ -892,14 +916,16 @@ void M17::transmit()
 		m_modeinfo.frame_number = tx_cnt;
 		m_modeinfo.streamid = txstreamid;
 		emit update(m_modeinfo);
-#ifdef DEBUG
-		fprintf(stderr, "LAST:%d: ", txframe.size());
-		for(int i = 0; i < txframe.size(); ++i){
-			fprintf(stderr, "%02x ", (uint8_t)txframe.data()[i]);
-		}
-		fprintf(stderr, "\n");
-		fflush(stderr);
-#endif
+
+        if(m_debug){
+            QDebug debug = qDebug();
+            debug.noquote();
+            QString s = "LAST:";
+            for(int i = 0; i < txframe.size(); ++i){
+                s += " " + QString("%1").arg((uint8_t)txframe.data()[i], 2, 16, QChar('0'));
+            }
+            debug << s;
+        }
 	}
 }
 

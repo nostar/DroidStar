@@ -20,8 +20,6 @@
 #include "CRCenc.h"
 #include "MMDVMDefines.h"
 
-//#define DEBUG
-
 DCS::DCS()
 {
     m_mode = "DCS";
@@ -40,16 +38,19 @@ void DCS::process_udp()
 	static bool sd_sync = 0;
 	static int sd_seq = 0;
 	static char user_data[21];
-	buf.resize(200);
-	int size = m_udp->readDatagram(buf.data(), buf.size(), &sender, &senderPort);
-#ifdef DEBUG
-	fprintf(stderr, "RECV: ");
-	for(int i = 0; i < size; ++i){
-		fprintf(stderr, "%02x ", (unsigned char)buf.data()[i]);
-	}
-	fprintf(stderr, "\n");
-	fflush(stderr);
-#endif
+    buf.resize(200);
+    int size = m_udp->readDatagram(buf.data(), buf.size(), &sender, &senderPort);
+
+    if(m_debug){
+        QDebug debug = qDebug();
+        debug.noquote();
+        QString s = "RECV:";
+        for(int i = 0; i < buf.size(); ++i){
+            s += " " + QString("%1").arg((uint8_t)buf.data()[i], 2, 16, QChar('0'));
+        }
+        debug << s;
+    }
+
 	if(size == 22){ //2 way keep alive ping
 		m_modeinfo.count++;
 		m_modeinfo.netmsg.clear();
@@ -227,14 +228,16 @@ void DCS::hostname_lookup(QHostInfo i)
 		m_udp = new QUdpSocket(this);
 		connect(m_udp, SIGNAL(readyRead()), this, SLOT(process_udp()));
 		m_udp->writeDatagram(out, m_address, m_modeinfo.port);
-#ifdef DEBUG
-		fprintf(stderr, "CONN: ");
-		for(int i = 0; i < out.size(); ++i){
-			fprintf(stderr, "%02x ", (unsigned char)out.data()[i]);
-		}
-		fprintf(stderr, "\n");
-		fflush(stderr);
-#endif
+
+        if(m_debug){
+            QDebug debug = qDebug();
+            debug.noquote();
+            QString s = "CONN:";
+            for(int i = 0; i < out.size(); ++i){
+                s += " " + QString("%1").arg((uint8_t)out.data()[i], 2, 16, QChar('0'));
+            }
+            debug << s;
+        }
 	}
 }
 
@@ -250,14 +253,16 @@ void DCS::send_ping()
 	out.append('\x00');
 	out.append(m_module);
 	m_udp->writeDatagram(out, m_address, m_modeinfo.port);
-#ifdef DEBUG
-	fprintf(stderr, "PING: ");
-	for(int i = 0; i < out.size(); ++i){
-		fprintf(stderr, "%02x ", (unsigned char)out.data()[i]);
-	}
-	fprintf(stderr, "\n");
-	fflush(stderr);
-#endif
+
+    if(m_debug){
+        QDebug debug = qDebug();
+        debug.noquote();
+        QString s = "PING:";
+        for(int i = 0; i < out.size(); ++i){
+            s += " " + QString("%1").arg((uint8_t)out.data()[i], 2, 16, QChar('0'));
+        }
+        debug << s;
+    }
 }
 
 void DCS::send_disconnect()
@@ -269,14 +274,16 @@ void DCS::send_disconnect()
 	out.append(' ');
 	out.append('\x00');
 	m_udp->writeDatagram(out, m_address, m_modeinfo.port);
-#ifdef DEBUG
-	fprintf(stderr, "SEND: ");
-	for(int i = 0; i < out.size(); ++i){
-		fprintf(stderr, "%02x ", (unsigned char)out.data()[i]);
-	}
-	fprintf(stderr, "\n");
-	fflush(stderr);
-#endif
+
+    if(m_debug){
+        QDebug debug = qDebug();
+        debug.noquote();
+        QString s = "DISC:";
+        for(int i = 0; i < out.size(); ++i){
+            s += " " + QString("%1").arg((uint8_t)out.data()[i], 2, 16, QChar('0'));
+        }
+        debug << s;
+    }
 }
 
 void DCS::format_callsign(QString &s)
@@ -340,17 +347,14 @@ void DCS::start_tx()
 
 void DCS::transmit()
 {
-	unsigned char ambe[9];
-	uint8_t ambe_frame[72];
+    uint8_t ambe[9];
 	int16_t pcm[160];
-	memset(ambe_frame, 0, 72);
 	memset(ambe, 0, 9);
 	
 #ifdef USE_FLITE
 	if(m_ttsid > 0){
 		for(int i = 0; i < 160; ++i){
 			if(m_ttscnt >= tts_audio->num_samples/2){
-				//audiotx_cnt = 0;
 				pcm[i] = 0;
 			}
 			else{
@@ -499,14 +503,15 @@ void DCS::send_frame(uint8_t *ambe)
 	emit update_output_level(m_audio->level() * 2);
 	update(m_modeinfo);
 
-#ifdef DEBUG
-	fprintf(stderr, "SEND:%d: ", txdata.size());
-	for(int i = 0; i < txdata.size(); ++i){
-		fprintf(stderr, "%02x ", (unsigned char)txdata.data()[i]);
-	}
-	fprintf(stderr, "\n");
-	fflush(stderr);
-#endif
+    if(m_debug){
+        QDebug debug = qDebug();
+        debug.noquote();
+        QString s = "SEND:";
+        for(int i = 0; i < txdata.size(); ++i){
+            s += " " + QString("%1").arg((uint8_t)txdata.data()[i], 2, 16, QChar('0'));
+        }
+        debug << s;
+    }
 }
 
 void DCS::get_ambe()

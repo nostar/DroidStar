@@ -97,6 +97,7 @@ void Mode::init(QString callsign, uint32_t dmrid, uint16_t nxdnid, char module, 
 
 	m_modem = nullptr;
 	m_ambedev = nullptr;
+    m_mbevocoder = nullptr;
 	m_hwrx = false;
 	m_hwtx = false;
 	m_tx = false;
@@ -128,7 +129,7 @@ void Mode::init(QString callsign, uint32_t dmrid, uint16_t nxdnid, char module, 
 	voice_kal = register_cmu_us_kal16(nullptr);
 	voice_awb = register_cmu_us_awb(nullptr);
 #endif
-
+    m_debug = true;
 }
 
 void Mode::ambe_connect_status(bool s)
@@ -343,6 +344,7 @@ bool Mode::load_vocoder_plugin()
 		return false;
 	}
 #else
+    qDebug() << "new vocoder";
 	m_mbevocoder = new VocoderPlugin();
 	return true;
 #endif
@@ -355,7 +357,8 @@ void Mode::deleteLater()
 		//m_udp->disconnect();
 		//m_ping_timer->stop();
 		send_disconnect();
-		delete m_audio;
+        delete m_audio;
+        //if(m_mbevocoder != nullptr) delete m_mbevocoder;
 #if !defined(Q_OS_IOS)
 		if(m_hwtx){
 			delete m_ambedev;

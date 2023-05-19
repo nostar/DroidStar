@@ -22,7 +22,6 @@
 #else
 #include <arpa/inet.h>
 #endif
-//#define DEBUG
 
 #ifdef USE_FLITE
 extern "C" {
@@ -31,6 +30,8 @@ extern cst_voice * register_cmu_us_kal16(const char *);
 extern cst_voice * register_cmu_us_awb(const char *);
 }
 #endif
+
+#define DEBUG
 
 IAX::IAX() :
 	m_scallno(0),
@@ -159,14 +160,16 @@ void IAX::send_call()
 	out.append(AST_FORMAT_ULAW);
 	m_timestamp = QDateTime::currentMSecsSinceEpoch();
 	m_udp->writeDatagram(out, m_address, m_port);
-#ifdef DEBUG
-	fprintf(stderr, "SEND: ");
-	for(int i = 0; i < out.size(); ++i){
-		fprintf(stderr, "%02x ", (unsigned char)out.data()[i]);
-	}
-	fprintf(stderr, "\n");
-	fflush(stderr);
-#endif
+
+    if(m_debug){
+        QDebug debug = qDebug();
+        debug.noquote();
+        QString s = "SEND:";
+        for(int i = 0; i < out.size(); ++i){
+            s += " " + QString("%1").arg((uint8_t)out.data()[i], 2, 16, QChar('0'));
+        }
+        debug << s;
+    }
 }
 
 void IAX::send_call_auth()
@@ -491,7 +494,9 @@ void IAX::send_disconnect()
 
 void IAX::hostname_lookup(QHostInfo i)
 {
+    qDebug() << "IAX::hostname_lookup()";
 	if (!i.addresses().isEmpty()) {
+        qDebug() << "IAX::hostname_lookup() 2";
 		m_address = i.addresses().first();
 		m_udp = new QUdpSocket(this);
 		m_regtimer = new QTimer();

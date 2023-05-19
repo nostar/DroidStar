@@ -20,7 +20,6 @@
 #include "ref.h"
 #include "CRCenc.h"
 
-//#define DEBUG
 
 const uint8_t MMDVM_DSTAR_HEADER = 0x10U;
 const uint8_t MMDVM_DSTAR_DATA   = 0x11U;
@@ -50,14 +49,17 @@ void REF::process_udp()
 
 	buf.resize(m_udp->pendingDatagramSize());
 	m_udp->readDatagram(buf.data(), buf.size(), &sender, &senderPort);
-#ifdef DEBUG
-	fprintf(stderr, "RECV: ");
-	for(int i = 0; i < buf.size(); ++i){
-		fprintf(stderr, "%02x ", (uint8_t)buf.data()[i]);
-	}
-	fprintf(stderr, "\n");
-	fflush(stderr);
-#endif
+
+    if(m_debug){
+        QDebug debug = qDebug();
+        debug.noquote();
+        QString s = "RECV:";
+        for(int i = 0; i < buf.size(); ++i){
+            s += " " + QString("%1").arg((uint8_t)buf.data()[i], 2, 16, QChar('0'));
+        }
+        debug << s;
+    }
+
 	if ((buf.size() == 5) && (buf.data()[0] == 5)){
 		int x = (::rand() % (999999 - 7245 + 1)) + 7245;
 		QString serial = "HS" + QString("%1").arg(x, 6, 10, QChar('0'));
@@ -77,16 +79,17 @@ void REF::process_udp()
 		}
 		emit update(m_modeinfo);
 	}
-#ifdef DEBUG
-	if(out.size()){
-		fprintf(stderr, "SEND: ");
-		for(int i = 0; i < out.size(); ++i){
-			fprintf(stderr, "%02x ", (uint8_t)out.data()[i]);
-		}
-		fprintf(stderr, "\n");
-		fflush(stderr);
-	}
-#endif
+
+    if(m_debug && out.size() > 0){
+        QDebug debug = qDebug();
+        debug.noquote();
+        QString s = "RECV:";
+        for(int i = 0; i < out.size(); ++i){
+            s += " " + QString("%1").arg((uint8_t)out.data()[i], 2, 16, QChar('0'));
+        }
+        debug << s;
+    }
+
 	if((m_modeinfo.status == CONNECTING) && (buf.size() == 0x08)){
 		if((memcmp(&buf.data()[4], "OKRW", 4) == 0) || (memcmp(&buf.data()[4], "OKRO", 4) == 0) || (memcmp(&buf.data()[4], "BUSY", 4) == 0)){
 			m_modeinfo.sw_vocoder_loaded = load_vocoder_plugin();
@@ -284,14 +287,16 @@ void REF::hostname_lookup(QHostInfo i)
 		m_udp = new QUdpSocket(this);
 		connect(m_udp, SIGNAL(readyRead()), this, SLOT(process_udp()));
 		m_udp->writeDatagram(out, m_address, m_modeinfo.port);
-#ifdef DEBUG
-		fprintf(stderr, "CONN: ");
-		for(int i = 0; i < out.size(); ++i){
-			fprintf(stderr, "%02x ", (uint8_t)out.data()[i]);
-		}
-		fprintf(stderr, "\n");
-		fflush(stderr);
-#endif
+
+        if(m_debug){
+            QDebug debug = qDebug();
+            debug.noquote();
+            QString s = "CONN:";
+            for(int i = 0; i < out.size(); ++i){
+                s += " " + QString("%1").arg((uint8_t)out.data()[i], 2, 16, QChar('0'));
+            }
+            debug << s;
+        }
 	}
 }
 
@@ -302,14 +307,16 @@ void REF::send_ping()
 	out.append(0x60);
 	out.append('\x00');
 	m_udp->writeDatagram(out, m_address, m_modeinfo.port);
-#ifdef DEBUG
-	fprintf(stderr, "PING: ");
-	for(int i = 0; i < out.size(); ++i){
-		fprintf(stderr, "%02x ", (uint8_t)out.data()[i]);
-	}
-	fprintf(stderr, "\n");
-	fflush(stderr);
-#endif
+
+    if(m_debug){
+        QDebug debug = qDebug();
+        debug.noquote();
+        QString s = "PING:";
+        for(int i = 0; i < out.size(); ++i){
+            s += " " + QString("%1").arg((uint8_t)out.data()[i], 2, 16, QChar('0'));
+        }
+        debug << s;
+    }
 }
 
 void REF::send_disconnect()
@@ -321,14 +328,16 @@ void REF::send_disconnect()
 	out.append('\x00');
 	out.append('\x00');
 	m_udp->writeDatagram(out, m_address, m_modeinfo.port);
-#ifdef DEBUG
-	fprintf(stderr, "SEND: ");
-	for(int i = 0; i < out.size(); ++i){
-		fprintf(stderr, "%02x ", (uint8_t)out.data()[i]);
-	}
-	fprintf(stderr, "\n");
-	fflush(stderr);
-#endif
+
+    if(m_debug){
+        QDebug debug = qDebug();
+        debug.noquote();
+        QString s = "DISC:";
+        for(int i = 0; i < out.size(); ++i){
+            s += " " + QString("%1").arg((uint8_t)out.data()[i], 2, 16, QChar('0'));
+        }
+        debug << s;
+    }
 }
 
 void REF::format_callsign(QString &s)
@@ -489,14 +498,16 @@ void REF::send_frame(uint8_t *ambe)
 		m_modeinfo.frame_number = m_txcnt;
 
 		m_udp->writeDatagram(txdata, m_address, m_modeinfo.port);
-#ifdef DEBUG
-	fprintf(stderr, "SEND:%d: ", txdata.size());
-	for(int i = 0; i < txdata.size(); ++i){
-		fprintf(stderr, "%02x ", (uint8_t)txdata.data()[i]);
-	}
-	fprintf(stderr, "\n");
-	fflush(stderr);
-#endif
+
+        if(m_debug){
+            QDebug debug = qDebug();
+            debug.noquote();
+            QString s = "SEND:";
+            for(int i = 0; i < txdata.size(); ++i){
+                s += " " + QString("%1").arg((uint8_t)txdata.data()[i], 2, 16, QChar('0'));
+            }
+            debug << s;
+        }
 	}
 
 	txdata.resize(29);
@@ -611,14 +622,16 @@ void REF::send_frame(uint8_t *ambe)
 	m_udp->writeDatagram(txdata, m_address, m_modeinfo.port);
 	emit update_output_level(m_audio->level() * 2);
 	emit update(m_modeinfo);
-#ifdef DEBUG
-	fprintf(stderr, "SEND:%d: ", txdata.size());
-	for(int i = 0; i < txdata.size(); ++i){
-		fprintf(stderr, "%02x ", (uint8_t)txdata.data()[i]);
-	}
-	fprintf(stderr, "\n");
-	fflush(stderr);
-#endif
+
+    if(m_debug){
+        QDebug debug = qDebug();
+        debug.noquote();
+        QString s = "SEND:";
+        for(int i = 0; i < txdata.size(); ++i){
+            s += " " + QString("%1").arg((uint8_t)txdata.data()[i], 2, 16, QChar('0'));
+        }
+        debug << s;
+    }
 }
 
 void REF::get_ambe()
