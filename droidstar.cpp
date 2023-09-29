@@ -902,7 +902,10 @@ void DroidStar::process_p25_hosts()
 			while (i != m_hostmap.constEnd()) {
 				m_hostsmodel.append(i.key());
 				++i;
-			}
+            }
+            QMap<int, QString> m;
+            for (auto s : m_hostsmodel) m[s.toInt()] = s;
+            m_hostsmodel = QStringList(m.values());
 		}
 		f.close();
 	}
@@ -943,7 +946,10 @@ void DroidStar::process_nxdn_hosts()
 			while (i != m_hostmap.constEnd()) {
 				m_hostsmodel.append(i.key());
 				++i;
-			}
+            }
+            QMap<int, QString> m;
+            for (auto s : m_hostsmodel) m[s.toInt()] = s;
+            m_hostsmodel = QStringList(m.values());
 		}
 		f.close();
 	}
