@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<manifest package="org.dudetronics.droidstar" xmlns:android="http://schemas.android.com/apk/res/android" android:versionName="-- %%INSERT_VERSION_NAME%% --" android:versionCode="75" android:installLocation="auto">
+<manifest package="org.dudetronics.droidstar" xmlns:android="http://schemas.android.com/apk/res/android" android:versionName="-- %%INSERT_VERSION_NAME%% --" android:versionCode="76" android:installLocation="auto">
 
 
 	<!-- The following comment will be replaced upon deployment with default permissions based on the dependencies of the application.
@@ -72,5 +72,5 @@
 		</activity>
 		<!-- For adding service(s) please check: https://wiki.qt.io/AndroidServices -->
 	</application>
-<uses-sdk android:targetSdkVersion="31"/>
+
 </manifest>

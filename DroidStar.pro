@@ -7,8 +7,8 @@ equals(QT_MAJOR_VERSION, 5){
 unix:!ios:QT += serialport
 CONFIG += c++11
 LFLAGS +=
-android:INCLUDEPATH += $$(HOME)/Android/android-build/include
-LIBS += -limbe_vocoder # -lvocoder
+android:INCLUDEPATH += $$(HOME)/Android/local/include
+LIBS += -limbe_vocoder  -lvocoder
 !win32:LIBS += -ldl
 win32:QT += serialport
 win32:INCLUDEPATH += /mnt/data/src/winlibs/include
