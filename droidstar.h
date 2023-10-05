@@ -61,6 +61,7 @@ signals:
 	void urcall_changed(QString);
 	void usrtxt_changed(QString);
     void dst_changed(QString);
+    void debug_changed(bool);
     void update_devices();
 public slots:
 	void set_callsign(const QString &callsign) {  m_callsign = callsign.simplified(); save_settings(); }
@@ -119,6 +120,7 @@ public slots:
     void set_mmdvm_direct(bool mmdvm) { m_mdirect = mmdvm; process_mode_change(m_protocol); }
 	void set_iaxport(const QString &port){ m_iaxport = port.simplified().toUInt(); save_settings(); }
     void set_dst(QString dst){emit dst_changed(dst);}
+    void set_debug(bool debug){emit debug_changed(debug);}
 
 	void set_modemRxFreq(QString m) { m_modemRxFreq = m; save_settings(); }
 	void set_modemTxFreq(QString m) { m_modemTxFreq = m; save_settings(); }

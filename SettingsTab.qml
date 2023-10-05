@@ -71,13 +71,14 @@ Item {
 	property alias modemNXDNTXLevelEdit: _modemNXDNTXLevelEdit
 	property alias modemBaudEdit: _modemBaudEdit
     property alias mmdvmBox: _mmdvmBox
+    property alias debugBox: _debugBox
 
 	Flickable {
 		id: flickable
 		anchors.fill: parent
 		contentWidth: parent.width
-        contentHeight: _mmdvmBox.y +
-                       _mmdvmBox.height + 10
+        contentHeight: _debugBox.y +
+                       _debugBox.height + 10
 		flickableDirection: Flickable.VerticalFlick
 		clip: true
 		ScrollBar.vertical: ScrollBar {}
@@ -1077,6 +1078,17 @@ Item {
             text: qsTr("MMDVM_DIRECT")
             onClicked:{
                 droidstar.set_mmdvm_direct(_mmdvmBox.checked)
+            }
+        }
+        CheckBox {
+            id: _debugBox
+            x: 10
+            y: 1390
+            width: parent.width
+            height: 25
+            text: qsTr("Debug output to stderr")
+            onClicked:{
+                droidstar.set_debug(_debugBox.checked)
             }
         }
 	}

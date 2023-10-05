@@ -129,7 +129,7 @@ void Mode::init(QString callsign, uint32_t dmrid, uint16_t nxdnid, char module, 
 	voice_kal = register_cmu_us_kal16(nullptr);
 	voice_awb = register_cmu_us_awb(nullptr);
 #endif
-    m_debug = true;
+    m_debug = false;
 }
 
 void Mode::ambe_connect_status(bool s)

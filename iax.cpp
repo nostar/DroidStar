@@ -494,9 +494,7 @@ void IAX::send_disconnect()
 
 void IAX::hostname_lookup(QHostInfo i)
 {
-    qDebug() << "IAX::hostname_lookup()";
 	if (!i.addresses().isEmpty()) {
-        qDebug() << "IAX::hostname_lookup() 2";
 		m_address = i.addresses().first();
 		m_udp = new QUdpSocket(this);
 		m_regtimer = new QTimer();

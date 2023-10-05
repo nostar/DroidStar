@@ -375,6 +375,7 @@ void DroidStar::process_connect()
 		connect(this, SIGNAL(rptr1_changed(QString)), m_mode, SLOT(rptr1_changed(QString)));
 		connect(this, SIGNAL(rptr2_changed(QString)), m_mode, SLOT(rptr2_changed(QString)));
 		connect(this, SIGNAL(usrtxt_changed(QString)), m_mode, SLOT(usrtxt_changed(QString)));
+        connect(this, SIGNAL(debug_changed(bool)), m_mode, SLOT(debug_changed(bool)));
 		emit module_changed(m_module);
 		emit mycall_changed(m_mycall);
 		emit urcall_changed(m_urcall);

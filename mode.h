@@ -159,6 +159,7 @@ protected slots:
 	void module_changed(char m) { m_module = m; m_modeinfo.streamid = 0; }
     void dst_changed(QString dst){ m_refname = dst; }
     void host_lookup();
+    void debug_changed(bool debug){ m_debug = debug; }
 protected:
     QString m_mode;
 	QUdpSocket *m_udp = nullptr;
