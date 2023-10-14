@@ -417,7 +417,7 @@ void DroidStar::process_connect()
 		m_modethread->start();
 
 	}
-
+/*
 	qDebug() << "process_connect called m_callsign == " << m_callsign;
 	qDebug() << "process_connect called m_dmrid == " << m_dmrid;
 	qDebug() << "process_connect called m_bm_password == " << m_bm_password;
@@ -428,6 +428,7 @@ void DroidStar::process_connect()
 	qDebug() << "process_connect called m_module == " << m_module;
 	qDebug() << "process_connect called m_protocol == " << m_protocol;
 	qDebug() << "process_connect called m_port == " << m_port;
+*/
 }
 
 void DroidStar::process_host_change(const QString &h)
@@ -720,7 +721,7 @@ void DroidStar::process_dstar_hosts(QString m)
             }
 
             m_customhosts = m_localhosts.split('\n');
-            for (const auto& i : qAsConst(m_customhosts)){
+            for (const auto& i : std::as_const(m_customhosts)){
                 QStringList line = i.simplified().split(' ');
 
                 if(line.at(0) == m){
@@ -761,7 +762,7 @@ void DroidStar::process_ysf_hosts()
 			}
 
 			m_customhosts = m_localhosts.split('\n');
-			for (const auto& i : qAsConst(m_customhosts)){
+            for (const auto& i : std::as_const(m_customhosts)){
 				QStringList line = i.simplified().split(' ');
 
 				if(line.at(0) == "YSF"){
@@ -804,7 +805,7 @@ void DroidStar::process_fcs_rooms()
 			}
 
 			m_customhosts = m_localhosts.split('\n');
-			for (const auto& i : qAsConst(m_customhosts)){
+            for (const auto& i : std::as_const(m_customhosts)){
 				QStringList line = i.simplified().split(' ');
 
 				if(line.at(0) == "FCS"){
@@ -850,7 +851,7 @@ void DroidStar::process_dmr_hosts()
 			}
 
 			m_customhosts = m_localhosts.split('\n');
-			for (const auto& i : qAsConst(m_customhosts)){
+            for (const auto& i : std::as_const(m_customhosts)){
 				QStringList line = i.simplified().split(' ');
 
 				if(line.at(0) == "DMR"){
@@ -891,7 +892,7 @@ void DroidStar::process_p25_hosts()
 			}
 
 			m_customhosts = m_localhosts.split('\n');
-			for (const auto& i : qAsConst(m_customhosts)){
+            for (const auto& i : std::as_const(m_customhosts)){
 				QStringList line = i.simplified().split(' ');
 
 				if(line.at(0) == "P25"){
@@ -935,7 +936,7 @@ void DroidStar::process_nxdn_hosts()
 			}
 
 			m_customhosts = m_localhosts.split('\n');
-			for (const auto& i : qAsConst(m_customhosts)){
+            for (const auto& i : std::as_const(m_customhosts)){
 				QStringList line = i.simplified().split(' ');
 
 				if(line.at(0) == "NXDN"){
@@ -980,7 +981,7 @@ void DroidStar::process_m17_hosts()
 			}
 
 			m_customhosts = m_localhosts.split('\n');
-			for (const auto& i : qAsConst(m_customhosts)){
+            for (const auto& i : std::as_const(m_customhosts)){
 				QStringList line = i.simplified().split(' ');
 
 				if(line.at(0) == "M17"){

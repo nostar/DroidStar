@@ -5,7 +5,7 @@ equals(QT_MAJOR_VERSION, 5){
 }
 
 unix:!ios:QT += serialport
-CONFIG += c++11
+CONFIG += c++17
 LFLAGS +=
 android:INCLUDEPATH += $$(HOME)/Android/local/include
 LIBS += -limbe_vocoder  -lvocoder

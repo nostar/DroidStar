@@ -176,20 +176,15 @@ QStringList AudioEngine::discover_audio_devices(uint8_t d)
 void AudioEngine::init()
 {
 	QAudioFormat format;
-	QAudioFormat tempformat;
 	format.setSampleRate(8000);
 	format.setChannelCount(1);
 	format.setSampleFormat(QAudioFormat::Int16);
-	//format.setSampleSize(16);
-	//format.setCodec("audio/pcm");
-	//format.setByteOrder(QAudioFormat::LittleEndian);
-	//format.setSampleType(QAudioFormat::SignedInt);
 
 	m_agc = true;
 
 	QList<QAudioDevice> devices = QMediaDevices::audioOutputs();
 	if(devices.size() == 0){
-		fprintf(stderr, "No audio playback hardware found\n");fflush(stderr);
+        qDebug() << "No audio playback hardware found";
 	}
 	else{
 		QAudioDevice device(QMediaDevices::defaultAudioOutput());
@@ -204,25 +199,20 @@ void AudioEngine::init()
 			}
 		}
 		if (!device.isFormatSupported(format)) {
-			qWarning() << "Raw audio format not supported by backend, trying nearest format.";
-			//tempformat = device.nearestFormat(format);
-			//qWarning() << "Format now set to " << format.sampleRate() << ":" << format.sampleSize();
-		}
-		else{
-			tempformat = format;
-		}
-		fprintf(stderr, "Using playback device %s\n", device.description().toStdString().c_str());fflush(stderr);
+            qWarning() << "Raw audio format not supported by playback device";
+        }
 
-		m_out = new QAudioSink(device, tempformat, this);
+        qDebug() << "Playback device: " << device.description() << "SR: " << format.sampleRate();
+
+        m_out = new QAudioSink(device, format, this);
 		m_out->setBufferSize(1280);
 		connect(m_out, SIGNAL(stateChanged(QAudio::State)), this, SLOT(handleStateChanged(QAudio::State)));
-		//m_outdev = m_out->start();
 	}
 
 	devices = QMediaDevices::audioInputs();
 
-	if(devices.size() == 0){
-		fprintf(stderr, "No audio recording hardware found\n");fflush(stderr);
+    if(devices.size() == 0){
+        qDebug() <<  "No audio capture hardware found";
 	}
 	else{
 		QAudioDevice device(QMediaDevices::defaultAudioInput());
@@ -237,13 +227,8 @@ void AudioEngine::init()
 			}
 		}
 		if (!device.isFormatSupported(format)) {
-			qWarning() << "Raw audio format not supported by backend, trying nearest format.";
-			//tempformat = device.nearestFormat(format);
-			//qWarning() << "Format now set to " << format.sampleRate() << ":" << format.sampleSize();
-		}
-		else{
-			tempformat = format;
-		}
+            qWarning() << "Raw audio format not supported by capture device";
+        }
 
 		int sr = 8000;
 		if(MACHAK){
@@ -251,11 +236,9 @@ void AudioEngine::init()
 			m_srm = (float)sr / 8000.0;
 		}
 		format.setSampleRate(sr);
-		m_in = new QAudioSource(device, format, this);
-		fprintf(stderr, "Capture device: %s SR: %d resample factor: %f\n", device.description().toStdString().c_str(), sr, m_srm);fflush(stderr);
+        m_in = new QAudioSource(device, format, this);
+        qDebug() << "Capture device: " <<  device.description() << " SR: " << sr << " resample factor: " << m_srm;
 	}
-
-	//start_playback();
 }
 #endif
 

@@ -188,7 +188,7 @@ void DMR::process_udp()
 		(m_modeinfo.status == CONNECTED_RW))
 	{
 		m_rxwatchdog = 0;
-		uint8_t t;
+        uint8_t t = 0;
 		if((uint8_t)buf.data()[15] & 0x02){
 			qDebug() << "DMR RX EOT";
 			m_modeinfo.stream_state = STREAM_END;
