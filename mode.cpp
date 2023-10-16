@@ -333,21 +333,9 @@ bool Mode::load_vocoder_plugin()
 	}
 #endif
 #else
-#if defined(Q_OS_IOS)
-	QString config_path = QStandardPaths::writableLocation(QStandardPaths::ConfigLocation) + "/dudetronics";
-	QString voc = config_path + "/vocoder_plugin." + QSysInfo::productType() + "." + QSysInfo::currentCpuArchitecture();
-	if(QFileInfo::exists(voc)){
-		m_mbevocoder = new VocoderPlugin();
-		return true;
-	}
-	else{
-		return false;
-	}
-#else
     qDebug() << "new vocoder";
 	m_mbevocoder = new VocoderPlugin();
 	return true;
-#endif
 #endif
 }
 

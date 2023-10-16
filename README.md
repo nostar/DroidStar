@@ -48,7 +48,7 @@ Talkgroup:  For DMR, enter the talkgroup ID number.  A very active TG for testin
 MYCALL/URCALL/RPTR1/RPTR2 are for Dstar modes REF/DCS/XRF.  These fields need to be entered correctly before attempting to TX on any DSTAR reflector.  All fields are populated with suggested values upon connect, but can still be modified for advanced users.  RPT2 is always overwritten with the current reflector upon connected.
 
 # IAX Client for AllStar
-Dudestar can connect to an AllStar node as an IAX(2) client.  See the AllStar wiki and other AllStar, Asterisk, and IAX2 protocal related websites for the technical details of IAX2 for AllStar.  This is a basic client and currently only uLaw audio codec is supported.  This is the default codec on most AllStar nodes.
+DroidStar can connect to an AllStar node as an IAX(2) client.  See the AllStar wiki and other AllStar, Asterisk, and IAX2 protocal related websites for the technical details of IAX2 for AllStar.  This is a basic client and currently only uLaw audio codec is supported.  This is the default codec on most AllStar nodes.
 
 Username: Defined in your nodes iax.conf file, usually iaxclient
 
@@ -93,6 +93,17 @@ All of the gradle build files are provided to create an APK file ready to be ins
 # No builds are available on Github
 No builds for any platform are available on this Github site.  This is and always will be an open source project, to be used for educational and development purposes only. I am currently providing a Windows build which is *not* to be confused as any sort of official release of any kind.  No support will be provided for any build at any time.
 
-http://www.dudetronics.com/
+# DroidStar for iOS
+DroidStar used to be available for iOS via the TestFlight program.  I got fed up with Apple and its developer policies (not to mention the cost) so I cancelled my paid developer account.  DroidStar can now be installed to an iOS device by using a marvelous program called Sideloadly:
+
+https://sideloadly.io/
+
+The instructions here are pretty thorough.  It is important to read the FAQ section of the website to understand how sideloading works.  I suggest enabling Wifi development on the iOS device, as explained on the website. This allows you to load/re-load DroidStar without connecting to USB.
+
+There are static builds for all platforms out there on a few 3rd party sites such as this one:
+
+http://pizzanbeer.net/
+
+The ipa file is the iOS package.
 
 

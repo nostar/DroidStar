@@ -189,11 +189,11 @@ void AudioEngine::init()
 	else{
 		QAudioDevice device(QMediaDevices::defaultAudioOutput());
 		for (QList<QAudioDevice>::ConstIterator it = devices.constBegin(); it != devices.constEnd(); ++it ) {
-			if(MACHAK){
-				qDebug() << "Playback device name = " << (*it).description();
-				qDebug() << (*it).supportedSampleFormats();
-				qDebug() << (*it).preferredFormat();
-			}
+
+            qDebug() << "Playback device name = " << (*it).description();
+            qDebug() << (*it).supportedSampleFormats();
+            qDebug() << (*it).preferredFormat();
+
 			if((*it).description() == m_outputdevice){
 				device = *it;
 			}

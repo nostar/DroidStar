@@ -81,7 +81,7 @@ QMap<QString, QString> SerialAMBE::discover_devices()
 				+ "Serial number: " + (!serialPortInfo.serialNumber().isEmpty() ? serialPortInfo.serialNumber() : blankString) + ENDLINE
 				+ "Vendor Identifier: " + (serialPortInfo.hasVendorIdentifier() ? QByteArray::number(serialPortInfo.vendorIdentifier(), 16) : blankString) + ENDLINE
 				+ "Product Identifier: " + (serialPortInfo.hasProductIdentifier() ? QByteArray::number(serialPortInfo.productIdentifier(), 16) : blankString) + ENDLINE;
-			fprintf(stderr, "%s", out.toStdString().c_str());fflush(stderr);
+            //fprintf(stderr, "%s", out.toStdString().c_str());fflush(stderr);
 			devlist[serialPortInfo.systemLocation()] = serialPortInfo.description() + ":" + serialPortInfo.systemLocation();
 		}
 	}
