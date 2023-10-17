@@ -23,11 +23,11 @@
 #ifdef USE_FLITE
 #include <flite/flite.h>
 #endif
-#include <imbe_vocoder_api.h>
+#include "imbe_vocoder/imbe_vocoder_api.h"
 #ifdef VOCODER_PLUGIN
 #include "vocoder_plugin.h"
 #else
-#include <vocoder_plugin_api.h>
+#include "mbe/vocoder_plugin_api.h"
 #endif
 #include "audioengine.h"
 #if !defined(Q_OS_IOS)
