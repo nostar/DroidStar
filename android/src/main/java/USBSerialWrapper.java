@@ -142,7 +142,7 @@ public class USBSerialWrapper implements SerialInputOutputManagerTest.Listener {
 				System.out.println("USB device getVendorId() == " + availableDrivers.get(i).getDevice().getVendorId());
 			}
 		}
-		c.registerReceiver(m_usbReceiver, m_filter);
+		c.registerReceiver(m_usbReceiver, m_filter, Context.RECEIVER_EXPORTED);
 		return devices;
 	}
 	
