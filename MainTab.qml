@@ -190,7 +190,7 @@ Item {
 		width: (parent.width / 5)
 		height: parent.height / rows;
 		font.pixelSize: parent.height / 35
-		model: ["CC1", "CC2", "CC3", "CC4", "CC5", "CC6", "CC7"]
+        model: ["CC0", "CC1", "CC2", "CC3", "CC4", "CC5", "CC6", "CC7", "CC8", "CC9", "CC10", "CC11", "CC12", "CC13", "CC14", "CC15"]
 		contentItem: Text {
 			text: _comboCC.displayText
 			font: _comboCC.font

@@ -40,8 +40,8 @@ private slots:
 	void transmit();
 	void hostname_lookup(QHostInfo i);
 	void dmr_tgid_changed(int id) { m_txdstid = id; }
-	void dmrpc_state_changed(int p){m_flco = p ? FLCO_USER_USER : FLCO_GROUP; }
-	void cc_changed(int cc) {m_txcc = cc + 1; }
+    void dmrpc_state_changed(int p){m_flco = p ? FLCO_USER_USER : FLCO_GROUP; }
+    void cc_changed(int cc) {m_txcc = cc;}
 	void slot_changed(int s) {m_txslot = s + 1; }
 	void send_frame();
 private:
