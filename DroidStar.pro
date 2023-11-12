@@ -208,3 +208,10 @@ contains(ANDROID_TARGET_ARCH,armeabi-v7a) {
 contains(ANDROID_TARGET_ARCH,arm64-v8a) {
 	ANDROID_PACKAGE_SOURCE_DIR = $$PWD/android
 }
+
+contains(DEFINES, USE_FLITE){
+	LIBS += -lflite_cmu_us_slt -lflite_cmu_us_kal16 -lflite_cmu_us_awb -lflite_cmu_us_rms -lflite_usenglish -lflite_cmulex -lflite -lasound
+}
+contains(DEFINES, USE_MD380_VOCODER){
+	LIBS += -lmd380_vocoder -Xlinker --section-start=.firmware=0x0800C000 -Xlinker  --section-start=.sram=0x20000000
+}
