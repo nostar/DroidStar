@@ -80,6 +80,8 @@ SOURCES += \
         ysf.cpp
 android:SOURCES += androidserialport.cpp
 !ios:SOURCES += serialambe.cpp serialmodem.cpp
+macx:OBJECTIVE_SOURCES += micpermission.mm
+ios:OBJECTIVE_SOURCES += micpermission.mm
 
 resources.files = main.qml AboutTab.qml HostsTab.qml LogTab.qml MainTab.qml SettingsTab.qml
 resources.prefix = /$${TARGET}
