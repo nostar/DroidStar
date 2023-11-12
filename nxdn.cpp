@@ -17,6 +17,9 @@
 
 #include "nxdn.h"
 #include <cstring>
+#ifdef USE_MD380_VOCODER
+#include <md380_vocoder.h>
+#endif
 
 const int dvsi_interleave[49] = {
 	0, 3, 6,  9, 12, 15, 18, 21, 24, 27, 30, 33, 36, 39, 41, 43, 45, 47,
@@ -43,6 +46,9 @@ NXDN::NXDN()
 	m_txcnt = 0;
 	m_txtimerint = 19;
 	m_attenuation = 5;
+#ifdef USE_MD380_VOCODER
+    md380_init();
+#endif
 }
 
 NXDN::~NXDN()
@@ -264,7 +270,11 @@ void NXDN::transmit()
 	}
 	else{
 		if(m_modeinfo.sw_vocoder_loaded){
-			m_mbevocoder->encode_2450(pcm, ambe);
+#ifdef USE_MD380_VOCODER
+            md380_encode(ambe, pcm);
+#else
+            m_mbevocoder->encode_2450(pcm, ambe);
+#endif
 		}
 		ambe[6] &= 0x80;
 
@@ -649,7 +659,11 @@ void NXDN::process_rx_data()
 		}
 		else{
 			if(m_modeinfo.sw_vocoder_loaded){
+#ifdef USE_MD380_VOCODER
+                md380_decode(ambe, pcm);
+#else
 				m_mbevocoder->decode_2450(pcm, ambe);
+#endif
 			}
 			else{
 				memset(pcm, 0, 160 * sizeof(int16_t));

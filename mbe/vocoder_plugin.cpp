@@ -130,7 +130,7 @@ static const short b0_lookup[] = {
 
 static const int m_list[] = {0, 1, 2, 3, 4, 5, 11, 12, 13, 14, 17, 18, 19, 20, 21, 22, 23, 26, 27, 28, 29, 30, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 7, 8, 9, 10, 15, 16, 24, 25, 31, 32, 6};
 static const int d_list[] = {7, 1, 11, 21, 31, 25, 35, 45, 55, 49, 59, 69, 6, 0, 10, 20, 30, 24, 34, 44, 54, 48, 58, 68, 5, 15, 9, 19, 29, 39, 33, 43, 53, 63, 57, 67, 4, 14, 8, 18, 28, 38, 32, 42, 52, 62, 56, 66, 3, 13, 23, 17, 27, 37, 47, 41, 51, 61, 71, 65, 2, 12, 22, 16, 26, 36, 46, 40, 50, 60, 70, 64};
-static const int alt_d_list[] = {0, 12, 24, 36, 48, 60, 1, 13, 25, 37, 49, 61, 2, 14, 26, 38, 50, 62, 3, 15, 27, 39, 51, 63, 4, 16, 28, 40, 52, 64, 5, 17, 29, 41, 53, 65, 6, 18, 30, 42, 54, 66, 7, 19, 31, 43, 55, 67, 8, 20, 32, 44, 56, 68, 9, 21, 33, 45, 57, 69, 10, 22, 34, 46, 58, 70, 11, 23, 35, 47, 59, 71};
+//static const int alt_d_list[] = {0, 12, 24, 36, 48, 60, 1, 13, 25, 37, 49, 61, 2, 14, 26, 38, 50, 62, 3, 15, 27, 39, 51, 63, 4, 16, 28, 40, 52, 64, 5, 17, 29, 41, 53, 65, 6, 18, 30, 42, 54, 66, 7, 19, 31, 43, 55, 67, 8, 20, 32, 44, 56, 68, 9, 21, 33, 45, 57, 69, 10, 22, 34, 46, 58, 70, 11, 23, 35, 47, 59, 71};
 static const int b_lengths[] = {7,4,6,9,7,4,4,4,3};
 
 const int dW[72] = {0,0,3,2,1,1,0,0,1,1,0,0,3,2,1,1,3,2,1,1,0,0,3,2,0,0,3,2,1,1,0,0,1,1,0,0,
@@ -206,14 +206,6 @@ static inline uint32_t golay_24_encode(uint32_t code_word_in)
 static inline uint32_t golay_23_encode(uint32_t code_word_in)
 {
 	return golay_24_encode(code_word_in) >> 1;
-}
-
-static inline void dump_i(uint8_t dest[], int src, int count)
-{
-	for (int i=0; i<count; i++) {
-		dest[i] = src & 1;
-		src = src >> 1;
-	}
 }
 
 static inline void store_reg(int reg, uint8_t val[], int len)
@@ -762,13 +754,13 @@ void encode_ambe(const IMBE_PARAM *imbe_param, int b[], mbe_parms*cur_mp, mbe_pa
 
 	// prediction residuals
 	float l_prev_l = (float) (prev_mp->L) / num_harms_f;
-	float tmp_s = 0.0;
+    //float tmp_s = 0.0;
 	prev_mp->log2Ml[0] = prev_mp->log2Ml[1];
 	for (int i1 = 0; i1 < imbe_param->num_harms; i1++) {
-		float kl = l_prev_l * (float)(i1+1);
-		int kl_floor = (int) kl;
-		float kl_frac = kl - kl_floor;
-		tmp_s += (1.0 - kl_frac) * prev_mp->log2Ml[kl_floor  +0] + kl_frac * prev_mp->log2Ml[kl_floor+1  +0];
+        //float kl = l_prev_l * (float)(i1+1);
+        //int kl_floor = (int) kl;
+        //float kl_frac = kl - kl_floor;
+        //tmp_s += (1.0 - kl_frac) * prev_mp->log2Ml[kl_floor  +0] + kl_frac * prev_mp->log2Ml[kl_floor+1  +0];
 	}
 	float T[NUM_HARMS_MAX];
 	for (int i1 = 0; i1 < imbe_param->num_harms; i1++) {

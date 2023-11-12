@@ -15,11 +15,11 @@
 	along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-import QtQuick 2.10
-import QtQuick.Window 2.10
-import QtQuick.Controls 2.3
-import QtQuick.Dialogs 1.3
-import org.dudetronics.droidstar 1.0
+import QtQuick
+import QtQuick.Window
+import QtQuick.Controls
+import QtQuick.Dialogs
+import org.dudetronics.droidstar
 
 ApplicationWindow {
 	// @disable-check M16

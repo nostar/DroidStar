@@ -39,9 +39,9 @@ private:
 
     float m_audio_out_temp_buf[160];   //!< output of decoder
     float *m_audio_out_temp_buf_p;
-    float m_aout_max_buf[200];
-    float *m_aout_max_buf_p;
-    int m_aout_max_buf_idx;
+    //float m_aout_max_buf[200];
+    //float *m_aout_max_buf_p;
+    //int m_aout_max_buf_idx;
     short m_audio_out_buf[2*48000];    //!< final result - 1s of L+R S16LE samples
     short *m_audio_out_buf_p;
     int   m_audio_out_nb_samples;

@@ -20,12 +20,9 @@
 
 #include <QObject>
 #ifdef Q_OS_ANDROID
-#if QT_VERSION < QT_VERSION_CHECK(6, 3, 0)
-#include <QtAndroidExtras>
-#else
 #include <QCoreApplication>
 #include <QJniObject>
-#endif
+
 
 class AndroidSerialPort : public QObject
 {

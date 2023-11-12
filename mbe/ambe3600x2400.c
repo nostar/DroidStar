@@ -281,6 +281,7 @@ mbe_decodeAmbe2400Parms (char *ambe_d, mbe_parms * cur_mp, mbe_parms * prev_mp)
   //unvc = (float) 0.2046 / sqrtf (f0);
 
   // decode L
+  L = 0;
   if (silence == 0)
     {
       // L from specification document 

@@ -44,115 +44,6 @@ AudioEngine::~AudioEngine()
 {
 }
 
-#if QT_VERSION < QT_VERSION_CHECK(6, 3, 0)
-QStringList AudioEngine::discover_audio_devices(uint8_t d)
-{
-	QStringList list;
-	QAudio::Mode m = (d) ? QAudio::AudioOutput :  QAudio::AudioInput;
-	QList<QAudioDeviceInfo> devices = QAudioDeviceInfo::availableDevices(m);
-
-	for (QList<QAudioDeviceInfo>::ConstIterator it = devices.constBegin(); it != devices.constEnd(); ++it ) {
-		list.append((*it).deviceName());
-	}
-	return list;
-}
-
-void AudioEngine::init()
-{
-	QAudioFormat format;
-	QAudioFormat tempformat;
-	format.setSampleRate(8000);
-	format.setChannelCount(1);
-	format.setSampleSize(16);
-	format.setCodec("audio/pcm");
-	format.setByteOrder(QAudioFormat::LittleEndian);
-	format.setSampleType(QAudioFormat::SignedInt);
-
-	m_agc = true;
-
-	QList<QAudioDeviceInfo> devices = QAudioDeviceInfo::availableDevices(QAudio::AudioOutput);
-
-	if(devices.size() == 0){
-		fprintf(stderr, "No audio playback hardware found\n");fflush(stderr);
-	}
-	else{
-		QAudioDeviceInfo info(QAudioDeviceInfo::defaultOutputDevice());
-
-		for (QList<QAudioDeviceInfo>::ConstIterator it = devices.constBegin(); it != devices.constEnd(); ++it ) {
-			if(MACHAK){
-				qDebug() << "Playback device name = " << (*it).deviceName();
-				qDebug() << (*it).supportedByteOrders();
-				qDebug() << (*it).supportedChannelCounts();
-				qDebug() << (*it).supportedCodecs();
-				qDebug() << (*it).supportedSampleRates();
-				qDebug() << (*it).supportedSampleSizes();
-				qDebug() << (*it).supportedSampleTypes();
-				qDebug() << (*it).preferredFormat();
-			}
-
-			if((*it).deviceName() == m_outputdevice){
-				info = *it;
-			}
-		}
-
-		if (!info.isFormatSupported(format)) {
-			qWarning() << "Raw audio format not supported by backend, trying nearest format.";
-			tempformat = info.nearestFormat(format);
-			qWarning() << "Format now set to " << format.sampleRate() << ":" << format.sampleSize();
-		}
-		else{
-			tempformat = format;
-		}
-		fprintf(stderr, "Playback device: %s\n", info.deviceName().toStdString().c_str());fflush(stderr);
-
-		m_out = new QAudioOutput(info, tempformat, this);
-		m_out->setBufferSize(2560);
-		connect(m_out, SIGNAL(stateChanged(QAudio::State)), this, SLOT(handleStateChanged(QAudio::State)));
-		//m_outdev = m_out->start();
-	}
-
-	devices = QAudioDeviceInfo::availableDevices(QAudio::AudioInput);
-
-	if(devices.size() == 0){
-		fprintf(stderr, "No audio recording hardware found\n");fflush(stderr);
-	}
-	else{
-		QAudioDeviceInfo info(QAudioDeviceInfo::defaultInputDevice());
-		for (QList<QAudioDeviceInfo>::ConstIterator it = devices.constBegin(); it != devices.constEnd(); ++it ) {
-			if(MACHAK){
-				qDebug() << "Capture device name = " << (*it).deviceName();
-				qDebug() << (*it).supportedByteOrders();
-				qDebug() << (*it).supportedChannelCounts();
-				qDebug() << (*it).supportedCodecs();
-				qDebug() << (*it).supportedSampleRates();
-				qDebug() << (*it).supportedSampleSizes();
-				qDebug() << (*it).supportedSampleTypes();
-				qDebug() << (*it).preferredFormat();
-			}
-			if((*it).deviceName() == m_inputdevice){
-				info = *it;
-			}
-		}
-		if (!info.isFormatSupported(format)) {
-			qWarning() << "Raw audio format not supported by backend, trying nearest format.";
-			tempformat = info.nearestFormat(format);
-			qWarning() << "Format now set to " << format.sampleRate() << ":" << format.sampleSize();
-		}
-		else{
-			tempformat = format;
-		}
-
-		int sr = 8000;
-		if(MACHAK){
-			sr = info.preferredFormat().sampleRate();
-			m_srm = (float)sr / 8000.0;
-		}
-		format.setSampleRate(sr);
-		m_in = new QAudioInput(info, format, this);
-		fprintf(stderr, "Capture device: %s SR: %d resample factor: %f\n", info.deviceName().toStdString().c_str(), sr, m_srm);fflush(stderr);
-	}
-}
-#else
 QStringList AudioEngine::discover_audio_devices(uint8_t d)
 {
 	QStringList list;
@@ -240,7 +131,6 @@ void AudioEngine::init()
         qDebug() << "Capture device: " <<  device.description() << " SR: " << sr << " resample factor: " << m_srm;
 	}
 }
-#endif
 
 void AudioEngine::start_capture()
 {

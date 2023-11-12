@@ -18,12 +18,8 @@
 #include "droidstar.h"
 #include "httpmanager.h"
 #ifdef Q_OS_ANDROID
-#if QT_VERSION < QT_VERSION_CHECK(6, 3, 0)
-#include <QtAndroidExtras>
-#else
 #include <QCoreApplication>
 #include <QJniObject>
-#endif
 #endif
 #ifdef Q_OS_IOS
 #include "micpermission.h"
@@ -82,22 +78,6 @@ DroidStar::~DroidStar()
 }
 
 #ifdef Q_OS_ANDROID
-#if QT_VERSION < QT_VERSION_CHECK(6, 3, 0)
-void DroidStar::keepScreenOn()
-{
-	char const * const action = "addFlags";
-	QtAndroid::runOnAndroidThread([action](){
-	QAndroidJniObject activity = QtAndroid::androidActivity();
-	if (activity.isValid()) {
-		QAndroidJniObject window = activity.callObjectMethod("getWindow", "()Landroid/view/Window;");
-
-		if (window.isValid()) {
-			const int FLAG_KEEP_SCREEN_ON = 128;
-			window.callMethod<void>("addFlags", "(I)V", FLAG_KEEP_SCREEN_ON);
-		}
-	}});
-}
-#else
 void DroidStar::keepScreenOn()
 {
 	char const * const action = "addFlags";
@@ -112,7 +92,6 @@ void DroidStar::keepScreenOn()
 		}
 	}});
 }
-#endif
 void DroidStar::reset_connect_status()
 {
 	if(connect_status == Mode::CONNECTED_RW){
@@ -120,7 +99,6 @@ void DroidStar::reset_connect_status()
 		process_connect();
 	}
 }
-
 #endif
 
 void DroidStar::discover_devices()

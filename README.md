@@ -43,7 +43,7 @@ Latitude/Longitude/Location/Description:  These are DMR config options, sent to 
 
 DMR+ IPSC2 hosts:  The format for the DMR+ options string is the complete string including 'Options='.  Create your options string and check 'Send DMR+ options on connect' before connecting.  A description of the DMR+ options string can be found here: https://github.com/g4klx/MMDVMHost/blob/master/DMRplus_startup_options.md .
 
-Talkgroup:  For DMR, enter the talkgroup ID number.  A very active TG for testing functionality on Brandmeister is 91 (Brandmeister Worldwide).  You must TX with a talkgroup entered to link to that talkgroup, just like a real radio.  Any ststics you have defined in BM selfcare will work the same way they do if you were using a hotspot/radio.
+Talkgroup:  For DMR, enter the talkgroup ID number.  A very active TG for testing functionality on Brandmeister is 91 (Brandmeister Worldwide).  You must TX with a talkgroup entered to link to that talkgroup, just like a real radio.  Any statics you have defined in BM selfcare will work the same way they do if you were using a hotspot/radio.
 
 MYCALL/URCALL/RPTR1/RPTR2 are for Dstar modes REF/DCS/XRF.  These fields need to be entered correctly before attempting to TX on any DSTAR reflector.  All fields are populated with suggested values upon connect, but can still be modified for advanced users.  RPT2 is always overwritten with the current reflector upon connected.
 
@@ -63,33 +63,38 @@ Port: UDP port of node, usually 4569.
 Add DTMF commands like \*3node, \*1node, \*70, etc in the IAX DTMF box and hit send to send the DTMF string. Details on various commands can be found at the AllStar wiki and others.
 
 # General building instructions
-This software is written primarily in C++ on Linux and requires Qt5 >= Qt5.15 or Qt6 >= Qt6.3, and natually the devel packages to build.  Java, QML (Javascript based), and C# code is also used where necessary.  The preferred way to obtain Qt is to use the Qt open source online installer from the Qt website.  Run this installer as a user (not root) to keep the Qt installation separate from your system libs.  Select the option as shown in this pic https://imgur.com/i0WuFCY which will install everything under ~/Qt.
+This software is written primarily in C++ on Linux and requires Qt6 >= Qt6.4, and naturally the devel packages to build.  Java, QML (Javascript based), and C# code is also used where necessary.  The preferred way to obtain Qt is to use the Qt open source online installer from the Qt website.  Run this installer as a user (not root) to keep the Qt installation separate from your system libs.  Select the option as shown in this pic https://imgur.com/i0WuFCY which will install everything under ~/Qt.
 
-In an effort to encourage others to build from source on multiple platforms, there are no longer any external build dependencies.  In order to build DroidStar with no internal AMBE vocider, uncomment the the following line in the DroidStar.pro file:
+In an effort to encourage others to build from source on multiple platforms, there are no longer any external build dependencies.  In order to build DroidStar with no internal AMBE vocoder, uncomment the the following line in the DroidStar.pro file:
 ```
 DEFINES+=VOCODER_PLUGIN
 ```
 Building DroidStar with this line commented out will build with internal AMBE support.  If you choose to do this, it is your responsibility to determine if you will violate any patents in your area.
 
-## Note for building on Raspbian/RaspiOS
-The Qt online installer does not support RPi, but fortunately there is a great Qt 5.15.2 installer for RaspiOS:
-
-https://github.com/koendv/qt5-opengl-raspberrypi
-
-This installer puts everything in the same place as the Qt installer, so build instructions are the same for all:
+## Note for building on RaspiOS (Also applies to debian based Linux desktops)
+The following commands should install everything necessary to build and run DroidStar:
+```
+sudo apt install libqt6*
+sudo apt install qml6*
+sudo apt install qt6-*-dev
+```
+Then to build:
 
 ```
+git clone https://github.com/nostar/DroidStar.git
 cd DroidStar
 mkdir build
 cd build
-/usr/lib/qt5.15.2/bin/qmake ..
+qmake6 ../DroidStar.pro
 make
 ```
+If building an an arm based platform like rpi, the md380 vocoder can be used.  In order to build with this, uncomment the following line in DroidStar.pro:
+```
+#DEFINES += USE_MD380_VOCODER
+```
+This requires the md380_vocoder library to be installed: https://github.com/nostar/md380_vocoder
+You must make sure that you are not in violation of any patent laws in your area if you decide to use this.
 
-And if pulseaudio is not currently installed:
-```
-sudo apt-get install pulseaudio
-```
 My primary development platform is Fedora Linux.  With a proper build environment, the build instructions apply to all other platforms/distributions, including Windows and macOS.
 
 All of the gradle build files are provided to create an APK file ready to be installed on an Android device.  A proper Android build system including the Android NDK is required and beyond the scope of this document.

@@ -41,11 +41,8 @@ QStringList AndroidSerialPort::discover_devices()
 	QStringList l;
 	l.clear();
 	qDebug() << "AndroidSerialPort::discover_devices()";
-#if QT_VERSION < QT_VERSION_CHECK(6, 3, 0)
-	QAndroidJniObject d = serialJavaObject.callObjectMethod("discover_devices", "(Landroid/content/Context;)[Ljava/lang/String;", QtAndroid::androidContext().object());
-#else
+
 	QAndroidJniObject d = serialJavaObject.callObjectMethod("discover_devices", "(Landroid/content/Context;)[Ljava/lang/String;", QNativeInterface::QAndroidApplication::context());
-#endif
 	jobjectArray devices = d.object<jobjectArray>();
 	int size = env->GetArrayLength(devices);
 
@@ -58,12 +55,7 @@ QStringList AndroidSerialPort::discover_devices()
 
 int AndroidSerialPort::open(int p)
 {
-#if QT_VERSION < QT_VERSION_CHECK(6, 3, 0)
-	QString s = serialJavaObject.callObjectMethod("setup_serial", "(Landroid/content/Context;)Ljava/lang/String;", QtAndroid::androidContext().object()).toString();
-	qDebug() << s;
-#else
 	serialJavaObject.callObjectMethod("setup_serial", "(Landroid/content/Context;)Ljava/lang/String;", QNativeInterface::QAndroidApplication::context());
-#endif
 	return p;
 }
 
@@ -137,7 +129,7 @@ QByteArray AndroidSerialPort::readAll()
 	return r;
 }
 
-void AndroidSerialPort::java_data_received(JNIEnv *env, jobject t, jbyteArray data)
+void AndroidSerialPort::java_data_received(JNIEnv *env, jobject, jbyteArray data)
 {
 	QByteArray r;
 	jboolean copy;

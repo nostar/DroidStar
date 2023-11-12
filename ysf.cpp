@@ -23,6 +23,9 @@
 #include "MMDVMDefines.h"
 #include <iostream>
 #include <cstring>
+#ifdef USE_MD380_VOCODER
+#include <md380_vocoder.h>
+#endif
 
 
 const uint32_t IMBE_INTERLEAVE[] = {
@@ -104,6 +107,9 @@ YSF::YSF() :
 {
     m_mode = "YSF";
 	m_attenuation = 5;
+#ifdef USE_MD380_VOCODER
+    md380_init();
+#endif
 }
 
 YSF::~YSF()
@@ -748,7 +754,11 @@ void YSF::transmit()
 		else{
 			s = 7;
 			if(m_modeinfo.sw_vocoder_loaded){
+#ifdef USE_MD380_VOCODER
+                md380_encode(ambe, pcm);
+#else
 				m_mbevocoder->encode_2450(pcm, ambe);
+#endif
 			}
 		}
 
@@ -1404,7 +1414,11 @@ void YSF::process_rx_data()
 		}
 		else{
 			if(m_modeinfo.sw_vocoder_loaded){
+#ifdef USE_MD380_VOCODER
+                md380_decode(ambe, pcm);
+#else
 				m_mbevocoder->decode_2450(pcm, ambe);
+#endif
 			}
 			else{
 				memset(pcm, 0, 160 * sizeof(int16_t));

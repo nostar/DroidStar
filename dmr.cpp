@@ -23,6 +23,9 @@
 #include "SHA256.h"
 #include "CRCenc.h"
 #include "MMDVMDefines.h"
+#ifdef USE_MD380_VOCODER
+#include <md380_vocoder.h>
+#endif
 
 const uint32_t ENCODING_TABLE_1676[] =
 	{0x0000U, 0x0273U, 0x04E5U, 0x0696U, 0x09C9U, 0x0BBAU, 0x0D2CU, 0x0F5FU, 0x11E2U, 0x1391U, 0x1507U, 0x1774U,
@@ -45,6 +48,9 @@ DMR::DMR() :
 	m_dmrcnt = 0;
 	m_flco = FLCO_GROUP;
 	m_attenuation = 5;
+#ifdef USE_MD380_VOCODER
+    md380_init();
+#endif
 }
 
 DMR::~DMR()
@@ -465,7 +471,11 @@ void DMR::transmit()
 	}
 	else{
 		if(m_modeinfo.sw_vocoder_loaded){
+#ifdef USE_MD380_VOCODER
+            md380_encode_fec(ambe, pcm);
+#else
 			m_mbevocoder->encode_2450x1150(pcm, ambe);
+#endif
 		}
 		for(int i = 0; i < 9; ++i){
 			m_txcodecq.append(ambe[i]);
@@ -946,7 +956,11 @@ void DMR::process_rx_data()
 		}
 		else{
 			if(m_modeinfo.sw_vocoder_loaded){
+#ifdef USE_MD380_VOCODER
+                md380_decode_fec(ambe, pcm);
+#else
 				m_mbevocoder->decode_2450x1150(pcm, ambe);
+#endif
 			}
 			else{
 				memset(pcm, 0, 160 * sizeof(int16_t));
