@@ -212,35 +212,35 @@ void REF::process_udp()
 		   user_data[3] = buf.data()[27] ^ 0x4f;
 		   user_data[4] = buf.data()[28] ^ 0x93;
 		   ++sd_seq;
-		}
-		if(sd_sync && (sd_seq == 3) && (buf.data()[16] == 3) && (buf.data()[26] == 0x31)){
+        }
+        if(sd_sync && (sd_seq == 3) && ((buf.data()[16] == 3) || (buf.data()[16] == 5)) && (buf.data()[26] == 0x31)){
 		   user_data[5] = buf.data()[27] ^ 0x4f;
 		   user_data[6] = buf.data()[28] ^ 0x93;
 		   ++sd_seq;
 		}
-		if(sd_sync && (sd_seq == 4) && (buf.data()[16] == 4)){
+        if(sd_sync && (sd_seq == 4) && ((buf.data()[16] == 4) || (buf.data()[16] == 6))){
 		   user_data[7] = buf.data()[26] ^ 0x70;
 		   user_data[8] = buf.data()[27] ^ 0x4f;
 		   user_data[9] = buf.data()[28] ^ 0x93;
 		   ++sd_seq;
 		}
-		if(sd_sync && (sd_seq == 5) && (buf.data()[16] == 5) && (buf.data()[26] == 0x32)){
+        if(sd_sync && (sd_seq == 5) && ((buf.data()[16] == 5) || (buf.data()[16] == 9)) && (buf.data()[26] == 0x32)){
 		   user_data[10] = buf.data()[27] ^ 0x4f;
 		   user_data[11] = buf.data()[28] ^ 0x93;
 		   ++sd_seq;
 		}
-		if(sd_sync && (sd_seq == 6) && (buf.data()[16] == 6)){
+        if(sd_sync && (sd_seq == 6) && ((buf.data()[16] == 6) || (buf.data()[16] == 10))){
 		   user_data[12] = buf.data()[26] ^ 0x70;
 		   user_data[13] = buf.data()[27] ^ 0x4f;
 		   user_data[14] = buf.data()[28] ^ 0x93;
 		   ++sd_seq;
 		}
-		if(sd_sync && (sd_seq == 7) && (buf.data()[16] == 7) && (buf.data()[26] == 0x33)){
+        if(sd_sync && (sd_seq == 7) && ((buf.data()[16] == 7) || (buf.data()[16] == 13)) && (buf.data()[26] == 0x33)){
 		   user_data[15] = buf.data()[27] ^ 0x4f;
 		   user_data[16] = buf.data()[28] ^ 0x93;
 		   ++sd_seq;
 		}
-		if(sd_sync && (sd_seq == 8) && (buf.data()[16] == 8)){
+        if(sd_sync && (sd_seq == 8) && ((buf.data()[16] == 8) || (buf.data()[16] == 14))){
 		   user_data[17] = buf.data()[26] ^ 0x70;
 		   user_data[18] = buf.data()[27] ^ 0x4f;
 		   user_data[19] = buf.data()[28] ^ 0x93;
