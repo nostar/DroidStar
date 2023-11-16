@@ -98,6 +98,7 @@ public:
 		QString mmdvm;
 		QString host;
         QString module;
+        QString gps;
 		int port;
 		bool path;
 		char type;
@@ -131,6 +132,7 @@ public:
 	};
 signals:
 	void update(Mode::MODEINFO);
+    void update_log(QString);
 	void update_output_level(unsigned short);
 protected slots:
 	virtual void send_disconnect(){}

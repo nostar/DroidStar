@@ -394,6 +394,7 @@ private slots:
 	void process_dmr_ids();
 	void process_nxdn_ids();
 	void update_data(Mode::MODEINFO);
+    void updatelog(QString);
 	void save_settings();
 	void update_output_level(unsigned short l){ m_outlevel = l;}
 	//void load_md380_fw();

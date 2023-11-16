@@ -336,7 +336,8 @@ void DroidStar::process_connect()
 		m_mode->set_modem_params(m_modemBaud.toUInt(), rxfreq, txfreq, m_modemTxDelay.toInt(), m_modemRxLevel.toFloat(), m_modemRFLevel.toFloat(), ysfTXHang, m_modemCWIdTxLevel.toFloat(), m_modemDstarTxLevel.toFloat(), m_modemDMRTxLevel.toFloat(), m_modemYSFTxLevel.toFloat(), m_modemP25TxLevel.toFloat(), m_modemNXDNTxLevel.toFloat(), pocsagTXLevel, m17TXLevel);
 
 		connect(this, SIGNAL(module_changed(char)), m_mode, SLOT(module_changed(char)));
-		connect(m_mode, SIGNAL(update(Mode::MODEINFO)), this, SLOT(update_data(Mode::MODEINFO)));
+        connect(m_mode, SIGNAL(update(Mode::MODEINFO)), this, SLOT(update_data(Mode::MODEINFO)));
+        connect(m_mode, SIGNAL(update_log(QString)), this, SLOT(updatelog(QString)));
 		connect(m_mode, SIGNAL(update_output_level(unsigned short)), this, SLOT(update_output_level(unsigned short)));
         connect(m_modethread, SIGNAL(started()), m_mode, SLOT(begin_connect()));
 		connect(m_modethread, SIGNAL(finished()), m_mode, SLOT(deleteLater()));
@@ -1341,7 +1342,12 @@ void DroidStar::update_data(Mode::MODEINFO info)
 			emit update_log(t + " " + m_protocol + " RX lost id: " + QString::number(info.streamid, 16) + " src: " + info.src + " dst: " + info.gw2);
 		}
 	}
-	emit update_data();
+    emit update_data();
+}
+
+void DroidStar::updatelog(QString s)
+{
+    emit update_log(s);
 }
 
 void DroidStar::set_input_volume(qreal v)

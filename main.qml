@@ -511,6 +511,7 @@ ApplicationWindow {
 				mainTab.buttonTX.enabled = true;
 				mainTab.btntxt.color = "black";
 				mainTab.agcBox.checked = true;
+                droidstar.set_debug(settingsTab.debugBox.checked);
 			}
 			if(c === 3){
 			}

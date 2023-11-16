@@ -44,10 +44,13 @@ void REF::process_udp()
 	quint16 senderPort;
 	static bool sd_sync = 0;
     static int sd_txt_seq = 0;
-    static int sd_gps_seq = 0;
     static int sd_gps_cnt = 0;
+    static int sd_hdr_cnt = 0;
+    static int sd_debug_cnt = 0;
 	static char user_data[21];
-    static char gps_data[100];
+    static QByteArray gps_data;
+    static uint8_t debug_data[64];
+
 	const uint8_t header[5] = {0x80,0x44,0x53,0x56,0x54};
 
 	buf.resize(m_udp->pendingDatagramSize());
@@ -177,6 +180,8 @@ void REF::process_udp()
 
 				qDebug() << "New stream from " << m_modeinfo.src << " to " << m_modeinfo.dst << " id == " << QString::number(m_modeinfo.streamid, 16);
 				emit update(m_modeinfo);
+                sd_gps_cnt = 0;
+                gps_data.clear();
 			}
 		}
 		else{
@@ -203,61 +208,82 @@ void REF::process_udp()
 		if((buf.data()[16] == 0) && (buf.data()[26] == 0x55) && (buf.data()[27] == 0x2d) && (buf.data()[28] == 0x16)){
 			sd_sync = 1;
             sd_txt_seq = 1;
+            //sd_debug_cnt = 0;
+            //for(int i = 0; i < 63; i++){
+            //    fprintf(stderr, "%02x ", debug_data[i]);
+            //}
+           // fprintf(stderr, "\n");
 		}
-        if( sd_sync && (buf.data()[26] & 0xf0) == 0x40){
-            sd_gps_cnt = (buf.data()[26] & 0x0f);
-            gps_data[sd_gps_seq] = buf.data()[27] ^ 0x4f;
+        //debug_data[sd_debug_cnt++] = buf.data()[26] ^ 0x70;
+        //debug_data[sd_debug_cnt++] = buf.data()[27] ^ 0x4f;
+        //debug_data[sd_debug_cnt++] = buf.data()[28] ^ 0x93;
 
-            if( (gps_data[sd_gps_seq] == 0x0a) || (gps_data[sd_gps_seq] == 0x0d) ){
-                gps_data[sd_gps_seq] = '\0';
-                sd_gps_seq = 0;
+        char c = buf.data()[26] ^ 0x70;
+
+        if( sd_sync && !sd_gps_cnt && ((c & 0xf0) == 0x50)){
+            sd_hdr_cnt = (c & 0x0f);
+        }
+        else if(sd_hdr_cnt){
+            c = 0;
+            sd_hdr_cnt = 0;
+        }
+        if( sd_sync && !sd_gps_cnt && ((c & 0xf0) == 0x30)){
+            sd_gps_cnt = (c & 0x0f);
+            c = buf.data()[27] ^ 0x4f;
+            if( (c == 0x0a) || (c == 0x0d) ){
+                gps_data.append('\0');
                 sd_gps_cnt = 0;
-                qDebug() << "GPS string: " << QString(gps_data);
+                QTextStream(stderr) << "GPS: " << QString(gps_data) << Qt::endl;
+                if(gps_data[0] == '$') emit update_log("GPS: " + QString(gps_data));
+                gps_data.clear();
             }
             else{
-                sd_gps_seq++;
                 sd_gps_cnt--;
-                gps_data[sd_gps_seq] = buf.data()[28] ^ 0x93;
-                if( (gps_data[sd_gps_seq] == 0x0a) || (gps_data[sd_gps_seq] == 0x0d) ){
-                    gps_data[sd_gps_seq] = '\0';
-                    sd_gps_seq = 0;
+                gps_data.append(c);
+                c = buf.data()[28] ^ 0x93;
+                if( (c == 0x0a) || (c == 0x0d) ){
+                    gps_data.append('\0');
                     sd_gps_cnt = 0;
-                    qDebug() << "GPS string: " << QString(gps_data);
+                    QTextStream(stderr) << "GPS: " << QString(gps_data) << Qt::endl;
+                    if(gps_data[0] == '$') emit update_log("GPS: " + QString(gps_data));
+                    gps_data.clear();
                 }
                 else{
-                    sd_gps_seq++;
                     sd_gps_cnt--;
+                    gps_data.append(c);
                 }
             }
         }
-        else if(sd_gps_cnt){
-            gps_data[sd_gps_seq] = buf.data()[26] ^ 0x70;
-            if( (gps_data[sd_gps_seq] == 0x0a) || (gps_data[sd_gps_seq] == 0x0d) ){
-                gps_data[sd_gps_seq] = '\0';
-                sd_gps_seq = 0;
+        else if(sd_gps_cnt && (buf.data()[16] != 0)){
+            if( (c == 0x0a) || (c == 0x0d) ){
+                gps_data.append('\0');
                 sd_gps_cnt = 0;
-                qDebug() << "GPS string: " << QString(gps_data);
+                QTextStream(stderr) << "GPS: " << QString(gps_data) << Qt::endl;
+                if(gps_data[0] == '$') emit update_log("GPS: " + QString(gps_data));
+                gps_data.clear();
             }
             else{
-                sd_gps_seq++;
-                gps_data[sd_gps_seq] = buf.data()[27] ^ 0x4f;
-                if( (gps_data[sd_gps_seq] == 0x0a) || (gps_data[sd_gps_seq] == 0x0d) ){
-                    gps_data[sd_gps_seq] = '\0';
-                    sd_gps_seq = 0;
+                gps_data.append(c);
+                c = buf.data()[27] ^ 0x4f;
+                if( (c == 0x0a) || (c == 0x0d) ){
+                    gps_data.append('\0');
                     sd_gps_cnt = 0;
-                    qDebug() << "GPS string: " << QString(gps_data);
+                    QTextStream(stderr) << "GPS: " << QString(gps_data) << Qt::endl;
+                    if(gps_data[0] == '$') emit update_log("GPS: " + QString(gps_data));
+                    gps_data.clear();
                 }
                 else{
-                    sd_gps_seq++;
-                    gps_data[sd_gps_seq] = buf.data()[28] ^ 0x93;
-                    if( (gps_data[sd_gps_seq] == 0x0a) || (gps_data[sd_gps_seq] == 0x0d) ){
-                        gps_data[sd_gps_seq] = '\0';
-                        sd_gps_seq = 0;
+                    gps_data.append(c);
+                    c = buf.data()[28] ^ 0x93;
+                    if( (c == 0x0a) || (c == 0x0d) ){
+                        gps_data.append('\0');
                         sd_gps_cnt = 0;
-                        qDebug() << "GPS string: " << QString(gps_data);
+                        QTextStream(stderr) << "GPS: " << QString(gps_data) << Qt::endl;
+                        if(gps_data[0] == '$') emit update_log("GPS: " + QString(gps_data));
+                        gps_data.clear();
                     }
                     else{
-                        sd_gps_seq++;
+                        gps_data.append(c);
                     }
                 }
             }
@@ -306,7 +332,6 @@ void REF::process_udp()
 		   user_data[18] = buf.data()[27] ^ 0x4f;
 		   user_data[19] = buf.data()[28] ^ 0x93;
            user_data[20] = '\0';
-           //if(sd_gps_seq == 0) sd_sync = 0;
            sd_txt_seq = 0;
 		   m_modeinfo.usertxt = QString(user_data);
 		}
@@ -331,6 +356,7 @@ void REF::process_udp()
 			emit update(m_modeinfo);
 			m_modeinfo.streamid = 0;
             sd_sync = 0;
+            sd_gps_cnt = 0;
 		}
 	}
 	//emit update(m_modeinfo);
