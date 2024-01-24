@@ -50,15 +50,7 @@ MYCALL/URCALL/RPTR1/RPTR2 are for Dstar modes REF/DCS/XRF.  These fields need to
 # IAX Client for AllStar
 DroidStar can connect to an AllStar node as an IAX(2) client.  See the AllStar wiki and other AllStar, Asterisk, and IAX2 protocal related websites for the technical details of IAX2 for AllStar.  This is a basic client and currently only uLaw audio codec is supported.  This is the default codec on most AllStar nodes.
 
-Username: Defined in your nodes iax.conf file, usually iaxclient
-
-Password: Defined as 'secret' in your iax.conf
-
-Node[@Context]: ID and context of your AllStar node. The context is optional and if not specified, defaults to iax-client.
-
-Host: hostname or IP address of node.
-
-Port: UDP port of node, usually 4569.
+All IAX nodes are now defined on the Hosts tab.  The example shows the format.  Once there are one or more IAX nodes defined on the Hosts tab, they will be available to select when IAX mode is selected from the Main tab.  This change allows multiple IAX nodes to be defined.
 
 Add DTMF commands like \*3node, \*1node, \*70, etc in the IAX DTMF box and hit send to send the DTMF string. Details on various commands can be found at the AllStar wiki and others.
 

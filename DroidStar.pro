@@ -202,6 +202,7 @@ android:HEADERS += androidserialport.h
 macx:HEADERS += micpermission.h
 !ios:HEADERS += serialambe.h serialmodem.h
 android:ANDROID_VERSION_CODE = 79
+android:QT_ANDROID_MIN_SDK_VERSION = 31
 
 contains(ANDROID_TARGET_ARCH,armeabi-v7a) {
 	ANDROID_PACKAGE_SOURCE_DIR = $$PWD/android

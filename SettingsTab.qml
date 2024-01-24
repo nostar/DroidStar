@@ -33,11 +33,6 @@ Item {
 	property alias swidEdit: swidedit
 	property alias pkgidEdit: pkgidedit
 	property alias dmroptsEdit: dmroptsedit
-	property alias iaxuserEdit: iaxuseredit
-	property alias iaxpassEdit: iaxpassedit
-	property alias iaxnodeEdit: iaxnodeedit
-	property alias iaxhostEdit: iaxhostedit
-	property alias iaxportEdit: iaxportedit
 	property alias m173200: m17_3200
 	property alias m171600: m17_1600
 	property alias mycallEdit: mycalledit
@@ -404,99 +399,7 @@ Item {
 			height: 25
 			selectByMouse: true
 		}
-		Text {
-			id: iaxuserlabel
-			x: 10
-			y: 510
-			width: 80
-			height: 25
-			text: qsTr("IAX User")
-			color: "white"
-			verticalAlignment: Text.AlignVCenter
-		}
-		TextField {
-			id: iaxuseredit
-			x: 100
-			y: iaxuserlabel.y
-			width: 125
-			height: 25
-			selectByMouse: true
-		}
-		Text {
-			id: iaxpasslabel
-			x: 10
-			y: 540
-			width: 80
-			height: 25
-			text: qsTr("IAX secret")
-			color: "white"
-			verticalAlignment: Text.AlignVCenter
-		}
-		TextField {
-			id: iaxpassedit
-			x: 100
-			y: iaxpasslabel.y
-			width: 125
-			height: 25
-			selectByMouse: true
-			echoMode: TextInput.Password
-		}
-		Text {
-			id: iaxnodelabel
-			x: 10
-			y: 570
-			width: 80
-			height: 25
-			text: qsTr("IAX Node")
-			color: "white"
-			verticalAlignment: Text.AlignVCenter
-		}
-		TextField {
-			id: iaxnodeedit
-			x: 100
-			y: iaxnodelabel.y
-			width: 125
-			height: 25
-			selectByMouse: true
-			inputMethodHints: "ImhPreferNumbers"
-		}
-		Text {
-			id: iaxhostlabel
-			x: 10
-			y: 600
-			width: 80
-			height: 25
-			text: qsTr("IAX Host")
-			color: "white"
-			verticalAlignment: Text.AlignVCenter
-		}
-		TextField {
-			id: iaxhostedit
-			x: 100
-			y: iaxhostlabel.y
-			width: 125
-			height: 25
-			selectByMouse: true
-		}
-		Text {
-			id: iaxportlabel
-			x: 10
-			y: 630
-			width: 80
-			height: 25
-			text: qsTr("IAX Port")
-			color: "white"
-			verticalAlignment: Text.AlignVCenter
-		}
-		TextField {
-			id: iaxportedit
-			x: 100
-			y: iaxportlabel.y
-			width: 125
-			height: 25
-			selectByMouse: true
-			inputMethodHints: "ImhPreferNumbers"
-		}
+
 		Text {
 			id: mycallLabel
 			x: 10

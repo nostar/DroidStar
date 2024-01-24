@@ -95,8 +95,8 @@ void DroidStar::keepScreenOn()
 void DroidStar::reset_connect_status()
 {
 	if(connect_status == Mode::CONNECTED_RW){
-		connect_status = Mode::CONNECTING;
-		process_connect();
+        connect_status = Mode::CONNECTING;
+        process_connect();
 	}
 }
 #endif
@@ -190,7 +190,6 @@ void DroidStar::file_downloaded(QString filename)
 void DroidStar::dtmf_send_clicked(QString dtmf)
 {
 	QByteArray tx(dtmf.simplified().toUtf8(), dtmf.simplified().size());
-	//tx.prepend('*');
 	emit send_dtmf(tx);
 }
 
@@ -265,33 +264,34 @@ void DroidStar::process_connect()
 		else if(m_protocol == "M17"){
 			m_refname = m_saved_m17host;
         }
+        else if(m_protocol == "IAX"){
+            m_refname = m_saved_iaxhost;
+        }
 
 		emit connect_status_changed(1);
 		connect_status = Mode::CONNECTING;
 		QStringList sl;
 
-		if(m_protocol != "IAX"){
-			m_host = m_hostmap[m_refname];
-			sl = m_host.split(',');
+        m_host = m_hostmap[m_refname];
+        sl = m_host.split(',');
 
-            if( (m_protocol == "M17") && !m_mdirect && (m_ipv6) && (sl.size() > 2) && (sl.at(2) != "none") ){
-				m_host = sl.at(2).simplified();
-				m_port = sl.at(1).toInt();
-			}
-			else if(sl.size() > 1){
-				m_host = sl.at(0).simplified();
-				m_port = sl.at(1).toInt();
-			}
-            else if( (m_protocol == "M17") && m_mdirect ){
-				qDebug() << "Going MMDVM_DIRECT";
-			}
-			else{
-				m_errortxt = "Invalid host selection";
-				connect_status = Mode::DISCONNECTED;
-				emit connect_status_changed(5);
-				return;
-			}
-		}
+        if( (m_protocol == "M17") && !m_mdirect && (m_ipv6) && (sl.size() > 2) && (sl.at(2) != "none") ){
+            m_host = sl.at(2).simplified();
+            m_port = sl.at(1).toInt();
+        }
+        else if(sl.size() > 1){
+            m_host = sl.at(0).simplified();
+            m_port = sl.at(1).toInt();
+        }
+        else if( (m_protocol == "M17") && m_mdirect ){
+            qDebug() << "Going MMDVM_DIRECT";
+        }
+        else{
+            m_errortxt = "Invalid host selection";
+            connect_status = Mode::DISCONNECTED;
+            emit connect_status_changed(5);
+            return;
+        }
 
 		QString vocoder = "";
 		if( (m_vocoder != "Software vocoder") && (m_vocoder.contains(':')) ){
@@ -324,14 +324,13 @@ void DroidStar::process_connect()
 		m_mode->moveToThread(m_modethread);
 
         if(m_protocol == "IAX"){
-            m_mode->set_iax_params(m_iaxuser, m_iaxpassword, m_iaxnode, m_iaxhost, m_iaxport);
-            m_mode->init(m_callsign, m_dmrid, nxdnid, m_module, m_refname, m_iaxhost, m_iaxport, m_ipv6, vocoder, modem, m_capture, m_playback, m_mdirect);
+            QString iaxuser = sl.at(2).simplified();
+            QString iaxpass = sl.at(3).simplified();
+            m_mode->set_iax_params(iaxuser, iaxpass, m_refname, m_host, m_port);
             connect(this, SIGNAL(send_dtmf(QByteArray)), m_mode, SLOT(send_dtmf(QByteArray)));
         }
-        else{
-            m_mode->init(m_callsign, m_dmrid, nxdnid, m_module, m_refname, m_host, m_port, m_ipv6, vocoder, modem, m_capture, m_playback, m_mdirect);
-        }
 
+        m_mode->init(m_callsign, m_dmrid, nxdnid, m_module, m_refname, m_host, m_port, m_ipv6, vocoder, modem, m_capture, m_playback, m_mdirect);
 		m_mode->set_modem_flags(rxInvert, txInvert, pttInvert, useCOSAsLockout, duplex);
 		m_mode->set_modem_params(m_modemBaud.toUInt(), rxfreq, txfreq, m_modemTxDelay.toInt(), m_modemRxLevel.toFloat(), m_modemRFLevel.toFloat(), ysfTXHang, m_modemCWIdTxLevel.toFloat(), m_modemDstarTxLevel.toFloat(), m_modemDMRTxLevel.toFloat(), m_modemYSFTxLevel.toFloat(), m_modemP25TxLevel.toFloat(), m_modemNXDNTxLevel.toFloat(), pocsagTXLevel, m17TXLevel);
 
@@ -513,6 +512,7 @@ void DroidStar::process_mode_change(const QString &m)
 		m_label6 = "";
 	}
 	if(m == "IAX"){
+        process_iax_hosts();
 		m_label1 = "";
 		m_label2 = "";
 		m_label3 = "";
@@ -538,6 +538,7 @@ void DroidStar::save_settings()
 	m_settings->setValue("P25HOST", m_saved_p25host);
 	m_settings->setValue("NXDNHOST", m_saved_nxdnhost);
 	m_settings->setValue("M17HOST", m_saved_m17host);
+    m_settings->setValue("IAXHOST", m_saved_iaxhost);
 	m_settings->setValue("MODULE", QString(m_module));
 	m_settings->setValue("CALLSIGN", m_callsign);
 	m_settings->setValue("DMRID", m_dmrid);
@@ -562,11 +563,6 @@ void DroidStar::save_settings()
 	m_settings->setValue("TXTOGGLE", m_toggletx ? "true" : "false");
 	m_settings->setValue("XRF2REF", m_xrf2ref ? "true" : "false");
 	m_settings->setValue("USRTXT", m_dstarusertxt);
-	m_settings->setValue("IAXUSER", m_iaxuser);
-	m_settings->setValue("IAXPASS", m_iaxpassword);
-	m_settings->setValue("IAXNODE", m_iaxnode);
-	m_settings->setValue("IAXHOST", m_iaxhost);
-	m_settings->setValue("IAXPORT", m_iaxport);
 
 	m_settings->setValue("ModemRxFreq", m_modemRxFreq);
 	m_settings->setValue("ModemTxFreq", m_modemTxFreq);
@@ -604,6 +600,7 @@ void DroidStar::process_settings()
 	m_saved_p25host = m_settings->value("P25HOST").toString().simplified();
 	m_saved_nxdnhost = m_settings->value("NXDNHOST").toString().simplified();
 	m_saved_m17host = m_settings->value("M17HOST").toString().simplified();
+    m_saved_iaxhost = m_settings->value("IAXHOST").toString().simplified();
 	m_module = m_settings->value("MODULE").toString().toStdString()[0];
 	m_callsign = m_settings->value("CALLSIGN").toString().simplified();
 	m_dmrid = m_settings->value("DMRID").toString().simplified().toUInt();
@@ -628,11 +625,6 @@ void DroidStar::process_settings()
 	m_toggletx = (m_settings->value("TXTOGGLE", "true").toString().simplified() == "true") ? true : false;
 	m_dstarusertxt = m_settings->value("USRTXT").toString().simplified();
 	m_xrf2ref = (m_settings->value("XRF2REF").toString().simplified() == "true") ? true : false;
-	m_iaxuser = m_settings->value("IAXUSER").toString().simplified();
-	m_iaxpassword = m_settings->value("IAXPASS").toString().simplified();
-	m_iaxnode = m_settings->value("IAXNODE").toString().simplified();
-	m_saved_iaxhost = m_iaxhost = m_settings->value("IAXHOST").toString().simplified();
-	m_iaxport = m_settings->value("IAXPORT", "4569").toString().simplified().toUInt();
 	m_localhosts = m_settings->value("LOCALHOSTS").toString();
 
 	m_modemRxFreq = m_settings->value("ModemRxFreq", "438800000").toString().simplified();
@@ -984,6 +976,25 @@ void DroidStar::process_m17_hosts()
 	else{
 		download_file("/M17Hosts-full.csv");
 	}
+}
+
+void DroidStar::process_iax_hosts()
+{
+    m_hostmap.clear();
+    m_hostsmodel.clear();
+    m_customhosts = m_localhosts.split('\n');
+    for (const auto& i : std::as_const(m_customhosts)){
+        QStringList line = i.simplified().split(' ');
+        if(line.at(0) == "IAX"){
+            m_hostmap[line.at(1).simplified()] = line.at(2).simplified() + "," + line.at(3).simplified() + "," + line.at(4).simplified() + "," + line.at(5).simplified();
+        }
+    }
+
+    QMap<QString, QString>::const_iterator i = m_hostmap.constBegin();
+    while (i != m_hostmap.constEnd()) {
+        m_hostsmodel.append(i.key());
+        ++i;
+    }
 }
 
 void DroidStar::process_dmr_ids()

@@ -92,15 +92,10 @@ public slots:
 	void set_pkgid(const QString &pkgid){ m_pkgid = pkgid; save_settings(); }
     void set_dmr_options(const QString &dmropts) { m_dmropts = dmropts; save_settings(); }
     void set_dmr_pc(int pc) { m_pc = pc; emit dmrpc_state_changed(m_pc); }
-	//void set_host(const QString &host) { m_host = host; save_settings(); }
 	void set_module(const QString &module) { m_module = module.toStdString()[0]; save_settings(); emit module_changed(m_module);}
 	void set_protocol(const QString &protocol) { m_protocol = protocol; save_settings(); }
 	void set_input_volume(qreal v);
 	void set_modelchange(bool t){ m_modelchange = t; }
-	void set_iaxuser(const QString &user){ m_iaxuser = user; save_settings(); }
-	void set_iaxpass(const QString &pass){ m_iaxpassword = pass; save_settings(); }
-	void set_iaxnode(const QString &node){ m_iaxnode = node; save_settings(); }
-	void set_iaxhost(const QString &host){ m_iaxhost = host; save_settings(); }
 	void set_mycall(const QString &mycall) { m_mycall = mycall; save_settings(); emit mycall_changed(mycall); }
     void set_urcall(const QString &urcall) { m_urcall = urcall; save_settings(); emit urcall_changed(urcall); }
     void set_rptr1(const QString &rptr1) { m_rptr1 = rptr1; save_settings(); emit rptr1_changed(rptr1); qDebug() << "rpt1 == " << m_rptr1; }
@@ -200,10 +195,6 @@ public slots:
 	QString get_nxdn_host() { return m_saved_nxdnhost; }
 	QString get_m17_host() { return m_saved_m17host; }
 	QString get_iax_host() { return m_saved_iaxhost; }
-	QString get_iax_user() { return m_iaxuser; }
-	QString get_iax_pass() { return m_iaxpassword; }
-	QString get_iax_node() { return m_iaxnode; }
-	QString get_iax_port() { return QString::number(m_iaxport); }
 	QString get_mycall() { return m_mycall; }
 	QString get_urcall() { return m_urcall; }
 	QString get_rptr1() { return m_rptr1; }
@@ -328,10 +319,6 @@ private:
 	QThread *m_modethread;
 	Mode *m_mode;
 	QByteArray user_data;
-	QString m_iaxuser;
-	QString m_iaxpassword;
-	QString m_iaxnode;
-	QString m_iaxhost;
 	QString m_localhosts;
 	int m_iaxport;
 	bool m_settings_processed;
@@ -391,6 +378,7 @@ private slots:
 	void process_p25_hosts();
 	void process_nxdn_hosts();
 	void process_m17_hosts();
+    void process_iax_hosts();
 	void process_dmr_ids();
 	void process_nxdn_ids();
 	void update_data(Mode::MODEINFO);

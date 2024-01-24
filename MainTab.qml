@@ -50,6 +50,10 @@ Item {
 		}
 	}
 
+    Keys.onPressed: {
+        console.log("Key pressed: " + event.key);
+    }
+
 	property alias element3: _element3
 	property alias label1: _label1
 	property alias label2: _label2
@@ -228,11 +232,6 @@ Item {
 			droidstar.set_pkgid(settingsTab.pkgidEdit.text);
 			droidstar.set_dmr_options(settingsTab.dmroptsEdit.text);
             droidstar.set_dmr_pc(mainTab.privateBox.checked);
-			droidstar.set_iaxuser(settingsTab.iaxuserEdit.text);
-			droidstar.set_iaxpass(settingsTab.iaxpassEdit.text);
-			droidstar.set_iaxnode(settingsTab.iaxnodeEdit.text);
-			droidstar.set_iaxhost(settingsTab.iaxhostEdit.text);
-			droidstar.set_iaxport(settingsTab.iaxportEdit.text);
 			droidstar.set_txtimeout(settingsTab.txtimerEdit.text);
 			//droidstar.set_toggletx(toggleTX.checked);
 			droidstar.set_xrf2ref(settingsTab.xrf2ref.checked);
@@ -327,7 +326,7 @@ Item {
 	Text {
 		id: _dtmflabel
 		x: 5
-		y: (parent.height / rows + 1) * 1;
+        y: (parent.height / rows + 1) * 4;
 		width: parent.width / 5
 		height:  parent.height / rows;
 		text: qsTr("DTMF")
@@ -339,7 +338,7 @@ Item {
 	TextField {
 		id: _editIAXDTMF
 		x: (parent.width / 4)
-		y: (parent.height / rows + 1) * 1;
+        y: (parent.height / rows + 1) * 4;
 		width: (parent.width * 3 / 8) - 4;
 		height: parent.height / rows;
 		font.pixelSize: parent.height / 35
@@ -349,7 +348,7 @@ Item {
 	Button {
 		id: _dtmfsendbutton
 		x: (parent.width * 5 / 8)
-		y: (parent.height / rows + 1) * 1;
+        y: (parent.height / rows + 1) * 4;
 		width: (parent.width * 3 / 8) - 5;
 		height: parent.height / rows;
 		text: qsTr("Send")

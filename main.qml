@@ -342,10 +342,11 @@ ApplicationWindow {
 			}
 			if(droidstar.get_mode() === "IAX"){
 				//mainTab.comboMode.width = mainTab.width / 2;
-				mainTab.comboHost.visible = false;
-				mainTab.dtmflabel.visible = true;
-				mainTab.editIAXDTMF.visible = true;
-				mainTab.dtmfsendbutton.visible = true;
+                mainTab.comboHost.visible = true;
+                mainTab.dtmflabel.visible = true;
+                mainTab.editIAXDTMF.visible = true;
+                mainTab.dtmfsendbutton.visible = true;
+                mainTab.comboHost.currentIndex = mainTab.comboHost.find(droidstar.get_iax_host());
 				mainTab.comboModule.visible = false;
 				mainTab.comboSlot.visible = false;
 				mainTab.comboCC.visible = false;
@@ -401,6 +402,9 @@ ApplicationWindow {
 			if(droidstar.get_mode() === "M17"){
 				mainTab.comboHost.currentIndex = mainTab.comboHost.find(droidstar.get_m17_host());
 			}
+            if(droidstar.get_mode() === "IAX"){
+                mainTab.comboHost.currentIndex = mainTab.comboHost.find(droidstar.get_iax_host());
+            }
 			mainTab.comboModule.currentIndex = mainTab.comboModule.find(droidstar.get_module());
 			settingsTab.callsignEdit.text = droidstar.get_callsign();
 			settingsTab.dmridEdit.text = droidstar.get_dmrid();
@@ -416,11 +420,6 @@ ApplicationWindow {
 			settingsTab.pkgidEdit.text = droidstar.get_pkgid();
 			settingsTab.dmroptsEdit.text = droidstar.get_dmr_options();
 			mainTab.dmrtgidEdit.text = droidstar.get_dmrtgid();
-			settingsTab.iaxuserEdit.text = droidstar.get_iax_user();
-			settingsTab.iaxpassEdit.text = droidstar.get_iax_pass();
-			settingsTab.iaxnodeEdit.text = droidstar.get_iax_node();
-			settingsTab.iaxhostEdit.text = droidstar.get_iax_host();
-			settingsTab.iaxportEdit.text = droidstar.get_iax_port();
 			settingsTab.mycallEdit.text = droidstar.get_mycall();
 			settingsTab.urcallEdit.text = droidstar.get_urcall();
 			settingsTab.rptr1Edit.text = droidstar.get_rptr1();
