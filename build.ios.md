@@ -15,6 +15,16 @@ open DroidStar.xcodeproj
 ```
 
 
+# Configration
+In Settings
+- Callsign
+- DMRID
+- BM Pass (hotspot)
+In Main
+- Mode DMR
+- Host
+- SWTX, SWRX, AGC
+- TG: i.e. 9990 with private (parrot)
 
 
 # References
