@@ -1,14 +1,16 @@
 # Prepare QT environment
 ```
 pip3 install aqtinstall 
+QT_VERSION=6.6.1
 
-aqt install-qt mac desktop 6.6.1 clang_64
-aqt install-qt mac ios 6.6.1     
+mkdir build_ios
+cd build_ios
 
-#aqt list-qt mac ios --modules 6.6.1     ios
-aqt install-qt mac ios 6.6.1 -m qtmultimedia
+aqt install-qt mac desktop $QT_VERSION clang_64
+aqt install-qt mac ios $QT_VERSION     
+aqt install-qt mac ios $QT_VERSION -m qtmultimedia
 
-./6.6.1/ios/bin/qmake ../DroidStar.pro
+./$QT_VERSION/ios/bin/qmake ../DroidStar.pro
 make
 
 open DroidStar.xcodeproj
