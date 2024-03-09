@@ -91,6 +91,11 @@ void DroidStar::keepScreenOn()
 			window.callMethod<void>("addFlags", "(I)V", FLAG_KEEP_SCREEN_ON);
 		}
 	}});
+
+    QMicrophonePermission microphonePermission;
+    if (qApp->checkPermission(microphonePermission) != Qt::PermissionStatus::Granted) {
+        qApp->requestPermission(microphonePermission, this, &DroidStar::keepScreenOn);
+    }
 }
 void DroidStar::reset_connect_status()
 {
