@@ -34,18 +34,13 @@ I added Flite TTS TX capability so I didn't have to talk to myself all of the ti
 # Usage
 Linux users with USB AMBE and/or MMDVM dongles will need to make sure they have permission to use the USB serial device, and disable the archaic ModeManager service that still exists on many Linux systems. On most systems this means adding your user to the 'dialout' group, and running 'sudo systemctl disable ModemManager.service' and rebooting.  This is a requirement for any serial device to be accessed.
 
-Host/Mod: Select the desired host and module (for D-STAR and M17) from the selections.
-
-Callsign:  Enter your amateur radio callsign.  A valid license is required to use this software.
-
-DMRID: A valid DMR ID is required to connect to DMR servers.
-Latitude/Longitude/Location/Description:  These are DMR config options, sent to the DMR server during connect.   Some servers require specific values here, some do not.  This is specific to the server you are connecting to, so please dont ask what these values should be.
-
-DMR+ IPSC2 hosts:  The format for the DMR+ options string is the complete string including 'Options='.  Create your options string and check 'Send DMR+ options on connect' before connecting.  A description of the DMR+ options string can be found here: https://github.com/g4klx/MMDVMHost/blob/master/DMRplus_startup_options.md .
-
-Talkgroup:  For DMR, enter the talkgroup ID number.  A very active TG for testing functionality on Brandmeister is 91 (Brandmeister Worldwide).  You must TX with a talkgroup entered to link to that talkgroup, just like a real radio.  Any statics you have defined in BM selfcare will work the same way they do if you were using a hotspot/radio.
-
-MYCALL/URCALL/RPTR1/RPTR2 are for Dstar modes REF/DCS/XRF.  These fields need to be entered correctly before attempting to TX on any DSTAR reflector.  All fields are populated with suggested values upon connect, but can still be modified for advanced users.  RPT2 is always overwritten with the current reflector upon connected.
+* Host/Mod: Select the desired host and module (for D-STAR and M17) from the selections.
+* Callsign:  Enter your amateur radio callsign.  A valid license is required to use this software.
+* DMRID: A valid DMR ID is required to connect to DMR servers.
+* Latitude/Longitude/Location/Description:  These are DMR config options, sent to the DMR server during connect.   Some servers require specific values here, some do not.  This is specific to the server you are connecting to, so please dont ask what these values should be.
+* DMR+ IPSC2 hosts:  The format for the DMR+ options string is the complete string including 'Options='.  Create your options string and check 'Send DMR+ options on connect' before connecting.  A description of the DMR+ options string can be found here: https://github.com/g4klx/MMDVMHost/blob/master/DMRplus_startup_options.md .
+* Talkgroup:  For DMR, enter the talkgroup ID number.  A very active TG for testing functionality on Brandmeister is 91 (Brandmeister Worldwide).  You must TX with a talkgroup entered to link to that talkgroup, just like a real radio.  Any statics you have defined in BM selfcare will work the same way they do if you were using a hotspot/radio.
+* MYCALL/URCALL/RPTR1/RPTR2 are for Dstar modes REF/DCS/XRF.  These fields need to be entered correctly before attempting to TX on any DSTAR reflector.  All fields are populated with suggested values upon connect, but can still be modified for advanced users.  RPT2 is always overwritten with the current reflector upon connected.
 
 # IAX Client for AllStar
 DroidStar can connect to an AllStar node as an IAX(2) client.  See the AllStar wiki and other AllStar, Asterisk, and IAX2 protocal related websites for the technical details of IAX2 for AllStar.  This is a basic client and currently only uLaw audio codec is supported.  This is the default codec on most AllStar nodes.
@@ -90,6 +85,31 @@ You must make sure that you are not in violation of any patent laws in your area
 My primary development platform is Fedora Linux.  With a proper build environment, the build instructions apply to all other platforms/distributions, including Windows and macOS.
 
 All of the gradle build files are provided to create an APK file ready to be installed on an Android device.  A proper Android build system including the Android NDK is required and beyond the scope of this document.
+
+## Note for building for iOS
+Building for iOS is only possible on a mac with xcode installed. In a first step you have install a recent QT version; a convenient way
+to do this is using aqtinstall as follows:
+```
+pip3 install aqtinstall 
+QT_VERSION=6.6.1
+
+mkdir build_ios
+cd build_ios
+
+aqt install-qt mac desktop $QT_VERSION clang_64
+aqt install-qt mac ios $QT_VERSION     
+aqt install-qt mac ios $QT_VERSION -m qtmultimedia
+```
+Afterwards you can create the xcode project using the qmake version for iOS, i.e.:
+```
+./$QT_VERSION/ios/bin/qmake ../DroidStar.pro
+make
+```
+Once this is done, you can open the xcode project
+```
+open DroidStar.xcodeproj
+```
+and build (or deploy to Testflight) as with any other iOS app.
 
 # No builds are available on Github
 No builds for any platform are available on this Github site.  This is and always will be an open source project, to be used for educational and development purposes only. I am currently providing a Windows build which is *not* to be confused as any sort of official release of any kind.  No support will be provided for any build at any time.
