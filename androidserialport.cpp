@@ -25,7 +25,7 @@ AndroidSerialPort::AndroidSerialPort(QObject *)
 		qDebug() << "com.hoho.android.usbserial.driver/UsbSerialDriver available";
 		serialJavaObject = QAndroidJniObject("DroidStar/USBSerialWrapper");
         QAndroidJniEnvironment env;
-        JNINativeMethod methods[] = { {"data_received", "([B)V", reinterpret_cast<void*>(java_data_received)}, {"device_open", "()V", reinterpret_cast<void*>(java_device_open)}, {"devices_changed", "()V", reinterpret_cast<void*>(java_devices_changed)}};
+        JNINativeMethod methods[] = { {"data_received", "([B)V", reinterpret_cast<void*>(java_data_received)}, {"device_open", "()V", reinterpret_cast<void*>(java_device_open)}, {"device_denied", "()V", reinterpret_cast<void*>(java_device_denied)}, {"devices_changed", "()V", reinterpret_cast<void*>(java_devices_changed)}};
 		jclass objectClass = env->GetObjectClass(serialJavaObject.object<jobject>());
 		env->RegisterNatives(objectClass, methods, sizeof(methods) / sizeof(methods[0]));
 		env->DeleteLocalRef(objectClass);
@@ -41,8 +41,8 @@ QStringList AndroidSerialPort::discover_devices()
 	QStringList l;
 	l.clear();
 	qDebug() << "AndroidSerialPort::discover_devices()";
-
-	QAndroidJniObject d = serialJavaObject.callObjectMethod("discover_devices", "(Landroid/content/Context;)[Ljava/lang/String;", QNativeInterface::QAndroidApplication::context());
+    auto activity = QJniObject(QNativeInterface::QAndroidApplication::context());
+    QAndroidJniObject d = serialJavaObject.callObjectMethod("discover_devices", "(Landroid/content/Context;)[Ljava/lang/String;", activity.object());
 	jobjectArray devices = d.object<jobjectArray>();
 	int size = env->GetArrayLength(devices);
 
@@ -55,7 +55,9 @@ QStringList AndroidSerialPort::discover_devices()
 
 int AndroidSerialPort::open(int p)
 {
-	serialJavaObject.callObjectMethod("setup_serial", "(Landroid/content/Context;)Ljava/lang/String;", QNativeInterface::QAndroidApplication::context());
+    auto activity = QJniObject(QNativeInterface::QAndroidApplication::context());
+    serialJavaObject.callObjectMethod("setup_serial", "(Landroid/content/Context;)Ljava/lang/String;", activity.object());
+    qDebug() << "AndroidSerialPort::open() finished";
 	return p;
 }
 
@@ -144,6 +146,13 @@ void AndroidSerialPort::java_device_open(JNIEnv *, jobject)
     emit AndroidSerialPort::GetInstance().device_ready();
 
 }
+
+void AndroidSerialPort::java_device_denied(JNIEnv *, jobject)
+{
+    emit AndroidSerialPort::GetInstance().device_denied();
+
+}
+
 void AndroidSerialPort::java_devices_changed(JNIEnv *, jobject)
 {
     emit AndroidSerialPort::GetInstance().devices_changed();

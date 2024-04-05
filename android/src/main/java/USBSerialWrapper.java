@@ -62,6 +62,7 @@ public class USBSerialWrapper implements SerialInputOutputManagerTest.Listener {
 				}
 				else {
 					System.out.println("USB Permission Denied");
+					device_denied();
 				}
 			}
 			if ( (UsbManager.ACTION_USB_DEVICE_ATTACHED.equals(action)) || (UsbManager.ACTION_USB_DEVICE_DETACHED.equals(action)) ) {
@@ -171,10 +172,11 @@ public class USBSerialWrapper implements SerialInputOutputManagerTest.Listener {
 				}
 			}
 		}
-		
+
 		m_driver = availableDrivers.get(devicenum);
-		PendingIntent mPendingIntent = PendingIntent.getBroadcast(c, 0, new Intent(ACTION_USB_PERMISSION), PendingIntent.FLAG_MUTABLE);
+		PendingIntent mPendingIntent = PendingIntent.getBroadcast(c, 0, new Intent(ACTION_USB_PERMISSION), PendingIntent.FLAG_MUTABLE | PendingIntent.FLAG_ALLOW_UNSAFE_IMPLICIT_INTENT);
 		m_manager.requestPermission(m_driver.getDevice(), mPendingIntent);
+		System.out.println("setup_serial() finished");
 		return "Yipee!";
 	}
 	
@@ -253,5 +255,6 @@ public class USBSerialWrapper implements SerialInputOutputManagerTest.Listener {
 	
 	private static native void data_received(byte[] data);
 	private static native void device_open();
+	private static native void device_denied();
 	private static native void devices_changed();
 }

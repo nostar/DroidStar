@@ -120,6 +120,7 @@ void SerialAMBE::connect_to_serial(QString p)
 #else
 		m_serial = &AndroidSerialPort::GetInstance();
         connect(m_serial, SIGNAL(device_ready()), this, SLOT(config_ambe()));
+        //connect(m_serial, SIGNAL(device_denied()), this, SLOT(config_ambe()));
 #endif
 		m_serial->setPortName(p);
 		m_serial->setBaudRate(br);

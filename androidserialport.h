@@ -51,11 +51,13 @@ signals:
 	void readyRead();
 	void data_received(QByteArray);
     void device_ready();
+    void device_denied();
     void devices_changed();
 private:
 	explicit AndroidSerialPort(QObject * parent = nullptr);
 	static void java_data_received(JNIEnv *env, jobject t, jbyteArray data);
     static void java_device_open(JNIEnv *env, jobject t);
+    static void java_device_denied(JNIEnv *env, jobject t);
     static void java_devices_changed(JNIEnv *env, jobject t);
 #if QT_VERSION < QT_VERSION_CHECK(6, 3, 0)
 	QAndroidJniObject serialJavaObject;
