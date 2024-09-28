@@ -180,6 +180,9 @@ void DroidStar::file_downloaded(QString filename)
 		else if(filename == "M17Hosts-full.csv" && m_protocol == "M17"){
 			process_m17_hosts();
 		}
+		else if(filename == "ASLHosts.txt" && m_protocol == "IAX"){
+			process_asl_hosts();
+		}
 		else if(filename == "DMRIDs.dat"){
 			process_dmr_ids();
 		}
@@ -259,7 +262,7 @@ void DroidStar::obtain_asl_wt_creds()
 				reply->deleteLater();
 			});
 
-			QNetworkReply *reply = manager->get(request);
+			manager->get(request);
 		} else {
 			// Handle error
 			qDebug() << "Error: " << reply->errorString();
@@ -1050,6 +1053,10 @@ void DroidStar::process_iax_hosts()
     }
 }
 
+void DroidStar::process_asl_hosts() {
+	// TODO - implement ASL hosts
+}
+
 void DroidStar::process_dmr_ids()
 {
 	QFileInfo check_file(config_path + "/DMRIDs.dat");
@@ -1178,6 +1185,11 @@ void DroidStar::check_host_files()
 		download_file("/M17Hosts-full.csv");
 	}
 
+	check_file.setFile(config_path + "/ASLHosts.txt");
+	if( (!check_file.exists() && !check_file.isFile()) || m_update_host_files ){
+		download_file("/ASLHosts.txt");
+	}
+
 	check_file.setFile(config_path + "/DMRIDs.dat");
 	if(!check_file.exists() && !check_file.isFile()){
 		download_file("/DMRIDs.dat");
@@ -1194,6 +1206,7 @@ void DroidStar::check_host_files()
 		process_nxdn_ids();
 	}
 	m_update_host_files = false;
+
 	//process_mode_change(ui->modeCombo->currentText().simplified());
 /*
 #if defined(Q_OS_ANDROID)

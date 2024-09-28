@@ -385,6 +385,7 @@ private slots:
 	void process_nxdn_hosts();
 	void process_m17_hosts();
     void process_iax_hosts();
+    void process_asl_hosts();
 	void process_dmr_ids();
 	void process_nxdn_ids();
 	void update_data(Mode::MODEINFO);
