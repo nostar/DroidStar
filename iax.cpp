@@ -46,7 +46,8 @@ IAX::IAX() :
 	m_rxdropped(0),
 	m_rxooo(0),
 	m_ttsid(0),
-    m_cnt(0)
+	m_cnt(0),
+	m_wt(false)
 {
 #ifdef USE_FLITE
 	flite_init();
@@ -60,14 +61,15 @@ IAX::~IAX()
 {
 }
 
-void IAX::set_iax_params(QString username, QString password, QString node, QString host, int port)
+void IAX::set_iax_params(QString username, QString password, QString callingname, QString node, QString host, int port)
 {
 	m_username = username;
 	m_password = password;
 	m_node = node;
 	m_host = host;
 	m_port = port;
-
+	m_callingname = callingname;
+	
 	QStringList l = m_node.split('@');
 	if(l.size() == 2){
 		m_node = l.at(0).simplified();
@@ -75,6 +77,10 @@ void IAX::set_iax_params(QString username, QString password, QString node, QStri
 	}
 	else{
 		m_context = "iax-client";
+	}
+
+	if (m_username == "allstar-public" && m_password == "allstar") {
+		m_wt = true;
 	}
 }
 
@@ -140,13 +146,28 @@ void IAX::send_call()
 	out.append('\x00');
 	out.append(IAX_PROTO_VERSION);
 	out.append(IAX_IE_CALLED_NUMBER);
-	out.append(m_node.size());
-	out.append(m_node.toUtf8(), m_node.size());
+	if (m_wt) {
+		out.append('\x01');
+		out.append('s');
+	} else {
+		out.append(m_node.size());
+		out.append(m_node.toUtf8(), m_node.size());
+	}
 	out.append(IAX_IE_CALLING_NUMBER);
-	out.append('\x00');
+	if (m_wt) {
+		out.append(m_node.size());
+		out.append(m_node.toUtf8(), m_node.size());
+	} else {
+		out.append('\x00');
+	}
 	out.append(IAX_IE_CALLING_NAME);
-    out.append(m_modeinfo.callsign.size());
-    out.append(m_modeinfo.callsign.toUtf8(), m_modeinfo.callsign.size());
+	if (m_wt) {
+		out.append(m_callingname.size());
+		out.append(m_callingname.toUtf8(), m_callingname.size());
+	} else {
+		out.append(m_modeinfo.callsign.size());
+		out.append(m_modeinfo.callsign.toUtf8(), m_modeinfo.callsign.size());
+	}
 	out.append(IAX_IE_USERNAME);
 	out.append(m_username.size());
 	out.append(m_username.toUtf8(), m_username.size());
@@ -517,9 +538,14 @@ void IAX::hostname_lookup(QHostInfo i)
 		m_udp = new QUdpSocket(this);
 		m_regtimer = new QTimer();
 		connect(m_udp, SIGNAL(readyRead()), this, SLOT(process_udp()));
-		connect(m_regtimer, SIGNAL(timeout()), this, SLOT(send_registration()));
+		if (m_wt) {
+			connect(m_regtimer, SIGNAL(timeout()), this, SLOT(send_call()));
+			send_call();
+		} else {
+			connect(m_regtimer, SIGNAL(timeout()), this, SLOT(send_registration()));
+			send_registration(0);
+		}
 		m_timestamp = QDateTime::currentMSecsSinceEpoch();
-		send_registration(0);
 		m_regtimer->start(60000);
 	}
 }
@@ -628,6 +654,9 @@ void IAX::process_udp()
 	{
 		//int16_t zeropcm[160];
 		//memset(zeropcm, 0, 160 * sizeof(int16_t));
+		if (m_wt && m_modeinfo.status == CONNECTING) {
+			connected();
+		}
 		++m_rxframes;
 		m_dcallno = (((buf.data()[0] & 0x7f) << 8) | ((uint8_t)buf.data()[1]));
 		m_iseq = buf.data()[8] + 1;
@@ -640,22 +669,7 @@ void IAX::process_udp()
 		(buf.data()[11] == AST_CONTROL_ANSWER) )
 	{
 		if(m_modeinfo.status == CONNECTING){
-			m_modeinfo.status = CONNECTED_RW;
-			m_txtimer = new QTimer();
-			connect(m_txtimer, SIGNAL(timeout()), this, SLOT(transmit()));
-			m_rxtimer = new QTimer();
-			connect(m_rxtimer, SIGNAL(timeout()), this, SLOT(process_rx_data()));
-			m_rxtimer->start(19);
-			m_pingtimer = new QTimer();
-			connect(m_pingtimer, SIGNAL(timeout()), this, SLOT(send_ping()));
-			m_pingtimer->start(2000);
-			m_audio = new AudioEngine(m_audioin, m_audioout);
-			m_audio->init();
-			m_audio->start_playback();
-			m_audio->set_input_buffer_size(640);
-			m_audio->start_capture();
-			//m_txtimer->start(19);
-			m_modeinfo.sw_vocoder_loaded = true;
+			connected();
 		}
 		++m_rxframes;
 		m_dcallno = (((buf.data()[0] & 0x7f) << 8) | ((uint8_t)buf.data()[1]));
@@ -753,6 +767,25 @@ void IAX::process_udp()
 		}
 	}
 	emit update(m_modeinfo);
+}
+
+void IAX::connected() {
+	m_modeinfo.status = CONNECTED_RW;
+	m_txtimer = new QTimer();
+	connect(m_txtimer, SIGNAL(timeout()), this, SLOT(transmit()));
+	m_rxtimer = new QTimer();
+	connect(m_rxtimer, SIGNAL(timeout()), this, SLOT(process_rx_data()));
+	m_rxtimer->start(19);
+	m_pingtimer = new QTimer();
+	connect(m_pingtimer, SIGNAL(timeout()), this, SLOT(send_ping()));
+	m_pingtimer->start(2000);
+	m_audio = new AudioEngine(m_audioin, m_audioout);
+	m_audio->init();
+	m_audio->start_playback();
+	m_audio->set_input_buffer_size(640);
+	m_audio->start_capture();
+	//m_txtimer->start(19);
+	m_modeinfo.sw_vocoder_loaded = true;
 }
 
 void IAX::process_rx_data()

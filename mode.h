@@ -70,7 +70,7 @@ public:
 		m_m17TXLevel = m17TXLevel;
 	}
 	virtual void set_dmr_params(uint8_t, QString, QString, QString, QString, QString, QString, QString, QString, QString, QString) {}
-	virtual void set_iax_params(QString, QString, QString, QString, int) {}
+	virtual void set_iax_params(QString, QString, QString, QString, QString, int) {}
 	bool get_hwrx() { return m_hwrx; }
 	bool get_hwtx() { return m_hwtx; }
 	void set_hostname(std::string);

@@ -82,6 +82,7 @@ public slots:
 	}
 	void set_bm_password(const QString &bmpwd) { m_bm_password = bmpwd; save_settings(); }
 	void set_tgif_password(const QString &tgifpwd) { m_tgif_password = tgifpwd; save_settings(); }
+	void set_asl_password(const QString &aslpwd) { m_asl_password = aslpwd; save_settings(); }
 	void set_latitude(const QString &lat){ m_latitude = lat; save_settings(); }
 	void set_longitude(const QString &lon){ m_longitude = lon; save_settings(); }
 	void set_location(const QString &loc){ m_location = loc; save_settings(); }
@@ -174,6 +175,7 @@ public slots:
 	QString get_essid() { return m_essid ? QString("%1").arg(m_essid - 1, 2, 10, QChar('0')) : "None"; }
 	QString get_bm_password() { return m_bm_password; }
 	QString get_tgif_password() { return m_tgif_password; }
+	QString get_asl_password() { return m_asl_password; }
 	QString get_latitude() { return m_latitude; }
 	QString get_longitude() { return m_longitude; }
 	QString get_location() { return m_location; }
@@ -251,6 +253,7 @@ public slots:
 	void set_output_level(unsigned short l){ m_outlevel = l; }
 	void tts_changed(QString);
 	void tts_text_changed(QString);
+	void obtain_asl_wt_creds();
 private:
 	int connect_status;
 	bool m_update_host_files;
@@ -263,6 +266,7 @@ private:
 	QString m_protocol;
 	QString m_bm_password;
 	QString m_tgif_password;
+	QString m_asl_password;
 	QString m_latitude;
 	QString m_longitude;
 	QString m_location;
@@ -337,6 +341,8 @@ private:
 	QStringList m_playbacks;
 	QStringList m_captures;
     bool m_mdirect;
+	QString m_wt_callingname;
+	QString m_wt_callingname_pass;
 
 	int m_tts;
 	QString m_ttstxt;
