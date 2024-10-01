@@ -127,6 +127,9 @@ int8_t ulaw_encode(int16_t number)
 
 void IAX::send_call()
 {
+	if (m_wt) {
+		send_disconnect();
+	}
 	uint16_t scall = htons(++m_scallno | 0x8000);
 	m_oseq = m_iseq = 0;
 	QByteArray out;
@@ -541,12 +544,13 @@ void IAX::hostname_lookup(QHostInfo i)
 		if (m_wt) {
 			connect(m_regtimer, SIGNAL(timeout()), this, SLOT(send_call()));
 			send_call();
+			//m_regtimer->start(240000);
 		} else {
 			connect(m_regtimer, SIGNAL(timeout()), this, SLOT(send_registration()));
 			send_registration(0);
+			m_regtimer->start(60000);
 		}
 		m_timestamp = QDateTime::currentMSecsSinceEpoch();
-		m_regtimer->start(60000);
 	}
 }
 
@@ -810,12 +814,15 @@ void IAX::toggle_tx(bool tx)
 
 void IAX::start_tx()
 {
+	int16_t pcm[160];
 	//std::cerr << "Pressed TX buffersize == " << audioin->bufferSize() << std::endl;
 	//QByteArray tx("*99", 3);
 	//send_dtmf(tx);
 	send_radio_key(true);
 	m_ttscnt = 0;
 	qDebug() << "start_tx() " << m_ttsid << " " << m_ttstext;
+	// Drain the audio buffer
+	while(m_audio->read(pcm));
 	m_tx = true;
 #ifdef USE_FLITE
 	if(m_ttsid == 1){
@@ -873,7 +880,9 @@ void IAX::transmit()
 	for(int i = 0; i < s; ++i){
 		out.append(ulaw_encode(pcm[i]));
 	}
-	m_udp->writeDatagram(out, m_address, m_port);
+	if (!m_wt || m_tx) {
+		m_udp->writeDatagram(out, m_address, m_port);
+	}
 #ifdef DEBUGG
 	fprintf(stderr, "SEND: ");
 	for(int i = 0; i < out.size(); ++i){
