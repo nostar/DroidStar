@@ -18,13 +18,14 @@ int main(int argc, char *argv[])
 #else
     engine.rootContext()->setContextProperty("USE_FLITE", QVariant(false));
 #endif
-    const QUrl url(u"qrc:/DroidStar/main.qml"_qs);
-    QObject::connect(&engine, &QQmlApplicationEngine::objectCreated,
-        &app, [url](QObject *obj, const QUrl &objUrl) {
-            if (!obj && url == objUrl)
-                QCoreApplication::exit(-1);
-        }, Qt::QueuedConnection);
-    engine.load(url);
 
+    QObject::connect(
+        &engine,
+        &QQmlApplicationEngine::objectCreationFailed,
+        &app,
+        []() { QCoreApplication::exit(-1); },
+        Qt::QueuedConnection);
+    engine.loadFromModule("DroidStarApp", "Main");
     return app.exec();
+
 }

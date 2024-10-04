@@ -21,9 +21,6 @@
 #include <QCoreApplication>
 #include <QJniObject>
 #endif
-#ifdef Q_OS_IOS
-#include "micpermission.h"
-#endif
 #include <QStandardPaths>
 #include <QFile>
 #include <QFileInfo>
@@ -70,7 +67,7 @@ DroidStar::DroidStar(QObject *parent) :
 	qDebug() << "Version: " << QSysInfo::productVersion();
 	qDebug() << "Kernel type: " << QSysInfo::kernelType();
 	qDebug() << "Kernel version: " << QSysInfo::kernelVersion();
-	qDebug() << "Software version: " << VERSION_NUMBER;
+    qDebug() << "Software version: " << VERSION_NUMBER;
 }
 
 DroidStar::~DroidStar()
@@ -239,9 +236,6 @@ void DroidStar::process_connect()
 		emit update_log("Disconnected");
 	}
 	else{
-#ifdef Q_OS_IOS
-		MicPermission::check_permission();
-#endif
 		if(m_protocol == "REF"){
 			m_refname = m_saved_refhost;
 		}

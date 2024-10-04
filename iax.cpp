@@ -31,8 +31,6 @@ extern cst_voice * register_cmu_us_awb(const char *);
 }
 #endif
 
-#define DEBUG
-
 IAX::IAX() :
 	m_scallno(0),
 	m_dcallno(0),
@@ -48,7 +46,7 @@ IAX::IAX() :
 	m_rxdropped(0),
 	m_rxooo(0),
 	m_ttsid(0),
-	m_cnt(0)
+    m_cnt(0)
 {
 #ifdef USE_FLITE
 	flite_init();
@@ -147,8 +145,8 @@ void IAX::send_call()
 	out.append(IAX_IE_CALLING_NUMBER);
 	out.append('\x00');
 	out.append(IAX_IE_CALLING_NAME);
-	out.append(m_callsign.size());
-	out.append(m_callsign.toUtf8(), m_callsign.size());
+    out.append(m_modeinfo.callsign.size());
+    out.append(m_modeinfo.callsign.toUtf8(), m_modeinfo.callsign.size());
 	out.append(IAX_IE_USERNAME);
 	out.append(m_username.size());
 	out.append(m_username.toUtf8(), m_username.size());
@@ -192,14 +190,16 @@ void IAX::send_call_auth()
 	out.append(result.toHex().size());
 	out.append(result.toHex());
 	m_udp->writeDatagram(out, m_address, m_port);
-#ifdef DEBUG
-	fprintf(stderr, "SEND: ");
-	for(int i = 0; i < out.size(); ++i){
-		fprintf(stderr, "%02x ", (unsigned char)out.data()[i]);
-	}
-	fprintf(stderr, "\n");
-	fflush(stderr);
-#endif
+
+    if(m_debug){
+        QDebug debug = qDebug();
+        debug.noquote();
+        QString s = "SEND:";
+        for(int i = 0; i < out.size(); ++i){
+            s += " " + QString("%1").arg((uint8_t)out.data()[i], 2, 16, QChar('0'));
+        }
+        debug << s;
+    }
 }
 
 void IAX::send_dtmf(QByteArray dtmf)
@@ -219,14 +219,16 @@ void IAX::send_dtmf(QByteArray dtmf)
 		out.append(AST_FRAME_DTMF);
 		out.append(dtmf.data()[i]);
 		m_udp->writeDatagram(out, m_address, m_port);
-#ifdef DEBUG
-		fprintf(stderr, "SEND: ");
-		for(int i = 0; i < out.size(); ++i){
-			fprintf(stderr, "%02x ", (unsigned char)out.data()[i]);
-		}
-		fprintf(stderr, "\n");
-		fflush(stderr);
-#endif
+
+        if(m_debug){
+            QDebug debug = qDebug();
+            debug.noquote();
+            QString s = "SEND:";
+            for(int i = 0; i < out.size(); ++i){
+                s += " " + QString("%1").arg((uint8_t)out.data()[i], 2, 16, QChar('0'));
+            }
+            debug << s;
+        }
 	}
 }
 
@@ -245,14 +247,16 @@ void IAX::send_radio_key(bool key)
 	out.append(AST_FRAME_CONTROL);
 	out.append(key ? AST_CONTROL_KEY : AST_CONTROL_UNKEY);
 	m_udp->writeDatagram(out, m_address, m_port);
-#ifdef DEBUG
-		fprintf(stderr, "SEND: ");
-		for(int i = 0; i < out.size(); ++i){
-			fprintf(stderr, "%02x ", (unsigned char)out.data()[i]);
-		}
-		fprintf(stderr, "\n");
-		fflush(stderr);
-#endif
+
+    if(m_debug){
+        QDebug debug = qDebug();
+        debug.noquote();
+        QString s = "SEND:";
+        for(int i = 0; i < out.size(); ++i){
+            s += " " + QString("%1").arg((uint8_t)out.data()[i], 2, 16, QChar('0'));
+        }
+        debug << s;
+    }
 }
 
 void IAX::send_ping()
@@ -270,14 +274,16 @@ void IAX::send_ping()
 	out.append(AST_FRAME_IAX);
 	out.append(IAX_COMMAND_PING);
 	m_udp->writeDatagram(out, m_address, m_port);
-#ifdef DEBUG
-	fprintf(stderr, "SEND: ");
-	for(int i = 0; i < out.size(); ++i){
-		fprintf(stderr, "%02x ", (unsigned char)out.data()[i]);
-	}
-	fprintf(stderr, "\n");
-	fflush(stderr);
-#endif
+
+    if(m_debug){
+        QDebug debug = qDebug();
+        debug.noquote();
+        QString s = "SEND:";
+        for(int i = 0; i < out.size(); ++i){
+            s += " " + QString("%1").arg((uint8_t)out.data()[i], 2, 16, QChar('0'));
+        }
+        debug << s;
+    }
 }
 
 void IAX::send_pong()
@@ -319,14 +325,16 @@ void IAX::send_pong()
 	out.append(sizeof(ooo));
 	out.append((char *)&ooo, sizeof(ooo));
 	m_udp->writeDatagram(out, m_address, m_port);
-#ifdef DEBUG
-	fprintf(stderr, "SEND: ");
-	for(int i = 0; i < out.size(); ++i){
-		fprintf(stderr, "%02x ", (unsigned char)out.data()[i]);
-	}
-	fprintf(stderr, "\n");
-	fflush(stderr);
-#endif
+
+    if(m_debug){
+        QDebug debug = qDebug();
+        debug.noquote();
+        QString s = "SEND:";
+        for(int i = 0; i < out.size(); ++i){
+            s += " " + QString("%1").arg((uint8_t)out.data()[i], 2, 16, QChar('0'));
+        }
+        debug << s;
+    }
 }
 
 void IAX::send_ack(uint16_t scall, uint16_t dcall, uint8_t oseq, uint8_t iseq)
@@ -344,14 +352,16 @@ void IAX::send_ack(uint16_t scall, uint16_t dcall, uint8_t oseq, uint8_t iseq)
 	out.append(AST_FRAME_IAX);
 	out.append(IAX_COMMAND_ACK);
 	m_udp->writeDatagram(out, m_address, m_port);
-#ifdef DEBUG
-	fprintf(stderr, "SEND: ");
-	for(int i = 0; i < out.size(); ++i){
-		fprintf(stderr, "%02x ", (unsigned char)out.data()[i]);
-	}
-	fprintf(stderr, "\n");
-	fflush(stderr);
-#endif
+
+    if(m_debug){
+        QDebug debug = qDebug();
+        debug.noquote();
+        QString s = "SEND:";
+        for(int i = 0; i < out.size(); ++i){
+            s += " " + QString("%1").arg((uint8_t)out.data()[i], 2, 16, QChar('0'));
+        }
+        debug << s;
+    }
 }
 
 void IAX::send_lag_response()
@@ -369,14 +379,16 @@ void IAX::send_lag_response()
 	out.append(AST_FRAME_IAX);
 	out.append(IAX_COMMAND_LAGRP);
 	m_udp->writeDatagram(out, m_address, m_port);
-#ifdef DEBUG
-	fprintf(stderr, "SEND: ");
-	for(int i = 0; i < out.size(); ++i){
-		fprintf(stderr, "%02x ", (unsigned char)out.data()[i]);
-	}
-	fprintf(stderr, "\n");
-	fflush(stderr);
-#endif
+
+    if(m_debug){
+        QDebug debug = qDebug();
+        debug.noquote();
+        QString s = "SEND:";
+        for(int i = 0; i < out.size(); ++i){
+            s += " " + QString("%1").arg((uint8_t)out.data()[i], 2, 16, QChar('0'));
+        }
+        debug << s;
+    }
 }
 
 void IAX::send_voice_frame(int16_t *f)
@@ -399,14 +411,16 @@ void IAX::send_voice_frame(int16_t *f)
 	}
 
 	m_udp->writeDatagram(out, m_address, m_port);
-#ifdef DEBUG
-	fprintf(stderr, "SEND: ");
-	for(int i = 0; i < out.size(); ++i){
-		fprintf(stderr, "%02x ", (unsigned char)out.data()[i]);
-	}
-	fprintf(stderr, "\n");
-	fflush(stderr);
-#endif
+
+    if(m_debug){
+        QDebug debug = qDebug();
+        debug.noquote();
+        QString s = "SEND:";
+        for(int i = 0; i < out.size(); ++i){
+            s += " " + QString("%1").arg((uint8_t)out.data()[i], 2, 16, QChar('0'));
+        }
+        debug << s;
+    }
 }
 
 void IAX::send_registration(uint16_t dcall)
@@ -454,14 +468,16 @@ void IAX::send_registration(uint16_t dcall)
 	out.append(0x02);
 	out.append((char *)&refresh, 2);			// refresh time = 60 secs
 	m_udp->writeDatagram(out, m_address, m_port);
-#ifdef DEBUG
-	fprintf(stderr, "SEND: ");
-	for(int i = 0; i < out.size(); ++i){
-		fprintf(stderr, "%02x ", (unsigned char)out.data()[i]);
-	}
-	fprintf(stderr, "\n");
-	fflush(stderr);
-#endif
+
+    if(m_debug){
+        QDebug debug = qDebug();
+        debug.noquote();
+        QString s = "SEND:";
+        for(int i = 0; i < out.size(); ++i){
+            s += " " + QString("%1").arg((uint8_t)out.data()[i], 2, 16, QChar('0'));
+        }
+        debug << s;
+    }
 }
 
 void IAX::send_disconnect()
@@ -482,14 +498,16 @@ void IAX::send_disconnect()
 	out.append(bye.size());
 	out.append(bye.toUtf8(), bye.size());
 	m_udp->writeDatagram(out, m_address, m_port);
-#ifdef DEBUG
-	fprintf(stderr, "SEND: ");
-	for(int i = 0; i < out.size(); ++i){
-		fprintf(stderr, "%02x ", (unsigned char)out.data()[i]);
-	}
-	fprintf(stderr, "\n");
-	fflush(stderr);
-#endif
+
+    if(m_debug){
+        QDebug debug = qDebug();
+        debug.noquote();
+        QString s = "SEND:";
+        for(int i = 0; i < out.size(); ++i){
+            s += " " + QString("%1").arg((uint8_t)out.data()[i], 2, 16, QChar('0'));
+        }
+        debug << s;
+    }
 }
 
 void IAX::hostname_lookup(QHostInfo i)
@@ -521,16 +539,17 @@ void IAX::process_udp()
 
 	buf.resize(m_udp->pendingDatagramSize());
 	m_udp->readDatagram(buf.data(), buf.size(), &sender, &senderPort);
-#ifdef DEBUG
-	if(buf.data()[0] & 0x80){
-	fprintf(stderr, "RECV: ");
-	for(int i = 0; i < buf.size(); ++i){
-		fprintf(stderr, "%02x ", (unsigned char)buf.data()[i]);
-	}
-	fprintf(stderr, "\n");
-	fflush(stderr);
-	}
-#endif
+
+    if(m_debug){
+        QDebug debug = qDebug();
+        debug.noquote();
+        QString s = "RECV:";
+        for(int i = 0; i < buf.size(); ++i){
+            s += " " + QString("%1").arg((uint8_t)buf.data()[i], 2, 16, QChar('0'));
+        }
+        debug << s;
+    }
+
 	if( (buf.data()[0] & 0x80) &&
 		(buf.data()[10] == AST_FRAME_IAX) &&
 		(buf.data()[11] == IAX_COMMAND_REGAUTH) &&
@@ -551,6 +570,7 @@ void IAX::process_udp()
 		uint16_t scallno = (((buf.data()[2] & 0x7f) << 8) | ((uint8_t)buf.data()[3]));
 		send_ack(scallno, dcallno, 2, 2);
 		if(m_modeinfo.status == CONNECTING){
+            qDebug() << "send_call() called";
 			send_call();
 		}
 	}

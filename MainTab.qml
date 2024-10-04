@@ -50,10 +50,6 @@ Item {
 		}
 	}
 
-    Keys.onPressed: {
-        console.log("Key pressed: " + event.key);
-    }
-
 	property alias element3: _element3
 	property alias label1: _label1
 	property alias label2: _label2

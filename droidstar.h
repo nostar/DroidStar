@@ -242,7 +242,7 @@ public slots:
 #endif
 	QString get_arch() { return QSysInfo::currentCpuArchitecture(); }
 	QString get_build_abi() { return QSysInfo::buildAbi(); }
-	QString get_software_build() { return VERSION_NUMBER; }
+    QString get_software_build() { return VERSION_NUMBER; }
 
 	void download_file(QString, bool u = false);
 	void file_downloaded(QString);

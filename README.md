@@ -55,9 +55,9 @@ All IAX nodes are now defined on the Hosts tab.  The example shows the format.  
 Add DTMF commands like \*3node, \*1node, \*70, etc in the IAX DTMF box and hit send to send the DTMF string. Details on various commands can be found at the AllStar wiki and others.
 
 # General building instructions
-This software is written primarily in C++ on Linux and requires Qt6 >= Qt6.4, and naturally the devel packages to build.  Java, QML (Javascript based), and C# code is also used where necessary.  The preferred way to obtain Qt is to use the Qt open source online installer from the Qt website.  Run this installer as a user (not root) to keep the Qt installation separate from your system libs.  Select the option as shown in this pic https://imgur.com/i0WuFCY which will install everything under ~/Qt.
+This software is written primarily in C++ on Linux and requires Qt6 >= Qt6.5, and naturally the devel packages to build.  Java, QML (Javascript based), and C# code is also used where necessary.  The preferred way to obtain Qt is to use the Qt open source online installer from the Qt website.  Run this installer as a user (not root) to keep the Qt installation separate from your system libs.  Select the option as shown in this pic https://imgur.com/i0WuFCY which will install everything under ~/Qt.
 
-In an effort to encourage others to build from source on multiple platforms, there are no longer any external build dependencies.  In order to build DroidStar with no internal AMBE vocoder, uncomment the the following line in the DroidStar.pro file:
+In an effort to encourage others to build from source on multiple platforms, there are no longer any external build dependencies.  In order to build DroidStar with no internal AMBE vocoder, uncomment the the following line in the CMakeLists.txt file:
 ```
 DEFINES+=VOCODER_PLUGIN
 ```
@@ -77,10 +77,10 @@ git clone https://github.com/nostar/DroidStar.git
 cd DroidStar
 mkdir build
 cd build
-qmake6 ../DroidStar.pro
+cmake ..
 make
 ```
-If building an an arm based platform like rpi, the md380 vocoder can be used.  In order to build with this, uncomment the following line in DroidStar.pro:
+If building an an arm based platform like rpi or using dynarmic on x64/arm64, the md380 vocoder can be used.  In order to build with this, uncomment the following line in DroidStar.pro:
 ```
 #DEFINES += USE_MD380_VOCODER
 ```
