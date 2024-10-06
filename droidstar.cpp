@@ -1187,7 +1187,7 @@ void DroidStar::check_host_files()
 
 	check_file.setFile(config_path + "/ASLHosts.txt");
 	if( (!check_file.exists() && !check_file.isFile()) || m_update_host_files ){
-		download_file("/ASLHosts.txt");
+        //download_file("/ASLHosts.txt");
 	}
 
 	check_file.setFile(config_path + "/DMRIDs.dat");
