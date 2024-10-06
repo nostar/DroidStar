@@ -180,6 +180,9 @@ void DroidStar::file_downloaded(QString filename)
 		else if(filename == "M17Hosts-full.csv" && m_protocol == "M17"){
 			process_m17_hosts();
 		}
+		else if(filename == "ASLHosts.txt" && m_protocol == "IAX"){
+			process_asl_hosts();
+		}
 		else if(filename == "DMRIDs.dat"){
 			process_dmr_ids();
 		}
@@ -219,6 +222,55 @@ void DroidStar::tts_text_changed(QString ttstxt)
 {
 	m_ttstxt = ttstxt;
 	emit input_source_changed(m_tts, m_ttstxt);
+}
+
+void DroidStar::obtain_asl_wt_creds()
+{
+	if (!m_wt_callingname.isEmpty() && (m_asl_password == m_wt_callingname_pass)) {
+		return;
+	}
+	QNetworkAccessManager *manager = new QNetworkAccessManager(this);
+	QUrl url("https://www.allstarlink.org/portal/login.php");
+	QNetworkRequest request(url);
+	request.setHeader(QNetworkRequest::ContentTypeHeader, "application/x-www-form-urlencoded");
+
+	QByteArray postData;
+	postData.append("user=" + QUrl::toPercentEncoding(m_callsign.toUtf8()));
+	postData.append("&pass=" + QUrl::toPercentEncoding(m_asl_password.toUtf8()));
+
+	connect(manager, &QNetworkAccessManager::finished, this, [=](QNetworkReply *reply) {
+		if (reply->error() == QNetworkReply::NoError) {
+			QUrl url("https://www.allstarlink.org/portal/webtransceiver.php?node=12345");
+			QNetworkRequest request(url);
+			
+			connect(manager, &QNetworkAccessManager::finished, this, [=](QNetworkReply *reply) {
+				if (reply->error() == QNetworkReply::NoError) {
+					QString html = reply->readAll();
+					QStringList l = html.split('\n');
+					for (int i = 0; i < l.size(); i++) {
+						if (l.at(i).contains("callingName")) {
+							QStringList ll = l.at(i).split('"');
+							m_wt_callingname = ll.at(3);
+							m_wt_callingname_pass = m_asl_password;
+							break;
+						}
+					}
+				} else {
+					// Handle error
+					qDebug() << "Error: " << reply->errorString();
+				}
+				reply->deleteLater();
+			});
+
+			manager->get(request);
+		} else {
+			// Handle error
+			qDebug() << "Error: " << reply->errorString();
+		}
+		reply->deleteLater();
+	});
+
+	manager->post(request, postData);
 }
 
 void DroidStar::process_connect()
@@ -325,7 +377,7 @@ void DroidStar::process_connect()
         if(m_protocol == "IAX"){
             QString iaxuser = sl.at(2).simplified();
             QString iaxpass = sl.at(3).simplified();
-            m_mode->set_iax_params(iaxuser, iaxpass, m_refname, m_host, m_port);
+            m_mode->set_iax_params(iaxuser, iaxpass, m_wt_callingname, m_refname, m_host, m_port);
             connect(this, SIGNAL(send_dtmf(QByteArray)), m_mode, SLOT(send_dtmf(QByteArray)));
         }
 
@@ -512,6 +564,9 @@ void DroidStar::process_mode_change(const QString &m)
 	}
 	if(m == "IAX"){
         process_iax_hosts();
+		if (!m_asl_password.isEmpty()) {
+			obtain_asl_wt_creds();
+		}
 		m_label1 = "";
 		m_label2 = "";
 		m_label3 = "";
@@ -544,6 +599,7 @@ void DroidStar::save_settings()
 	m_settings->setValue("ESSID", m_essid);
 	m_settings->setValue("BMPASSWORD", m_bm_password);
 	m_settings->setValue("TGIFPASSWORD", m_tgif_password);
+	m_settings->setValue("ASLPASSWORD", m_asl_password);
 	m_settings->setValue("DMRTGID", m_dmr_destid);
 	m_settings->setValue("DMRLAT", m_latitude);
 	m_settings->setValue("DMRLONG", m_longitude);
@@ -606,6 +662,7 @@ void DroidStar::process_settings()
 	m_essid = m_settings->value("ESSID").toString().simplified().toUInt();
 	m_bm_password = m_settings->value("BMPASSWORD").toString().simplified();
 	m_tgif_password = m_settings->value("TGIFPASSWORD").toString().simplified();
+	m_asl_password = m_settings->value("ASLPASSWORD").toString().simplified();
 	m_latitude = m_settings->value("DMRLAT", "0").toString().simplified();
 	m_longitude = m_settings->value("DMRLONG", "0").toString().simplified();
 	m_location = m_settings->value("DMRLOC").toString().simplified();
@@ -996,6 +1053,10 @@ void DroidStar::process_iax_hosts()
     }
 }
 
+void DroidStar::process_asl_hosts() {
+	// TODO - implement ASL hosts
+}
+
 void DroidStar::process_dmr_ids()
 {
 	QFileInfo check_file(config_path + "/DMRIDs.dat");
@@ -1124,6 +1185,11 @@ void DroidStar::check_host_files()
 		download_file("/M17Hosts-full.csv");
 	}
 
+	check_file.setFile(config_path + "/ASLHosts.txt");
+	if( (!check_file.exists() && !check_file.isFile()) || m_update_host_files ){
+		download_file("/ASLHosts.txt");
+	}
+
 	check_file.setFile(config_path + "/DMRIDs.dat");
 	if(!check_file.exists() && !check_file.isFile()){
 		download_file("/DMRIDs.dat");
@@ -1140,6 +1206,7 @@ void DroidStar::check_host_files()
 		process_nxdn_ids();
 	}
 	m_update_host_files = false;
+
 	//process_mode_change(ui->modeCombo->currentText().simplified());
 /*
 #if defined(Q_OS_ANDROID)

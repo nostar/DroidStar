@@ -26,7 +26,7 @@ class IAX : public Mode
 public:
 	IAX();//QString callsign, QString username, QString password, QString node, QString host, int port, QString audioin, QString audioout);
 	~IAX();
-	void set_iax_params(QString username, QString password, QString node, QString host, int port);
+	void set_iax_params(QString username, QString password, QString callingname, QString node, QString host, int port);
 	//uint8_t get_status(){ return m_status; }
 	QString get_host() { return m_host; }
 	int get_port() { return m_port; }
@@ -54,12 +54,14 @@ private slots:
 	void send_radio_key(bool);
 	void in_audio_vol_changed(qreal v){ m_audio->set_input_volume(v); }
 	void out_audio_vol_changed(qreal v){ m_audio->set_output_volume(v); }
+	void connected();
 private:
 	QUdpSocket *m_udp = nullptr;
 	QHostAddress m_address;
 	QString m_callsign;
 	QString m_username;
 	QString m_password;
+	QString m_callingname;
 	QString m_node;
 	QString m_context;
 	QString m_host;
@@ -93,6 +95,7 @@ private:
 	QString m_ttstext;
 	uint16_t m_ttscnt;
 	int m_cnt;
+	bool m_wt;
 	//qreal m_rxgain;
 #ifdef USE_FLITE
 	cst_voice *voice_slt;

@@ -25,6 +25,7 @@ Item {
 	property alias comboEssid: comboessid
 	property alias bmpwEdit: bmpwedit
 	property alias tgifpwEdit: tgifpwedit
+	property alias aslpwEdit: aslpwedit
 	property alias latEdit: latedit
 	property alias lonEdit: lonedit
 	property alias locEdit: locedit
@@ -256,9 +257,28 @@ Item {
 			echoMode: TextInput.Password
 		}
 		Text {
-			id: latLabel
+			id: aslpwLabel
 			x: 10
 			y: 270
+			width: 80
+			height: 25
+			text: qsTr("ASL Pass")
+			color: "white"
+			verticalAlignment: Text.AlignVCenter
+		}
+		TextField {
+			id: aslpwedit
+			x: 100
+			y: aslpwLabel.y
+			width: parent.width - 110
+			height: 25
+			selectByMouse: true
+			echoMode: TextInput.Password
+		}
+		Text {
+			id: latLabel
+			x: 10
+			y: 300
 			width: 80
 			height: 25
 			text: qsTr("Latitude")
@@ -276,7 +296,7 @@ Item {
 		Text {
 			id: lonLabel
 			x: 10
-			y: 300
+			y: 330
 			width: 80
 			height: 25
 			text: qsTr("Longitude")
@@ -294,7 +314,7 @@ Item {
 		Text {
 			id: locLabel
 			x: 10
-			y: 330
+			y: 360
 			width: 80
 			height: 25
 			text: qsTr("Location")
@@ -312,7 +332,7 @@ Item {
 		Text {
 			id: descLabel
 			x: 10
-			y: 360
+			y: 390
 			width: 80
 			height: 25
 			text: qsTr("Description")
@@ -330,7 +350,7 @@ Item {
 		Text {
 			id: urlLabel
 			x: 10
-			y: 390
+			y: 420
 			width: 80
 			height: 25
 			text: qsTr("URL")
@@ -348,7 +368,7 @@ Item {
 		Text {
 			id: swidLabel
 			x: 10
-			y: 420
+			y: 450
 			width: 80
 			height: 25
 			text: qsTr("SoftwareID")
@@ -366,7 +386,7 @@ Item {
 		Text {
 			id: pkgidLabel
 			x: 10
-			y: 450
+			y: 480
 			width: 80
 			height: 25
 			text: qsTr("PackageID")
@@ -384,7 +404,7 @@ Item {
 		Text {
 			id: dmroptslabel
 			x: 10
-			y: 480
+			y: 510
 			width: 80
 			height: 25
 			text: qsTr("DMR+ Opts")
