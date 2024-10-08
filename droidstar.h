@@ -231,7 +231,6 @@ public slots:
 	QString get_modemM17CAN() { return m_modemM17CAN; }
 #if defined(Q_OS_ANDROID)
 	QString get_platform() { return QSysInfo::productType(); }
-	void reset_connect_status();
 	QString get_monofont() { return "Droid Sans Mono"; }
 #elif defined(Q_OS_WIN)
 	QString get_platform() { return QSysInfo::kernelType(); }

@@ -20,6 +20,7 @@
 #ifdef Q_OS_ANDROID
 #include <QCoreApplication>
 #include <QJniObject>
+#include <QtCore/private/qandroidextras_p.h>
 #endif
 #include <QStandardPaths>
 #include <QFile>
@@ -31,6 +32,8 @@
 #include <stdio.h>
 #include <fcntl.h>
 #include <iostream>
+
+using namespace Qt::StringLiterals;
 
 DroidStar::DroidStar(QObject *parent) :
 	QObject(parent),
@@ -84,7 +87,7 @@ void DroidStar::keepScreenOn()
 		QJniObject window = activity.callObjectMethod("getWindow", "()Landroid/view/Window;");
 
 		if (window.isValid()) {
-			const int FLAG_KEEP_SCREEN_ON = 128;
+            const int FLAG_KEEP_SCREEN_ON = 0x00000080;
 			window.callMethod<void>("addFlags", "(I)V", FLAG_KEEP_SCREEN_ON);
 		}
 	}});
@@ -93,13 +96,15 @@ void DroidStar::keepScreenOn()
     if (qApp->checkPermission(microphonePermission) != Qt::PermissionStatus::Granted) {
         qApp->requestPermission(microphonePermission, this, &DroidStar::keepScreenOn);
     }
-}
-void DroidStar::reset_connect_status()
-{
-	if(connect_status == Mode::CONNECTED_RW){
-        connect_status = Mode::CONNECTING;
-        process_connect();
-	}
+
+    if (QNativeInterface::QAndroidApplication::sdkVersion() >= __ANDROID_API_T__) {
+        const auto notificationPermission = "android.permission.POST_NOTIFICATIONS"_L1;
+        auto requestResult = QtAndroidPrivate::requestPermission(notificationPermission);
+        if (requestResult.result() != QtAndroidPrivate::Authorized) {
+            qWarning() << "Failed to acquire permission to post notifications "
+                          "(required for Android 13+)";
+        }
+    }
 }
 #endif
 
@@ -286,6 +291,13 @@ void DroidStar::process_connect()
 		m_data6.clear();
 		emit connect_status_changed(0);
 		emit update_log("Disconnected");
+#ifdef Q_OS_ANDROID
+        QJniObject::callStaticMethod<void>(
+            "org/dudetronics/droidstar/NotificationClient",
+            "denotify",
+            "(Landroid/content/Context;)V",
+            QNativeInterface::QAndroidApplication::context());
+#endif
 	}
 	else{
 		if(m_protocol == "REF"){
@@ -1260,7 +1272,8 @@ void DroidStar::update_data(Mode::MODEINFO info)
 		if(m_mycall.isEmpty()) set_mycall(m_callsign);
 		if(m_urcall.isEmpty()) set_urcall("CQCQCQ");
 		if(m_rptr1.isEmpty()) set_rptr1(m_callsign + " " + m_module);
-		emit update_log("Connected to " + m_protocol + " " + m_refname + " " + m_host + ":" + QString::number(m_port));
+        QString s = "Connected to " + m_protocol + " " + m_refname + " " + m_host + ":" + QString::number(m_port);
+        emit update_log(s);
 
 		if(info.sw_vocoder_loaded){
 			emit update_log("Vocoder plugin loaded");
@@ -1269,6 +1282,15 @@ void DroidStar::update_data(Mode::MODEINFO info)
 			emit update_log("Vocoder plugin not loaded");
 			emit open_vocoder_dialog();
 		}
+#ifdef Q_OS_ANDROID
+        QJniObject javaNotification = QJniObject::fromString(s);
+        QJniObject::callStaticMethod<void>(
+            "org/dudetronics/droidstar/NotificationClient",
+            "notify",
+            "(Landroid/content/Context;Ljava/lang/String;)V",
+            QNativeInterface::QAndroidApplication::context(),
+            javaNotification.object<jstring>());
+#endif
 	}
 
 	m_netstatustxt = "Connected ping cnt: " + QString::number(info.count);

@@ -129,14 +129,7 @@ ApplicationWindow {
     DroidStar {
         id: droidstar
     }
-	Connections {
-		target: Qt.application
-		function onStateChanged() {
-			if (Qt.application.state !== Qt.ApplicationActive) {
-				droidstar.reset_connect_status();
-			}
-		}
-	}
+
     Connections {
         target: droidstar
 		Component.onCompleted: {
