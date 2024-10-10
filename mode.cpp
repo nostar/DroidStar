@@ -333,9 +333,8 @@ bool Mode::load_vocoder_plugin()
 	}
 #endif
 #else
-    qDebug() << "new vocoder";
-	m_mbevocoder = new VocoderPlugin();
-	return true;
+    m_mbevocoder = new VocoderPlugin();
+    return true;
 #endif
 }
 

@@ -1083,7 +1083,12 @@ void DroidStar::process_dmr_ids()
 				QStringList llids = lids.simplified().split(' ');
 
 				if(llids.size() >= 2){
-					m_dmrids[llids.at(0).toUInt()] = llids.at(1);
+                    if(llids.size() == 3){
+                         m_dmrids[llids.at(0).toUInt()] = llids.at(1) + " - " + llids.at(2);
+                    }
+                    else{
+                        m_dmrids[llids.at(0).toUInt()] = llids.at(1);
+                    }
 				}
 			}
 		}

@@ -147,7 +147,7 @@ if(ANDROID)
     )
     set_target_properties(DroidStar PROPERTIES
        QT_ANDROID_PACKAGE_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/android
-       #QT_ANDROID_VERSION_CODE 79
+       QT_ANDROID_VERSION_CODE 79
        #QT_ANDROID_MIN_SDK_VERSION 31
     )
 endif()
