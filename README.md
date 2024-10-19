@@ -54,6 +54,13 @@ All IAX nodes are now defined on the Hosts tab.  The example shows the format.  
 
 Add DTMF commands like \*3node, \*1node, \*70, etc in the IAX DTMF box and hit send to send the DTMF string. Details on various commands can be found at the AllStar wiki and others.
 
+# AllStar web transceiver support
+In order to connect to an AllStar node via the ASL WT portal, add a line in the Host tab as follows:
+```
+IAX 12345 wt 4569 allstar-public allstar
+```
+When 'wt' is used instead of an IP address, then wt will be replaced by XXXXX.nodes.allstarlink.org, where XXXXX is the specified none number.  Then you must add you ASL web portal password to ASL password under settings.  This is *NOT* the password for your node, this is the password you made to login to the ASL website.
+
 # General building instructions
 This software is written primarily in C++ on Linux and requires Qt6 >= Qt6.5, and naturally the devel packages to build.  Java, QML (Javascript based), and C# code is also used where necessary.  The preferred way to obtain Qt is to use the Qt open source online installer from the Qt website.  Run this installer as a user (not root) to keep the Qt installation separate from your system libs.  Select the option as shown in this pic https://imgur.com/i0WuFCY which will install everything under ~/Qt.
 
