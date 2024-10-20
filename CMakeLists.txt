@@ -142,6 +142,8 @@ if(APPLE)
 endif()
 
 if(ANDROID)
+    include(~/Android/Sdk/android_openssl/android_openssl.cmake)
+    add_android_openssl_libraries(DroidStar)
     target_sources(DroidStar PUBLIC
         androidserialport.cpp androidserialport.h
     )
@@ -220,7 +222,7 @@ if(FALSE) # set TRUE for flite
     )
 endif()
 
-if(FALSE) # set TRUE for md380_vocoder
+if(TRUE) # set TRUE for md380_vocoder
     target_compile_definitions(DroidStar PRIVATE
         USE_MD380_VOCODER
     )

@@ -28,6 +28,7 @@
 #include <QDir>
 #include <QFont>
 #include <QFontDatabase>
+#include <QSslSocket>
 #include <cstring>
 #include <stdio.h>
 #include <fcntl.h>
@@ -71,6 +72,7 @@ DroidStar::DroidStar(QObject *parent) :
 	qDebug() << "Kernel type: " << QSysInfo::kernelType();
 	qDebug() << "Kernel version: " << QSysInfo::kernelVersion();
     qDebug() << "Software version: " << VERSION_NUMBER;
+    qDebug() << "OpenSSL: " << QSslSocket::supportsSsl();
 }
 
 DroidStar::~DroidStar()
@@ -257,12 +259,13 @@ void DroidStar::obtain_asl_wt_creds()
 							QStringList ll = l.at(i).split('"');
 							m_wt_callingname = ll.at(3);
 							m_wt_callingname_pass = m_asl_password;
+                            manager->disconnect();
 							break;
 						}
 					}
 				} else {
 					// Handle error
-					qDebug() << "Error: " << reply->errorString();
+                    qDebug() << "Error: " << reply->errorString();
 				}
 				reply->deleteLater();
 			});
@@ -270,7 +273,7 @@ void DroidStar::obtain_asl_wt_creds()
 			manager->get(request);
 		} else {
 			// Handle error
-			qDebug() << "Error: " << reply->errorString();
+            qDebug() << "Error: " << reply->errorString();
 		}
 		reply->deleteLater();
 	});
