@@ -222,7 +222,7 @@ if(FALSE) # set TRUE for flite
     )
 endif()
 
-if(TRUE) # set TRUE for md380_vocoder
+if(FALSE) # set TRUE for md380_vocoder
     target_compile_definitions(DroidStar PRIVATE
         USE_MD380_VOCODER
     )
