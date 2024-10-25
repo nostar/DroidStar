@@ -518,7 +518,7 @@ ApplicationWindow {
                     errorDialog.text = "Banned!"
                 }
 				errorDialog.open();
-				droidstar.onConnect_status_changed(0);
+                droidstar.connect_status_changed(0);
 			}
 		}
 	}

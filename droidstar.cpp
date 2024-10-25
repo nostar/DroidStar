@@ -233,9 +233,6 @@ void DroidStar::tts_text_changed(QString ttstxt)
 
 void DroidStar::obtain_asl_wt_creds()
 {
-	if (!m_wt_callingname.isEmpty() && (m_asl_password == m_wt_callingname_pass)) {
-		return;
-	}
 	QNetworkAccessManager *manager = new QNetworkAccessManager(this);
 	QUrl url("https://www.allstarlink.org/portal/login.php");
 	QNetworkRequest request(url);
@@ -260,20 +257,24 @@ void DroidStar::obtain_asl_wt_creds()
 							m_wt_callingname = ll.at(3);
 							m_wt_callingname_pass = m_asl_password;
                             manager->disconnect();
+                            qDebug() << "ASL authentication complete";
+                            process_connect();
 							break;
 						}
 					}
 				} else {
-					// Handle error
                     qDebug() << "Error: " << reply->errorString();
+                    m_errortxt = "ASL authentication failed";
+                    emit connect_status_changed(5);
 				}
 				reply->deleteLater();
 			});
 
 			manager->get(request);
 		} else {
-			// Handle error
             qDebug() << "Error: " << reply->errorString();
+            m_errortxt = "ASL authentication failed";
+            emit connect_status_changed(5);
 		}
 		reply->deleteLater();
 	});
@@ -332,6 +333,10 @@ void DroidStar::process_connect()
         }
         else if(m_protocol == "IAX"){
             m_refname = m_saved_iaxhost;
+            if (m_wt_callingname.isEmpty() || (m_asl_password != m_wt_callingname_pass)) {
+                obtain_asl_wt_creds();
+                return;
+            }
         }
 
 		emit connect_status_changed(1);
@@ -579,9 +584,6 @@ void DroidStar::process_mode_change(const QString &m)
 	}
 	if(m == "IAX"){
         process_iax_hosts();
-		if (!m_asl_password.isEmpty()) {
-			obtain_asl_wt_creds();
-		}
 		m_label1 = "";
 		m_label2 = "";
 		m_label3 = "";
