@@ -31,10 +31,9 @@ jobs:
         cd build
         cmake ..
         make
-        mkdir release
-        mv Droidstar.app release
+        ditto -c -k --keepParent Droidstar.app Droidstar-${{ env.sha_short }}-${{ env.platform }}-${{ env.arch }}.zip
     - name: upload
       uses: actions/upload-artifact@v4
       with:
         name: Droidstar-${{ env.sha_short }}-${{ env.platform }}-${{ env.arch }}
-        path: build/release
+        path: Droidstar-${{ env.sha_short }}-${{ env.platform }}-${{ env.arch }}.zip
