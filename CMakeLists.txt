@@ -185,7 +185,7 @@ else()
     )
 endif()
 
-if(FALSE) #set TRUE to use vocoder plugin
+if(TRUE) #set TRUE to use vocoder plugin
     target_compile_definitions(DroidStar PRIVATE
         VOCODER_PLUGIN
     )
