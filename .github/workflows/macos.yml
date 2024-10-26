@@ -1,0 +1,38 @@
+on:
+  push:
+    branches:
+      - main
+      - develop
+ 
+jobs:
+  build:
+    name: mac-build
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        # macOS 13 = Intel, macOS 14 = Apple Silicon
+        os: [macos-13,macos-14]
+    steps:
+    - name: checkout
+      uses: actions/checkout@v4
+    - name: Declare some variables
+      shell: bash
+      run: |
+        echo "sha_short=$(git rev-parse --short "$GITHUB_SHA")" >> "$GITHUB_ENV"
+        echo "branch=$(echo ${GITHUB_REF#refs/heads/})" >> "$GITHUB_ENV"
+        echo "platform=$(uname -o)" >> "$GITHUB_ENV" 
+        echo "arch=$(uname -m)" >> "$GITHUB_ENV"
+    - name: install dependencies
+      run: |
+        brew install qt@6
+    - name: build
+      run: |
+        mkdir build
+        cd build
+        cmake ..
+        make
+    - name: upload
+      uses: actions/upload-artifact@v4
+      with:
+        name: Droidstar-${{ env.sha_short }}-${{ env.platform }}-${{ env.arch }}
+        path: build/Droidstar.app
