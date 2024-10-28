@@ -56,9 +56,6 @@ private slots:
 	void out_audio_vol_changed(qreal v){ m_audio->set_output_volume(v); }
 	void connected();
 private:
-	QUdpSocket *m_udp = nullptr;
-	QHostAddress m_address;
-	QString m_callsign;
 	QString m_username;
 	QString m_password;
 	QString m_callingname;
@@ -71,16 +68,10 @@ private:
 	uint16_t m_regscallno;
 	uint16_t m_regdcallno;
 	int m_id;
-	QString m_audioin;
-	QString m_audioout;
 	qint64 m_timestamp;
 	uint8_t m_regstat;
 	QByteArray m_md5seed;
 	QTimer *m_regtimer;
-	QTimer *m_pingtimer;
-	QTimer *m_rxtimer;
-	QTimer *m_txtimer;
-	AudioEngine *m_audio;
 	uint8_t m_iseq;
 	uint8_t m_oseq;
 	QQueue<int16_t> m_audioq;
@@ -96,7 +87,6 @@ private:
 	uint16_t m_ttscnt;
 	int m_cnt;
 	bool m_wt;
-	//qreal m_rxgain;
 #ifdef USE_FLITE
 	cst_voice *voice_slt;
 	cst_voice *voice_kal;

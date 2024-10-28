@@ -780,9 +780,9 @@ void IAX::connected() {
 	m_rxtimer = new QTimer();
 	connect(m_rxtimer, SIGNAL(timeout()), this, SLOT(process_rx_data()));
 	m_rxtimer->start(19);
-	m_pingtimer = new QTimer();
-	connect(m_pingtimer, SIGNAL(timeout()), this, SLOT(send_ping()));
-	m_pingtimer->start(2000);
+    m_ping_timer = new QTimer();
+    connect(m_ping_timer, SIGNAL(timeout()), this, SLOT(send_ping()));
+    m_ping_timer->start(2000);
 	m_audio = new AudioEngine(m_audioin, m_audioout);
 	m_audio->init();
 	m_audio->start_playback();
