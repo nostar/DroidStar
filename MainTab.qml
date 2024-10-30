@@ -267,13 +267,91 @@ Item {
 		height: parent.height / rows;
 		font.pixelSize: parent.height / 35
 		currentIndex: -1
-			displayText: currentIndex === -1 ? "Host..." : currentText
+		displayText: currentIndex === -1 ? "Host..." : currentText
+			
+		property var selectedHost: "Host..."
+		property var imodel
+		model: imodel.filter(condition => {
+			if(filterConditionText.text.length > 0) {
+				return condition.toLowerCase().includes(filterConditionText.text.toLowerCase())
+			}
+			return true
+		});
+		popup: Popup {
+			id: _comboHostPopup
+			y: parent.height - 1
+			width: parent.width
+			implicitHeight: contentItem.implicitHeight
+			padding: 1
+
+			contentItem: Item {
+				id: _comboHostPopupItem
+                anchors.fill: parent
+    
+                TextArea {
+                    id: filterConditionText
+                    anchors.left: parent.left
+                    anchors.right: parent.right
+                    anchors.top: parent.bottom
+
+					placeholderText: qsTr("Search...")
+					background: Rectangle {
+						color: "#353535"
+					}
+                }
+				ListView {
+					clip: true
+                    anchors.left: parent.left
+                    anchors.right: parent.right
+                    anchors.top: filterConditionText.bottom
+        			implicitHeight: _comboHost.parent.height / rows * 14
+					model: _comboHost.popup.visible ? _comboHost.delegateModel : null
+					currentIndex: _comboHost.highlightedIndex
+
+					ScrollBar.vertical: ScrollBar {
+						active: true
+					}
+				}
+			}
+			onClosed: {
+				filterConditionText.text = ""
+			}
+		}
+
+        delegate: ItemDelegate {
+			id: _comboHostDelegate
+            width: _comboHost.width
+    
+			required property var model
+			required property int index
+
+            palette.text: _comboHost.palette.text
+            palette.highlightedText: _comboHost.palette.highlightedText
+    
+			background: Rectangle {
+				color: _comboHostDelegate.highlighted ? "steelblue" : "#252424"
+			}
+
+            contentItem: Text {
+            	text: _comboHostDelegate.model[_comboHost.textRole]
+
+            	font: _comboHost.font
+				verticalAlignment: Text.AlignVCenter
+				color: "white"
+            }
+    
+            highlighted: _comboHost.highlightedIndex === index
+        }
 		contentItem: Text {
-			text: _comboHost.displayText
+			text: _comboHost.selectedHost
 			font: _comboHost.font
 			leftPadding: 10
 			verticalAlignment: Text.AlignVCenter
 			color: _comboHost.enabled ? "white" : "darkgrey"
+		}
+		onActivated: {
+			// Change only when an item is selected
+			selectedHost = _comboHost.currentText;
 		}
 		onCurrentTextChanged: {
             if(settingsTab.mmdvmBox.checked){
