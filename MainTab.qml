@@ -178,7 +178,7 @@ Item {
 		onCurrentTextChanged: {
 			droidstar.set_slot(_comboSlot.currentIndex);
 		}
-        visible: false
+		visible: false
 	}
 	ComboBox {
 		id: _comboCC
@@ -187,7 +187,7 @@ Item {
 		width: (parent.width / 5)
 		height: parent.height / rows;
 		font.pixelSize: parent.height / 35
-        model: ["CC0", "CC1", "CC2", "CC3", "CC4", "CC5", "CC6", "CC7", "CC8", "CC9", "CC10", "CC11", "CC12", "CC13", "CC14", "CC15"]
+		model: ["CC0", "CC1", "CC2", "CC3", "CC4", "CC5", "CC6", "CC7", "CC8", "CC9", "CC10", "CC11", "CC12", "CC13", "CC14", "CC15"]
 		contentItem: Text {
 			text: _comboCC.displayText
 			font: _comboCC.font
@@ -198,7 +198,7 @@ Item {
 		onCurrentTextChanged: {
 			droidstar.set_cc(_comboCC.currentIndex);
 		}
-        visible: false
+		visible: false
 	}
 	Button {
 		id: _connectbutton
@@ -228,7 +228,7 @@ Item {
 			droidstar.set_swid(settingsTab.swidEdit.text);
 			droidstar.set_pkgid(settingsTab.pkgidEdit.text);
 			droidstar.set_dmr_options(settingsTab.dmroptsEdit.text);
-            droidstar.set_dmr_pc(mainTab.privateBox.checked);
+			droidstar.set_dmr_pc(mainTab.privateBox.checked);
 			droidstar.set_txtimeout(settingsTab.txtimerEdit.text);
 			//droidstar.set_toggletx(toggleTX.checked);
 			droidstar.set_xrf2ref(settingsTab.xrf2ref.checked);
@@ -255,7 +255,7 @@ Item {
 			droidstar.set_modemP25TxLevel(settingsTab.modemYSFTXLevelEdit.text);
 			droidstar.set_modemNXDNTxLevel(settingsTab.modemNXDNTXLevelEdit.text);
 			droidstar.set_modemBaud(settingsTab.modemBaudEdit.text);
-            //droidstar.set_mmdvm_direct(settingsTab.mmdvmBox.checked)
+			//droidstar.set_mmdvm_direct(settingsTab.mmdvmBox.checked)
 			droidstar.process_connect();
 		}
 	}
@@ -286,25 +286,25 @@ Item {
 
 			contentItem: Item {
 				id: _comboHostPopupItem
-                anchors.fill: parent
-    
-                TextArea {
-                    id: filterConditionText
-                    anchors.left: parent.left
-                    anchors.right: parent.right
-                    anchors.top: parent.bottom
+				anchors.fill: parent
+	
+				TextArea {
+					id: filterConditionText
+					anchors.left: parent.left
+					anchors.right: parent.right
+					anchors.top: parent.bottom
 
 					placeholderText: qsTr("Search...")
 					background: Rectangle {
 						color: "#353535"
 					}
-                }
+				}
 				ListView {
 					clip: true
-                    anchors.left: parent.left
-                    anchors.right: parent.right
-                    anchors.top: filterConditionText.bottom
-        			implicitHeight: _comboHost.parent.height / rows * 14
+					anchors.left: parent.left
+					anchors.right: parent.right
+					anchors.top: filterConditionText.bottom
+					implicitHeight: _comboHost.parent.height / rows * 14
 					model: _comboHost.popup.visible ? _comboHost.delegateModel : null
 					currentIndex: _comboHost.highlightedIndex
 
@@ -318,30 +318,30 @@ Item {
 			}
 		}
 
-        delegate: ItemDelegate {
+		delegate: ItemDelegate {
 			id: _comboHostDelegate
-            width: _comboHost.width
-    
+			width: _comboHost.width
+	
 			required property var model
 			required property int index
 
-            palette.text: _comboHost.palette.text
-            palette.highlightedText: _comboHost.palette.highlightedText
-    
+			palette.text: _comboHost.palette.text
+			palette.highlightedText: _comboHost.palette.highlightedText
+	
 			background: Rectangle {
 				color: _comboHostDelegate.highlighted ? "steelblue" : "#252424"
 			}
 
-            contentItem: Text {
-            	text: _comboHostDelegate.model[_comboHost.textRole]
+			contentItem: Text {
+				text: _comboHostDelegate.model[_comboHost.textRole]
 
-            	font: _comboHost.font
+				font: _comboHost.font
 				verticalAlignment: Text.AlignVCenter
 				color: "white"
-            }
-    
-            highlighted: _comboHost.highlightedIndex === index
-        }
+			}
+	
+			highlighted: _comboHost.highlightedIndex === index
+		}
 		contentItem: Text {
 			text: _comboHost.selectedHost
 			font: _comboHost.font
@@ -354,10 +354,10 @@ Item {
 			selectedHost = _comboHost.currentText;
 		}
 		onCurrentTextChanged: {
-            if(settingsTab.mmdvmBox.checked){
-                droidstar.set_dst(_comboHost.currentText);
-            }
-            if(!droidstar.get_modelchange()){
+			if(settingsTab.mmdvmBox.checked){
+				droidstar.set_dst(_comboHost.currentText);
+			}
+			if(!droidstar.get_modelchange()){
 				droidstar.process_host_change(_comboHost.currentText);
 			}
 		}
@@ -371,7 +371,7 @@ Item {
 		font.pixelSize: parent.height / 35
 		currentIndex: -1
 			displayText: currentIndex === -1 ? "Mod..." : currentText
-        model: [" ", "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z"]
+		model: [" ", "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z"]
 		contentItem: Text {
 			text: _comboModule.displayText
 			font: _comboModule.font
@@ -396,34 +396,34 @@ Item {
 			droidstar.set_dmr_pc(privateBox.checked)
 			//console.log("screen size ", parent.width, " x ", parent.height);
 		}
-        visible: false
+		visible: false
 	}
 	Text {
 		id: _dtmflabel
 		x: 5
-        y: (parent.height / rows + 1) * 4;
+		y: (parent.height / rows + 1) * 4;
 		width: parent.width / 5
 		height:  parent.height / rows;
 		text: qsTr("DTMF")
 		color: "white"
 		font.pixelSize: parent.height / 30;
 		verticalAlignment: Text.AlignVCenter
-        visible: false
+		visible: false
 	}
 	TextField {
 		id: _editIAXDTMF
 		x: (parent.width / 4)
-        y: (parent.height / rows + 1) * 4;
+		y: (parent.height / rows + 1) * 4;
 		width: (parent.width * 3 / 8) - 4;
 		height: parent.height / rows;
 		font.pixelSize: parent.height / 35
 		//inputMethodHints: "ImhPreferNumbers"
-        visible: false
+		visible: false
 	}
 	Button {
 		id: _dtmfsendbutton
 		x: (parent.width * 5 / 8)
-        y: (parent.height / rows + 1) * 4;
+		y: (parent.height / rows + 1) * 4;
 		width: (parent.width * 3 / 8) - 5;
 		height: parent.height / rows;
 		text: qsTr("Send")
@@ -431,7 +431,7 @@ Item {
 		onClicked: {
 			droidstar.dtmf_send_clicked(editIAXDTMF.text);
 		}
-        visible: false
+		visible: false
 	}
 	Text {
 		id: _element3
@@ -443,7 +443,7 @@ Item {
 		color: "white"
 		font.pixelSize: parent.height / 30;
 		verticalAlignment: Text.AlignVCenter
-        visible: false
+		visible: false
 	}
 	TextField {
 		visible: false
@@ -485,7 +485,7 @@ Item {
 		id: _swtxBox
 		x: (parent.width * 2 / 5) + 5
 		y: (parent.height / rows + 1) * 2;
-        width: parent.width / 4
+		width: parent.width / 4
 		height: parent.height / rows
 		font.pixelSize: parent.height / 40;
 		text: qsTr("SWTX")
