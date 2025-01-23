@@ -316,6 +316,7 @@ Item {
 			}
 			onClosed: {
 				filterConditionText.text = ""
+				_comboHostContentItem.text = _comboHost.currentText
 			}
 		}
 
@@ -344,6 +345,7 @@ Item {
 			highlighted: _comboHost.highlightedIndex === index
 		}
 		contentItem: Text {
+			id: _comboHostContentItem
 			text: _comboHost.selectedHost
 			font: _comboHost.font
 			leftPadding: 10
