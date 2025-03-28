@@ -30,11 +30,7 @@
 #include <QFontDatabase>
 #include <QSslSocket>
 #include <cstring>
-#include <stdio.h>
 #include <fcntl.h>
-#include <iostream>
-
-using namespace Qt::StringLiterals;
 
 DroidStar::DroidStar(QObject *parent) :
 	QObject(parent),
@@ -80,6 +76,8 @@ DroidStar::~DroidStar()
 }
 
 #ifdef Q_OS_ANDROID
+using namespace Qt::StringLiterals;
+
 void DroidStar::keepScreenOn()
 {
 	char const * const action = "addFlags";
@@ -285,6 +283,10 @@ void DroidStar::obtain_asl_wt_creds()
 void DroidStar::process_connect()
 {
 	if(connect_status != Mode::DISCONNECTED){
+        if(connect_status == Mode::TIMEOUT){
+            m_errortxt = "Connection timed out";
+            emit connect_status_changed(5);
+        }
 		connect_status = Mode::DISCONNECTED;
 		m_modethread->quit();
 		m_data1.clear();
@@ -458,6 +460,7 @@ void DroidStar::process_connect()
 		if(m_protocol == "M17"){
 			connect(this, SIGNAL(m17_rate_changed(int)), m_mode, SLOT(rate_changed(int)));
 			connect(this, SIGNAL(m17_can_changed(int)), m_mode, SLOT(can_changed(int)));
+            connect(this, SIGNAL(m17_send_sms(QString)), m_mode, SLOT(tx_packet(QString)));
             if(m_mdirect){
                 connect(this, SIGNAL(dst_changed(QString)), m_mode, SLOT(dst_changed(QString)));
             }
@@ -1094,7 +1097,7 @@ void DroidStar::process_dmr_ids()
 
 				if(llids.size() >= 2){
                     if(llids.size() == 3){
-                         m_dmrids[llids.at(0).toUInt()] = llids.at(1) + " - " + llids.at(2);
+                         m_dmrids[llids.at(0).toUInt()] = llids.at(1) + " " + llids.at(2);
                     }
                     else{
                         m_dmrids[llids.at(0).toUInt()] = llids.at(1);
@@ -1277,6 +1280,12 @@ void DroidStar::update_data(Mode::MODEINFO info)
 		return;
 	}
 
+    if((connect_status == Mode::CONNECTED_RW) && (info.status == Mode::TIMEOUT)){
+        connect_status = Mode::TIMEOUT;
+        process_connect();
+        return;
+    }
+
 	if( (connect_status == Mode::CONNECTING) && ( info.status == Mode::CONNECTED_RW)){
 		connect_status = Mode::CONNECTED_RW;
 		emit connect_status_changed(2);
@@ -1423,12 +1432,28 @@ void DroidStar::update_data(Mode::MODEINFO info)
 	else if(m_protocol == "M17"){
 		m_data1 = info.src;
         m_data2 = info.dst + " " + info.module;
-		m_data3 = info.type ? "3200 Voice" : "1600 V/D";
+
+        switch(info.type){
+        case 0:
+           m_data3 =  "1600 V/D";
+            m_data5 = QString::number(info.streamid, 16);
+            break;
+        case 1:
+            m_data3 = "3200 Voice";
+            m_data5 = QString::number(info.streamid, 16);
+            break;
+        case 2:
+            m_data3 = "Packet";
+            m_data5 = info.usertxt.left(20);
+            update_log(info.src.section(" ", 0, 0) + ": " + info.usertxt);
+            break;
+        }
+
 		if(info.frame_number){
 			QString n = QString("%1").arg(info.frame_number, 4, 16, QChar('0'));
 			m_data4 = n;
 		}
-		m_data5 = QString::number(info.streamid, 16);
+
 	}
 	else if(m_protocol == "IAX"){
 

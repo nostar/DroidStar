@@ -81,9 +81,9 @@ void AudioEngine::init()
 		QAudioDevice device(QMediaDevices::defaultAudioOutput());
 		for (QList<QAudioDevice>::ConstIterator it = devices.constBegin(); it != devices.constEnd(); ++it ) {
 
-            qDebug() << "Playback device name = " << (*it).description();
-            qDebug() << (*it).supportedSampleFormats();
-            qDebug() << (*it).preferredFormat();
+            //qDebug() << "Playback device name = " << (*it).description();
+            //qDebug() << (*it).supportedSampleFormats();
+            //qDebug() << (*it).preferredFormat();
 
 			if((*it).description() == m_outputdevice){
 				device = *it;
@@ -109,9 +109,9 @@ void AudioEngine::init()
 		QAudioDevice device(QMediaDevices::defaultAudioInput());
 		for (QList<QAudioDevice>::ConstIterator it = devices.constBegin(); it != devices.constEnd(); ++it ) {
 			if(MACHAK){
-				qDebug() << "Playback device name = " << (*it).description();
-				qDebug() << (*it).supportedSampleFormats();
-				qDebug() << (*it).preferredFormat();
+                //qDebug() << "Capture device name = " << (*it).description();
+                //qDebug() << (*it).supportedSampleFormats();
+                //qDebug() << (*it).preferredFormat();
 			}
 			if((*it).description() == m_inputdevice){
 				device = *it;
@@ -359,16 +359,16 @@ void AudioEngine::handleStateChanged(QAudio::State newState)
 {
 	switch (newState) {
 	case QAudio::ActiveState:
-		//qDebug() << "AudioOut state active";
+        //qDebug() << "AudioOut state active";
 		break;
 	case QAudio::SuspendedState:
-		//qDebug() << "AudioOut state suspended";
+        //qDebug() << "AudioOut state suspended";
 		break;
 	case QAudio::IdleState:
-		//qDebug() << "AudioOut state idle";
+        //qDebug() << "AudioOut state idle";
 		break;
 	case QAudio::StoppedState:
-		//qDebug() << "AudioOut state stopped";
+        //qDebug() << "AudioOut state stopped";
 		break;
 	default:
 		break;

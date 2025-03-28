@@ -43,7 +43,8 @@ signals:
 	void in_audio_vol_changed(qreal);
 	void tx_pressed();
 	void tx_released();
-	void tx_clicked(bool);
+    void tx_clicked(bool);
+    void m17_send_sms(QString);
 	void dmrpc_state_changed(int);
 	void dmr_tgid_changed(int);
 	void m17_rate_changed(int);
@@ -142,6 +143,7 @@ public slots:
 	void press_tx();
 	void release_tx();
 	void click_tx(bool);
+    void m17_sms_pressed(QString sms) { emit m17_send_sms(sms.left(822)); }
 	void process_settings();
 	void check_host_files();
 	void update_host_files();

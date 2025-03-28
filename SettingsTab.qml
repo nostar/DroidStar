@@ -203,7 +203,6 @@ Item {
 			width: 80
 			height: 30
 			function build_model(){
-				console.log("build_model() called");
 				var ids = ["None"];
 				for(var i = 0; i < 100; ++i){
 					ids[i+1] = i.toString().padStart(2, "0");
@@ -560,7 +559,7 @@ Item {
 		ButtonGroup {
 			id: m17rateGroup
 			onClicked: {
-				button.text == "Voice Full" ? droidstar.m17_rate_changed(true) : droidstar.m17_rate_changed(false)
+                button.text === "Voice Full" ? droidstar.m17_rate_changed(true) : droidstar.m17_rate_changed(false)
 			}
 		}
 		CheckBox {

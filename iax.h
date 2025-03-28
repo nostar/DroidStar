@@ -40,10 +40,10 @@ private slots:
 	void send_registration(uint16_t dcall = 0);
 	void send_call();
 	void send_call_auth();
-	void send_ack(uint16_t, uint16_t, uint8_t, uint8_t);
-	void send_lag_response();
+    void send_ack(uint16_t, uint16_t, uint8_t, uint8_t, uint32_t ts = 0);
+    void send_lag_response(uint32_t);
 	void send_ping();
-	void send_pong();
+    void send_pong(uint32_t);
 	void toggle_tx(bool);
 	void start_tx();
 	void stop_tx();

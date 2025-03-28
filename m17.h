@@ -52,7 +52,8 @@ private slots:
 	void toggle_tx(bool);
 	void start_tx();
 	void transmit();
-	void hostname_lookup(QHostInfo i);
+    void tx_packet(QString);
+    void hostname_lookup(QHostInfo);
 	void mmdvm_direct_connect();
 	void rate_changed(int r) { m_txrate = r; }
 	void can_changed(int c) { m_txcan = c; qDebug() << "CAN == " << c; }
@@ -62,9 +63,9 @@ private slots:
 	void combineFragmentLICHFEC(uint32_t, uint32_t, uint32_t, uint32_t, uint8_t*);
 	void interleave(uint8_t *, uint8_t *);
 	void decorrelate(uint8_t *, uint8_t *);
-	bool checkCRC16(const uint8_t* in, uint32_t nBytes);
-	void encodeCRC16(uint8_t* in, uint32_t nBytes);
-	uint16_t createCRC16(const uint8_t* in, uint32_t nBytes);
+    bool checkCRC16(const uint8_t *, uint32_t);
+    void encodeCRC16(uint8_t *, uint32_t);
+    uint16_t createCRC16(const uint8_t *, uint32_t);
 private:
 	int m_txrate;
 	uint8_t m_txcan;

@@ -15,7 +15,6 @@
 	along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#include <iostream>
 #include <cstring>
 #include "ref.h"
 #include "CRCenc.h"
@@ -448,7 +447,6 @@ void REF::format_callsign(QString &s)
 
 void REF::process_modem_data(QByteArray d)
 {
-	QByteArray txdata;
 	char cs[9];
 	uint8_t ambe[9];
 

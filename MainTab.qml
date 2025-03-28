@@ -22,10 +22,10 @@ Item {
 	id: mainTab
 	property int rows: {
 		if(USE_FLITE){
-			rows = 20;
+            mainTab.rows = 20;
 		}
 		else{
-			rows = 18;
+            mainTab.rows = 18;
 		}
 	}
 	property bool tts: {
@@ -38,7 +38,7 @@ Item {
 	}
 
 	onWidthChanged:{
-		if(_comboMode.currentText == "DMR"){
+        if(_comboMode.currentText === "DMR"){
 			_comboMode.width = (mainTab.width / 5) - 5;
 			_connectbutton.width = (mainTab.width * 2 / 5 ) - 5
 			_connectbutton.x = (mainTab.width * 3 / 5 )
@@ -99,7 +99,7 @@ Item {
 		function update_level(){
 			if(cnt >= 20){
 				if(rxcnt == last_rxcnt){
-					droidstar.set_output_level(0);
+                    droidstar.set_output_level(0);
 					rxcnt = 0;
 					//console.log("TIMEOUT");
 				}
@@ -131,7 +131,7 @@ Item {
 		x: 5
 		y: 0
 		width: (parent.width / 2) - 5
-		height: parent.height / rows;
+        height: parent.height / mainTab.rows;
 		font.pixelSize: parent.height / 40
 		currentIndex: -1
 			displayText: currentIndex === -1 ? "Mode..." : currentText
@@ -164,7 +164,7 @@ Item {
 		x: (parent.width / 5 )
 		y: 0
 		width: (parent.width / 5)
-		height: parent.height / rows;
+        height: parent.height / mainTab.rows;
 		font.pixelSize: parent.height / 35
 		model: ["S1", "S2"]
 		currentIndex: 1
@@ -185,7 +185,7 @@ Item {
 		x: (parent.width * 2 / 5 )
 		y: 0
 		width: (parent.width / 5)
-		height: parent.height / rows;
+        height: parent.height / mainTab.rows;
 		font.pixelSize: parent.height / 35
         model: ["CC0", "CC1", "CC2", "CC3", "CC4", "CC5", "CC6", "CC7", "CC8", "CC9", "CC10", "CC11", "CC12", "CC13", "CC14", "CC15"]
 		contentItem: Text {
@@ -205,7 +205,7 @@ Item {
 		x: parent.width / 2
 		y: 0
 		width: parent.width / 2
-		height: parent.height / rows
+        height: parent.height / mainTab.rows
 		text: qsTr("Connect")
 		font.pixelSize: parent.height / 30
 		onClicked: {
@@ -262,9 +262,9 @@ Item {
 	ComboBox {
 		id: _comboHost
 		x: 5
-		y: (parent.height / rows + 1) * 1;
+        y: (parent.height / mainTab.rows + 1) * 1;
 		width: ((parent.width * 3) / 4) - 5
-		height: parent.height / rows;
+        height: parent.height / mainTab.rows;
 		font.pixelSize: parent.height / 35
 		currentIndex: -1
 			displayText: currentIndex === -1 ? "Host..." : currentText
@@ -287,9 +287,9 @@ Item {
 	ComboBox {
 		id: _comboModule
 		x: ((parent.width * 3) / 4)
-		y: (parent.height / rows + 1) * 1
+        y: (parent.height / mainTab.rows + 1) * 1
 		width: (parent.width / 4) - 5
-		height: parent.height / rows;
+        height: parent.height / mainTab.rows;
 		font.pixelSize: parent.height / 35
 		currentIndex: -1
 			displayText: currentIndex === -1 ? "Mod..." : currentText
@@ -310,9 +310,9 @@ Item {
 	CheckBox {
 		id: _privateBox
 		x: ((parent.width * 3) / 4)
-		y: (parent.height / rows + 1) * 1;
+        y: (parent.height / mainTab.rows + 1) * 1;
 		width: (parent.width / 4) - 5
-		height: parent.height / rows
+        height: parent.height / mainTab.rows
 		text: qsTr("Private")
 		onClicked:{
 			droidstar.set_dmr_pc(privateBox.checked)
@@ -323,9 +323,9 @@ Item {
 	Text {
 		id: _dtmflabel
 		x: 5
-        y: (parent.height / rows + 1) * 4;
+        y: (parent.height / mainTab.rows + 1) * 4;
 		width: parent.width / 5
-		height:  parent.height / rows;
+        height:  parent.height / mainTab.rows;
 		text: qsTr("DTMF")
 		color: "white"
 		font.pixelSize: parent.height / 30;
@@ -335,9 +335,9 @@ Item {
 	TextField {
 		id: _editIAXDTMF
 		x: (parent.width / 4)
-        y: (parent.height / rows + 1) * 4;
+        y: (parent.height / mainTab.rows + 1) * 4;
 		width: (parent.width * 3 / 8) - 4;
-		height: parent.height / rows;
+        height: parent.height / mainTab.rows;
 		font.pixelSize: parent.height / 35
 		//inputMethodHints: "ImhPreferNumbers"
         visible: false
@@ -345,9 +345,9 @@ Item {
 	Button {
 		id: _dtmfsendbutton
 		x: (parent.width * 5 / 8)
-        y: (parent.height / rows + 1) * 4;
+        y: (parent.height / mainTab.rows + 1) * 4;
 		width: (parent.width * 3 / 8) - 5;
-		height: parent.height / rows;
+        height: parent.height / mainTab.rows;
 		text: qsTr("Send")
 		font.pixelSize: parent.height / 30
 		onClicked: {
@@ -358,9 +358,9 @@ Item {
 	Text {
 		id: _element3
 		x: 5
-		y: (parent.height / rows + 1) * 2;
+        y: (parent.height / mainTab.rows + 1) * 2;
 		width: parent.width / 5
-		height:  parent.height / rows;
+        height:  parent.height / mainTab.rows;
 		text: qsTr("TGID")
 		color: "white"
 		font.pixelSize: parent.height / 30;
@@ -371,9 +371,9 @@ Item {
 		visible: false
 		id: _dmrtgidEdit
 		x: parent.width / 5
-		y: (parent.height / rows + 1) * 2
+        y: (parent.height / mainTab.rows + 1) * 2
 		width: parent.width / 5
-		height: parent.height / rows
+        height: parent.height / mainTab.rows
 		font.pixelSize: parent.height / 35
 		selectByMouse: true
 		inputMethodHints: "ImhPreferNumbers"
@@ -386,9 +386,9 @@ Item {
 		visible: false
 		id: _comboM17CAN
 		x: parent.width / 5
-		y:  (parent.height / rows + 1) * 2
+        y:  (parent.height / mainTab.rows + 1) * 2
 		width: parent.width / 5
-		height: parent.height / rows;
+        height: parent.height / mainTab.rows;
 		font.pixelSize: parent.height / 35
 		currentIndex: 0
 		model: ["0", "1", "2", "3", "4", "5", "6", "7"]
@@ -406,9 +406,9 @@ Item {
 	CheckBox {
 		id: _swtxBox
 		x: (parent.width * 2 / 5) + 5
-		y: (parent.height / rows + 1) * 2;
+        y: (parent.height / mainTab.rows + 1) * 2;
         width: parent.width / 4
-		height: parent.height / rows
+        height: parent.height / mainTab.rows
 		font.pixelSize: parent.height / 40;
 		text: qsTr("SWTX")
 		onClicked:{
@@ -418,9 +418,9 @@ Item {
 	CheckBox {
 		id: _swrxBox
 		x: (parent.width * 3 / 5) + 5
-		y: (parent.height / rows + 1) * 2;
+        y: (parent.height / mainTab.rows + 1) * 2;
 		width: parent.width / 4
-		height: parent.height / rows
+        height: parent.height / mainTab.rows
 		font.pixelSize: parent.height / 40;
 		text: qsTr("SWRX")
 		onClicked:{
@@ -431,9 +431,9 @@ Item {
 	CheckBox {
 		id: _agcBox
 		x: (parent.width * 4 / 5) + 5
-		y: (parent.height / rows + 1) * 2;
+        y: (parent.height / mainTab.rows + 1) * 2;
 		width: parent.width / 4
-		height: parent.height / rows
+        height: parent.height / mainTab.rows
 		font.pixelSize: parent.height / 40;
 		text: qsTr("AGC")
 		onClicked:{
@@ -443,9 +443,9 @@ Item {
 	Text {
 		id: micgain_label
 		x: 10
-		y: (parent.height / rows + 1) * 3;
+        y: (parent.height / mainTab.rows + 1) * 3;
 		width: parent.width / 4;
-		height: parent.height / rows;
+        height: parent.height / mainTab.rows;
 		text: qsTr("Mic")
 		color: "white"
 		font.pixelSize: parent.height / 40;
@@ -456,9 +456,9 @@ Item {
 		visible: true
 		id: _slidermicGain
 		x: (parent.width / 4) + 10
-		y: (parent.height / rows + 1) * 3;
+        y: (parent.height / mainTab.rows + 1) * 3;
 		width: (parent.width * 3 / 4) - 20
-		height: parent.height / rows;
+        height: parent.height / mainTab.rows;
 		value: 0.1
 		onValueChanged: {
 			v = value * 100;
@@ -469,9 +469,9 @@ Item {
 	Text {
 		id: _label1
 		x: 10
-		y: (parent.height / rows + 1) * 4;
+        y: (parent.height / mainTab.rows + 1) * 4;
 		width: parent.width / 3
-		height: parent.height / rows;
+        height: parent.height / mainTab.rows;
 		text: qsTr("MYCALL")
 		color: "white"
 		font.pixelSize: parent.height / 30;
@@ -479,9 +479,9 @@ Item {
 	Text {
 		id: _label2
 		x: 10
-		y: (parent.height / rows + 1) * 5;
+        y: (parent.height / mainTab.rows + 1) * 5;
 		width: parent.width / 3
-		height: parent.height / rows;
+        height: parent.height / mainTab.rows;
 		text: qsTr("URCALL")
 		color: "white"
 		font.pixelSize: parent.height / 30;
@@ -490,9 +490,9 @@ Item {
 	Text {
 		id: _label3
 		x: 10
-		y: (parent.height / rows + 1) * 6;
+        y: (parent.height / mainTab.rows + 1) * 6;
 		width: parent.width / 3
-		height: parent.height / rows;
+        height: parent.height / mainTab.rows;
 		text: qsTr("RPTR1")
 		color: "white"
 		font.pixelSize: parent.height / 30;
@@ -501,9 +501,9 @@ Item {
 	Text {
 		id: _label4
 		x: 10
-		y: (parent.height / rows + 1) * 7;
+        y: (parent.height / mainTab.rows + 1) * 7;
 		width: parent.width / 3
-		height: parent.height / rows;
+        height: parent.height / mainTab.rows;
 		text: qsTr("RPTR2")
 		color: "white"
 		font.pixelSize: parent.height / 30;
@@ -512,9 +512,9 @@ Item {
 	Text {
 		id: _label5
 		x: 10
-		y: (parent.height / rows + 1) * 8;
+        y: (parent.height / mainTab.rows + 1) * 8;
 		width: parent.width / 3
-		height: parent.height / rows;
+        height: parent.height / mainTab.rows;
 		text: qsTr("StrmID")
 		color: "white"
 		font.pixelSize: parent.height / 30;
@@ -523,9 +523,9 @@ Item {
 	Text {
 		id: _label6
 		x: 10
-		y: (parent.height / rows + 1) * 9;
+        y: (parent.height / mainTab.rows + 1) * 9;
 		width: parent.width / 3
-		height: parent.height / rows;
+        height: parent.height / mainTab.rows;
 		text: qsTr("Text")
 		color: "white"
 		font.pixelSize: parent.height / 30;
@@ -533,9 +533,9 @@ Item {
 	Text {
 		id: _label7
 		x: 10
-		y: (parent.height / rows + 1) * 10;
+        y: (parent.height / mainTab.rows + 1) * 10;
 		width: parent.width / 3
-		height: parent.height / rows;
+        height: parent.height / mainTab.rows;
 		text: qsTr("")
 		color: "white"
 		font.pixelSize: parent.height / 30;
@@ -543,9 +543,9 @@ Item {
 	Text {
 		id: _data1
 		x: parent.width / 3
-		y: (parent.height / rows + 1) * 4;
+        y: (parent.height / mainTab.rows + 1) * 4;
 		width: (parent.width * 2) / 3
-		height: parent.height / rows;
+        height: parent.height / mainTab.rows;
 		text: qsTr("")
 		color: "white"
 		font.pixelSize: parent.height / 30;
@@ -554,9 +554,9 @@ Item {
 	Text {
 		id: _data2
 		x: parent.width / 3
-		y: (parent.height / rows + 1) * 5;
+        y: (parent.height / mainTab.rows + 1) * 5;
 		width: (parent.width * 2) / 3
-		height: parent.height / rows;
+        height: parent.height / mainTab.rows;
 		text: qsTr("")
 		color: "white"
 		font.pixelSize: parent.height / 30;
@@ -565,9 +565,9 @@ Item {
 	Text {
 		id: _data3
 		x: parent.width / 3
-		y: (parent.height / rows + 1) * 6;
+        y: (parent.height / mainTab.rows + 1) * 6;
 		width: (parent.width * 2) / 3
-		height: parent.height / rows;
+        height: parent.height / mainTab.rows;
 		text: qsTr("")
 		color: "white"
 		font.pixelSize: parent.height / 30;
@@ -576,9 +576,9 @@ Item {
 	Text {
 		id: _data4
 		x: parent.width / 3
-		y: (parent.height / rows + 1) * 7;
+        y: (parent.height / mainTab.rows + 1) * 7;
 		width: (parent.width * 2) / 3
-		height: parent.height / rows;
+        height: parent.height / mainTab.rows;
 		text: qsTr("")
 		color: "white"
 		font.pixelSize: parent.height / 30;
@@ -587,9 +587,9 @@ Item {
 	Text {
 		id: _data5
 		x: parent.width / 3
-		y: (parent.height / rows + 1) * 8;
+        y: (parent.height / mainTab.rows + 1) * 8;
 		width: (parent.width * 2) / 3
-		height: parent.height / rows;
+        height: parent.height / mainTab.rows;
 		text: qsTr("")
 		color: "white"
 		font.pixelSize: parent.height / 30;
@@ -598,9 +598,9 @@ Item {
 	Text {
 		id: _data6
 		x: parent.width / 3
-		y:(parent.height / rows + 1) * 9;
+        y:(parent.height / mainTab.rows + 1) * 9;
 		width: (parent.width * 2) / 3
-		height: parent.height / rows;
+        height: parent.height / mainTab.rows;
 		text: qsTr("")
 		color: "white"
 		font.pixelSize: parent.height / 30;
@@ -608,9 +608,9 @@ Item {
 	Text {
 		id: _data7
 		x: parent.width / 3
-		y:(parent.height / rows + 1) * 10;
+        y:(parent.height / mainTab.rows + 1) * 10;
 		width: (parent.width * 2) / 3
-		height: parent.height / rows;
+        height: parent.height / mainTab.rows;
 		text: qsTr("")
 		color: "white"
 		font.pixelSize: parent.height / 30;
@@ -619,9 +619,9 @@ Item {
 	Text {
 		id: _ambestatus
 		x: 10
-		y: (parent.height / rows + 1) * 11;
+        y: (parent.height / mainTab.rows + 1) * 11;
 		width: parent.width - 20
-		height: parent.height / rows;
+        height: parent.height / mainTab.rows;
 		text: qsTr("No AMBE hardware connected")
 		color: "white"
 		font.pixelSize: parent.height / 35;
@@ -629,9 +629,9 @@ Item {
 	Text {
 		id: _mmdvmstatus
 		x: 10
-		y: (parent.height / rows + 1) * 12;
+        y: (parent.height / mainTab.rows + 1) * 12;
 		width: parent.width - 20
-		height: parent.height / rows;
+        height: parent.height / mainTab.rows;
 		text: qsTr("No MMDVM connected")
 		color: "white"
 		font.pixelSize: parent.height / 35;
@@ -639,16 +639,16 @@ Item {
 	Text {
 		id: _netstatus
 		x: 10
-		y: (parent.height / rows + 1) * 13;
+        y: (parent.height / mainTab.rows + 1) * 13;
 		width: parent.width - 20
-		height: parent.height / rows;
+        height: parent.height / mainTab.rows;
 		text: qsTr("Not Connected to network")
 		color: "white"
 		font.pixelSize: parent.height / 35;
 	}
 	Rectangle {
 		x: 10
-		y: (parent.height / rows + 1) * 14;
+        y: (parent.height / mainTab.rows + 1) * 14;
 		width: parent.width - 20
 		height: parent.height / 30;
 		color: "black"
@@ -659,7 +659,7 @@ Item {
 	Rectangle {
 		id: _levelMeter
 		x: 10
-		y: (parent.height / rows + 1) * 14;
+        y: (parent.height / mainTab.rows + 1) * 14;
 		width: 0
 		height: parent.height / 30;
 		color: "#80C342"
@@ -675,9 +675,9 @@ Item {
 	}
 	CheckBox {
 		id: mic
-		visible: tts ? true : false;
+        visible: mainTab.tts ? true : false;
 		x: 5
-		y: (parent.height / rows + 1) * 15;
+        y: (parent.height / mainTab.rows + 1) * 15;
 		height: 25
 		spacing: 1
 		text: qsTr("Mic")
@@ -686,9 +686,9 @@ Item {
 	}
 	CheckBox {
 		id: tts1
-		visible: tts ? true : false;
+        visible: mainTab.tts ? true : false;
 		x: parent.width / 4
-		y: (parent.height / rows + 1) * 15;
+        y: (parent.height / mainTab.rows + 1) * 15;
 		height: 25
 		spacing: 1
 		text: qsTr("TTS1")
@@ -696,9 +696,9 @@ Item {
 	}
 	CheckBox {
 		id: tts2
-		visible: tts ? true : false;
+        visible: mainTab.tts ? true : false;
 		x: parent.width * 2 / 4
-		y: (parent.height / rows + 1) * 15;
+        y: (parent.height / mainTab.rows + 1) * 15;
 		height: 25
 		spacing: 1
 		text: qsTr("TTS2")
@@ -707,9 +707,9 @@ Item {
 	}
 	CheckBox {
 		id: tts3
-		visible: tts ? true : false;
+        visible: mainTab.tts ? true : false;
 		x: parent.width * 3 / 4
-		y: (parent.height / rows + 1) * 15;
+        y: (parent.height / mainTab.rows + 1) * 15;
 		height: 25
 		spacing: 1
 		text: qsTr("TTS3")
@@ -717,11 +717,11 @@ Item {
 	}
 	TextField {
 		id: _ttstxtedit
-		visible: tts ? true : false;
+        visible: mainTab.tts ? true : false;
 		x: 5
-		y: (parent.height / rows + 1) * 16;
+        y: (parent.height / mainTab.rows + 1) * 16;
 		width: parent.width - 10
-		height: parent.height / rows
+        height: parent.height / mainTab.rows
 		font.pixelSize: parent.height / 35
 		selectByMouse: true
 		inputMethodHints: "ImhPreferNumbers"
@@ -762,7 +762,7 @@ Item {
 			}
 		}
 		x: 10
-		y: (parent.height / rows + 1) * ( tts ? 17 : 15);
+        y: (parent.height / mainTab.rows + 1) * ( mainTab.tts ? 17 : 15);
 		//y: parent.height - ((parent.height / 5) + 5);
 		width: parent.width - 20
 		height: parent.height - y - 10

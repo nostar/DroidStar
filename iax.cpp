@@ -32,7 +32,7 @@ extern cst_voice * register_cmu_us_awb(const char *);
 #endif
 
 IAX::IAX() :
-	m_scallno(0),
+    m_scallno(1),
 	m_dcallno(0),
 	m_regscallno(0x7fff),
 	m_regdcallno(0),
@@ -79,7 +79,7 @@ void IAX::set_iax_params(QString username, QString password, QString callingname
 		m_context = "iax-client";
 	}
 
-	if (m_username == "allstar-public" && m_password == "allstar") {
+    if (m_username == "allstar-public" && m_password == "allstar") {
 		m_wt = true;
 	}
 }
@@ -130,7 +130,7 @@ void IAX::send_call()
 	if (m_wt) {
 		send_disconnect();
 	}
-	uint16_t scall = htons(++m_scallno | 0x8000);
+    uint16_t scall = htons(m_scallno | 0x8000);
 	m_oseq = m_iseq = 0;
 	QByteArray out;
 	out.append((char *)&scall, 2);
@@ -285,6 +285,7 @@ void IAX::send_radio_key(bool key)
 
 void IAX::send_ping()
 {
+/*
 	QByteArray out;
 	uint16_t scall = htons(m_scallno | 0x8000);
 	uint16_t dcall = htons(m_dcallno);
@@ -308,14 +309,20 @@ void IAX::send_ping()
         }
         debug << s;
     }
+*/
+    if(++m_watchdog > 6){
+        m_modeinfo.status = TIMEOUT;
+        emit update(m_modeinfo);
+    }
 }
 
-void IAX::send_pong()
+void IAX::send_pong(uint32_t ts)
 {
 	QByteArray out;
 	uint16_t scall = htons(m_scallno | 0x8000);
 	uint16_t dcall = htons(m_dcallno);
-	uint32_t ts = htonl((QDateTime::currentMSecsSinceEpoch() - m_timestamp));// + 3);
+    //uint32_t ts = htonl((QDateTime::currentMSecsSinceEpoch() - m_timestamp));// + 3);
+    ts = htonl(ts);
 	uint32_t jitter = htonl(m_rxjitter);
 	//uint32_t loss = htonl(m_rxloss);
 	uint32_t frames = htonl(m_rxframes);
@@ -361,12 +368,18 @@ void IAX::send_pong()
     }
 }
 
-void IAX::send_ack(uint16_t scall, uint16_t dcall, uint8_t oseq, uint8_t iseq)
+void IAX::send_ack(uint16_t scall, uint16_t dcall, uint8_t oseq, uint8_t iseq, uint32_t ts)
 {
 	QByteArray out;
 	scall = htons(scall | 0x8000);
 	dcall = htons(dcall);
-	uint32_t ts = htonl((QDateTime::currentMSecsSinceEpoch() - m_timestamp));// + 3);
+
+    if(!ts){
+        ts = htonl((QDateTime::currentMSecsSinceEpoch() - m_timestamp));// + 3);
+    }
+    else{
+        ts = htonl(ts);
+    }
 
 	out.append((char *)&scall, 2);
 	out.append((char *)&dcall, 2);
@@ -388,12 +401,13 @@ void IAX::send_ack(uint16_t scall, uint16_t dcall, uint8_t oseq, uint8_t iseq)
     }
 }
 
-void IAX::send_lag_response()
+void IAX::send_lag_response(uint32_t ts)
 {
 	QByteArray out;
 	uint16_t scall = htons(m_scallno | 0x8000);
 	uint16_t dcall = htons(m_dcallno);
-	uint32_t ts = htonl((QDateTime::currentMSecsSinceEpoch() - m_timestamp));// + 3);
+    //uint32_t ts = htonl((QDateTime::currentMSecsSinceEpoch() - m_timestamp));// + 3);
+    ts = htonl(ts);
 
 	out.append((char *)&scall, 2);
 	out.append((char *)&dcall, 2);
@@ -685,23 +699,29 @@ void IAX::process_udp()
 		(buf.data()[10] == AST_FRAME_IAX) &&
 		(buf.data()[11] == IAX_COMMAND_PING) )
 	{
+        m_watchdog = 0;
 		++m_rxframes;
 		++m_cnt;
 		m_dcallno = (((buf.data()[0] & 0x7f) << 8) | ((uint8_t)buf.data()[1]));
 		m_iseq = buf.data()[8] + 1;
 		m_oseq = buf.data()[9];
-		send_ack(m_scallno, m_dcallno, m_oseq, m_iseq);
-		send_pong();
+        uint32_t ts = (uint32_t)((buf.data()[4] << 24) | ((buf.data()[5] << 16) & 0xff0000) | ((buf.data()[6] << 8) & 0xff00) | (buf.data()[7] & 0xff));
+        //send_ack(m_scallno, m_dcallno, m_oseq, m_iseq);
+        send_pong(ts);
+        ++(m_modeinfo.count);
 	}
 	else if( (buf.data()[0] & 0x80) &&
 		(buf.data()[10] == AST_FRAME_IAX) &&
 		(buf.data()[11] == IAX_COMMAND_PONG) )
 	{
+        m_watchdog = 0;
 		++m_rxframes;
 		m_dcallno = (((buf.data()[0] & 0x7f) << 8) | ((uint8_t)buf.data()[1]));
 		m_iseq = buf.data()[8] + 1;
 		m_oseq = buf.data()[9];
-		send_ack(m_scallno, m_dcallno, m_oseq, m_iseq);
+        uint32_t ts = (uint32_t)((buf.data()[4] << 24) | ((buf.data()[5] << 16) & 0xff0000) | ((buf.data()[6] << 8) & 0xff00) | (buf.data()[7] & 0xff));
+        send_ack(m_scallno, m_dcallno, m_oseq, m_iseq, ts);
+        ++(m_modeinfo.count);
 	}
 	else if( (buf.data()[0] & 0x80) &&
 		(buf.data()[10] == AST_FRAME_IAX) &&
@@ -759,8 +779,9 @@ void IAX::process_udp()
 		m_dcallno = (((buf.data()[0] & 0x7f) << 8) | ((uint8_t)buf.data()[1]));
 		m_iseq = buf.data()[8] + 1;
 		m_oseq = buf.data()[9];
-		send_ack(m_scallno, m_dcallno, m_oseq, m_iseq);
-		send_lag_response();
+        //send_ack(m_scallno, m_dcallno, m_oseq, m_iseq);
+        uint32_t ts = (uint32_t)((buf.data()[4] << 24) | ((buf.data()[5] << 16) & 0xff0000) | ((buf.data()[6] << 8) & 0xff00) | (buf.data()[7] & 0xff));
+        send_lag_response(ts);
 	}
 	else if(!(buf.data()[0] & 0x80)){
 		uint16_t dcallno = ((buf.data()[0] << 8) | ((uint8_t)buf.data()[1]));
@@ -782,7 +803,7 @@ void IAX::connected() {
 	m_rxtimer->start(19);
     m_ping_timer = new QTimer();
     connect(m_ping_timer, SIGNAL(timeout()), this, SLOT(send_ping()));
-    m_ping_timer->start(2000);
+    m_ping_timer->start(10000);
 	m_audio = new AudioEngine(m_audioin, m_audioout);
 	m_audio->init();
 	m_audio->start_playback();

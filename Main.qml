@@ -22,14 +22,10 @@ import QtQuick.Dialogs
 import org.dudetronics.droidstar
 
 ApplicationWindow {
-	// @disable-check M16
+    id: main
 	visible: true
-	 // @disable-check M16
 	width: 340
-	 // @disable-check M16
 	height: 480
-	 // @disable-check M16
-	 // @disable-check M16
 	title: qsTr("DroidStar")
 
 	palette.window: "#252424"
@@ -200,6 +196,8 @@ ApplicationWindow {
 				mainTab.comboM17CAN.visible = false;
 				mainTab.privateBox.visible = false;
 				mainTab.sliderMicGain.value = 0.0;
+				logTab.smsedit.visible = false;
+				logTab.smsSendButton.visible = false;
             }
             if(droidstar.get_mode() === "DCS"){
 				//mainTab.comboMode.width = mainTab.width / 2;
@@ -216,6 +214,8 @@ ApplicationWindow {
 				mainTab.comboM17CAN.visible = false;
 				mainTab.privateBox.visible = false;
 				mainTab.sliderMicGain.value = 0.0;
+				logTab.smsedit.visible = false;
+				logTab.smsSendButton.visible = false;
             }
             if(droidstar.get_mode() === "XRF"){
 				//mainTab.comboMode.width = mainTab.width / 2;
@@ -232,6 +232,8 @@ ApplicationWindow {
 				mainTab.comboM17CAN.visible = false;
 				mainTab.privateBox.visible = false;
 				mainTab.sliderMicGain.value = 0.0;
+				logTab.smsedit.visible = false;
+				logTab.smsSendButton.visible = false;
             }
             if(droidstar.get_mode() === "YSF"){
 				//mainTab.comboMode.width = mainTab.width / 2;
@@ -248,6 +250,8 @@ ApplicationWindow {
 				mainTab.comboM17CAN.visible = false;
 				mainTab.privateBox.visible = false;
 				mainTab.sliderMicGain.value = 0.5;
+				logTab.smsedit.visible = false;
+				logTab.smsSendButton.visible = false;
             }
 			if(droidstar.get_mode() === "FCS"){
 				//mainTab.comboMode.width = mainTab.width / 2;
@@ -264,6 +268,8 @@ ApplicationWindow {
 				mainTab.comboM17CAN.visible = false;
 				mainTab.privateBox.visible = false;
 				mainTab.sliderMicGain.value = 0.5;
+				logTab.smsedit.visible = false;
+				logTab.smsSendButton.visible = false;
 			}
             if(droidstar.get_mode() === "DMR"){
 				//mainTab.comboMode.width = (mainTab.width / 5) - 5;
@@ -281,6 +287,8 @@ ApplicationWindow {
 				mainTab.comboM17CAN.visible = false;
 				mainTab.privateBox.visible = true;
 				mainTab.sliderMicGain.value = 0.5;
+				logTab.smsedit.visible = false;
+				logTab.smsSendButton.visible = false;
             }
             if(droidstar.get_mode() === "P25"){
 				//mainTab.comboMode.width = mainTab.width / 2;
@@ -298,6 +306,8 @@ ApplicationWindow {
 				mainTab.comboM17CAN.visible = false;
 				mainTab.privateBox.visible = false;
 				mainTab.sliderMicGain.value = 0.5;
+				logTab.smsedit.visible = false;
+				logTab.smsSendButton.visible = false;
             }
             if(droidstar.get_mode() === "NXDN"){
 				//mainTab.comboMode.width = mainTab.width / 2;
@@ -314,6 +324,8 @@ ApplicationWindow {
 				mainTab.comboM17CAN.visible = false;
 				mainTab.privateBox.visible = false;
 				mainTab.sliderMicGain.value = 0.5;
+				logTab.smsedit.visible = false;
+				logTab.smsSendButton.visible = false;
             }
 			if(droidstar.get_mode() === "M17"){
 				//mainTab.comboMode.width = mainTab.width / 2;
@@ -332,6 +344,8 @@ ApplicationWindow {
 				mainTab.comboM17CAN.visible = true;
 				mainTab.privateBox.visible = false;
 				mainTab.sliderMicGain.value = 0.5;
+				logTab.smsedit.visible = true;
+				logTab.smsSendButton.visible = true;
 			}
 			if(droidstar.get_mode() === "IAX"){
 				//mainTab.comboMode.width = mainTab.width / 2;
@@ -348,7 +362,10 @@ ApplicationWindow {
 				mainTab.comboM17CAN.visible = false;
 				mainTab.privateBox.visible = false;
 				mainTab.sliderMicGain.value = 0.5;
+				logTab.smsedit.visible = false;
+				logTab.smsSendButton.visible = false;
 			}
+			//mainTab.comboHost.contentItem.text = mainTab.comboHost.currentIndex === -1 ? "Host..." : mainTab.comboHost.currentText
         }
 		function onUpdate_data() {
 			mainTab.data1.text = droidstar.get_data1();

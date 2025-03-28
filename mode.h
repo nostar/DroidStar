@@ -112,6 +112,7 @@ public:
 	} m_modeinfo;
 	enum{
 		DISCONNECTED,
+        TIMEOUT,
 		CLOSED,
 		CONNECTING,
 		DMR_AUTH,
@@ -128,7 +129,9 @@ public:
 		STREAM_IDLE,
 		TRANSMITTING,
 		TRANSMITTING_MODEM,
-		STREAM_UNKNOWN
+        STREAM_UNKNOWN,
+        PACKET_RECEIVED,
+        PACKET_SENT
 	};
 signals:
 	void update(Mode::MODEINFO);
@@ -167,6 +170,7 @@ protected:
 	QUdpSocket *m_udp = nullptr;
 	QHostAddress m_address;
 	char m_module;
+    uint8_t m_watchdog;
 	uint32_t m_dmrid;
 	uint16_t m_nxdnid;
 	QString m_refname;

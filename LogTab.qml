@@ -19,6 +19,9 @@ import QtQuick
 import QtQuick.Controls
 
 Item {
+	property alias smsedit: _smsedit
+	property alias smsSendButton: _smsSendButton
+
 	id: logTab
 	property alias logText: logTxt
 	Button {
@@ -37,7 +40,7 @@ Item {
 		x: 20
 		y: 40
 		width: parent.width - 40
-		height: parent.height - 40
+		height: parent.height - 60
 		color: "#252424"
 		Flickable{
 			id: logflick
@@ -55,6 +58,27 @@ Item {
 				wrapMode: TextArea.WordWrap
 				text: qsTr("")
 			}
+		}
+	}
+	TextField {
+		id: _smsedit
+		x: 10
+		y: parent.height - 40
+		width: parent.width - 90
+		height: 25
+		text: qsTr("")
+		selectByMouse: true
+	}
+	Button {
+		id: _smsSendButton
+		x: smsedit.width + 20
+		y: parent.height - 40
+		width: 60
+		height: 25
+		text: qsTr("SMS")
+		onClicked: {
+			droidstar.m17_sms_pressed(smsedit.text);
+			smsedit.text = "";
 		}
 	}
 }

@@ -15,7 +15,6 @@
 	along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#include <iostream>
 #include <cstring>
 #include "dmr.h"
 #include "cgolay2087.h"
@@ -503,7 +502,7 @@ void DMR::send_frame()
 		m_modeinfo.slot = m_txslot;
 
 		if(!m_dmrcnt){
-			encode_header(DT_VOICE_LC_HEADER);
+            encode_header(DT_VOICE_LC_HEADER);
 			m_txstreamid = static_cast<uint32_t>(::rand());
 		}
 		else{

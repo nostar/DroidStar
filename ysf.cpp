@@ -21,7 +21,6 @@
 #include "Golay24128.h"
 #include "chamming.h"
 #include "MMDVMDefines.h"
-#include <iostream>
 #include <cstring>
 #ifdef USE_MD380_VOCODER
 #include <md380_vocoder.h>
@@ -791,7 +790,7 @@ void YSF::send_frame()
 		m_modeinfo.stream_state = TRANSMITTING;
 
 		if(!m_txcnt){
-			encode_header();
+            encode_header();
 		}
 		else{
 			m_txfullrate ? encode_vw() : encode_dv2();

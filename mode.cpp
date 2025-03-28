@@ -15,7 +15,6 @@
 	along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 #include "mode.h"
-#include <iostream>
 #ifdef Q_OS_WIN
 #include <windows.h>
 #else
@@ -102,6 +101,7 @@ void Mode::init(QString callsign, uint32_t dmrid, uint16_t nxdnid, char module, 
 	m_hwtx = false;
 	m_tx = false;
 	m_ttsid = 0;
+    m_watchdog = 0;
 	m_rxwatchdog = 0;
 
 	m_modeinfo.callsign = callsign;

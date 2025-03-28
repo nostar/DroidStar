@@ -22,7 +22,6 @@
 #ifndef Q_OS_ANDROID
 #include <QSerialPortInfo>
 #endif
-#include <algorithm>
 #include "serialambe.h"
 
 #define ENDLINE "\n"

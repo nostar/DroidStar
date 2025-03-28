@@ -246,7 +246,20 @@ void M17::process_udp()
 		m_modeinfo.count++;
 		emit update(m_modeinfo);
 	}
-	if((buf.size() == 54) && (::memcmp(buf.data(), "M17 ", 4U) == 0)){
+    if((buf.size() > 33) && (::memcmp(buf.data(), "M17P", 4U) == 0)){
+        uint8_t cs[10];
+        ::memcpy(cs, &(buf.data()[10]), 6);
+        decode_callsign(cs);
+        m_modeinfo.src = QString((char *)cs);
+        ::memcpy(cs, &(buf.data()[4]), 6);
+        decode_callsign(cs);
+        m_modeinfo.dst = QString((char *)cs);
+        m_modeinfo.type = 2;
+        m_modeinfo.usertxt = &(buf.data()[35]);
+        m_modeinfo.stream_state = PACKET_RECEIVED;
+        emit update(m_modeinfo);
+    }
+    if((buf.size() == 54) && (::memcmp(buf.data(), "M17 ", 4U) == 0)){
 		uint16_t streamid = (buf.data()[4] << 8) | (buf.data()[5] & 0xff);
 		if( (m_modeinfo.streamid != 0) && (streamid != m_modeinfo.streamid) ){
 			qDebug() << "New streamid received before timeout";
@@ -305,7 +318,7 @@ void M17::process_udp()
 			m_rxwatchdog = 0;
 			m_modeinfo.stream_state = STREAM_END;
 			m_modeinfo.ts = QDateTime::currentMSecsSinceEpoch();
-			emit update(m_modeinfo);
+            emit update(m_modeinfo);
 			m_modeinfo.streamid = 0;
 		}
 		else{
@@ -390,14 +403,17 @@ void M17::send_ping()
 	out.append('G');
 	out.append((char *)cs, 6);
 	m_udp->writeDatagram(out, m_address, m_modeinfo.port);
-#ifdef DEBUG
-	fprintf(stderr, "PING: ");
-	for(int i = 0; i < out.size(); ++i){
-		fprintf(stderr, "%02x ", (uint8_t)out.data()[i]);
-	}
-	fprintf(stderr, "\n");
-	fflush(stderr);
-#endif
+
+    if(m_debug){
+        QDebug debug = qDebug();
+        debug.noquote();
+        QString s = "PING:";
+        for(int i = 0; i < out.size(); ++i){
+            s += " " + QString("%1").arg((uint8_t)out.data()[i], 2, 16, QChar('0'));
+        }
+        debug << s;
+    }
+
     if(m_debug){
         QDebug debug = qDebug();
         debug.noquote();
@@ -841,14 +857,7 @@ void M17::transmit()
 		m_modeinfo.frame_number = tx_cnt;
 		m_modeinfo.streamid = txstreamid;
 		emit update(m_modeinfo);
-#ifdef DEBUG
-		fprintf(stderr, "SEND:%d: ", txframe.size());
-		for(int i = 0; i < txframe.size(); ++i){
-			fprintf(stderr, "%02x ", (uint8_t)txframe.data()[i]);
-		}
-		fprintf(stderr, "\n");
-		fflush(stderr);
-#endif
+
         if(m_debug){
             QDebug debug = qDebug();
             debug.noquote();
@@ -885,8 +894,8 @@ void M17::transmit()
 		txframe.append(txstreamid & 0xff);
 		txframe.append((char *)dst, 6);
 		txframe.append((char *)src, 6);
-		txframe.append('\x00');
-		txframe.append(r); // Frame type voice only
+        txframe.append(m_txcan >> 1);
+        txframe.append(((m_txcan << 7) & 0x80U) | r);
 		txframe.append(14, 0x00); //Blank nonce
 		txframe.append((char)(tx_cnt >> 8));
 		txframe.append((char)tx_cnt & 0xff);
@@ -927,6 +936,63 @@ void M17::transmit()
             debug << s;
         }
 	}
+}
+
+void M17::tx_packet(QString sms)
+{
+    QByteArray txframe;
+    uint8_t src[10];
+    uint8_t dst[10];
+    uint8_t lsf[30];
+    memset(dst, ' ', 9);
+    memcpy(dst, m_refname.toLocal8Bit(), m_refname.size());
+
+    dst[8] =  m_module;
+    dst[9] = 0x00;
+    encode_callsign(dst);
+    memset(src, 0x00, 9);
+    memcpy(src, m_modeinfo.callsign.toLocal8Bit(), m_modeinfo.callsign.size());
+    encode_callsign(src);
+
+    txframe.append('M');
+    txframe.append('1');
+    txframe.append('7');
+    txframe.append('P');
+    txframe.append((char *)dst, 6);
+    txframe.append((char *)src, 6);
+    txframe.append(m_txcan >> 1);
+    txframe.append(((m_txcan << 7) & 0x80U));
+    txframe.append(16, 0x00);
+
+    for(int i = 0; i < 28; ++i){
+        lsf[i] = txframe.data()[4+i];
+    }
+
+    encodeCRC16(lsf, M17_LSF_LENGTH_BYTES);
+    txframe.append(0x06); // SMS packet type
+    txframe.append(sms.toUtf8());
+    txframe.append(1, 0x00);
+    txframe.append(lsf[28]);
+    txframe.append(lsf[29]);
+    m_udp->writeDatagram(txframe, m_address, m_modeinfo.port);
+
+    m_modeinfo.stream_state = PACKET_SENT;
+    m_modeinfo.src = m_modeinfo.callsign;
+    m_modeinfo.dst = m_refname;
+    m_modeinfo.type = 2;
+    m_modeinfo.frame_number = 0;
+    m_modeinfo.usertxt = sms;
+    emit update(m_modeinfo);
+
+    if(m_debug){
+        QDebug debug = qDebug();
+        debug.noquote();
+        QString s = "PACK:";
+        for(int i = 0; i < txframe.size(); ++i){
+            s += " " + QString("%1").arg((uint8_t)txframe.data()[i], 2, 16, QChar('0'));
+        }
+        debug << s;
+    }
 }
 
 void M17::process_rx_data()

@@ -132,13 +132,10 @@ if(UNIX)
 endif()
 
 if(APPLE)
+    set_target_properties(DroidStar PROPERTIES MACOSX_BUNDLE_INFO_PLIST ${CMAKE_CURRENT_SOURCE_DIR}/Info.plist)
     target_link_libraries(DroidStar PRIVATE
         "-framework AVFoundation"
     )
-endif()
-
-if(APPLE)
-    set_target_properties(DroidStar PROPERTIES MACOSX_BUNDLE_INFO_PLIST ${CMAKE_CURRENT_SOURCE_DIR}/Info.plist)
 endif()
 
 if(ANDROID)
@@ -150,7 +147,7 @@ if(ANDROID)
 
     set_target_properties(DroidStar PROPERTIES
        QT_ANDROID_PACKAGE_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/android
-       QT_ANDROID_VERSION_CODE 84
+       QT_ANDROID_VERSION_CODE 86
        #QT_ANDROID_MIN_SDK_VERSION 31
     )
 endif()
@@ -206,6 +203,7 @@ else()
     )
 endif()
 
+
 if(FALSE) # set TRUE for flite
     target_compile_definitions(DroidStar PRIVATE
         USE_FLITE
@@ -228,6 +226,7 @@ if(FALSE) # set TRUE for md380_vocoder
     )
     target_link_libraries(DroidStar PRIVATE
         md380_vocoder
+        #/home/nostar/Android/Sdk/local/libmd380_vocoder.a
         # -Xlinker --section-start=.firmware=0x0800C000 -Xlinker --section-start=.sram=0x20000000
     )
 endif()
