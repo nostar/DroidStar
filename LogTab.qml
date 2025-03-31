@@ -40,7 +40,7 @@ Item {
 		x: 20
 		y: 40
 		width: parent.width - 40
-		height: parent.height - 60
+		height: parent.height - 80
 		color: "#252424"
 		Flickable{
 			id: logflick
