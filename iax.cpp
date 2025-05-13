@@ -15,6 +15,7 @@
 	along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
+
 #include "iax.h"
 #include "iaxdefines.h"
 #ifdef Q_OS_WIN
@@ -125,11 +126,40 @@ int8_t ulaw_encode(int16_t number)
    return (~(sign | ((position - 5) << 4) | lsb));
 }
 
+void IAX::send_calltoken_request()
+{
+    uint16_t scall = htons(m_scallno | 0x8000);
+    m_oseq = m_iseq = 0;
+    QByteArray out;
+    out.append((char *)&scall, 2);
+    out.append('\x00');
+    out.append('\x00');
+    out.append('\x00');
+    out.append('\x00');
+    out.append('\x00');
+    out.append('\x00');
+    out.append(m_oseq);
+    out.append(m_iseq);
+    out.append(AST_FRAME_IAX);
+    out.append(IAX_COMMAND_NEW);
+    out.append(IAX_IE_CALLTOKEN);
+    out.append('\x00');
+
+    m_udp->writeDatagram(out, m_address, m_port);
+
+    if(m_debug){
+        QDebug debug = qDebug();
+        debug.noquote();
+        QString s = "SEND:";
+        for(int i = 0; i < out.size(); ++i){
+            s += " " + QString("%1").arg((uint8_t)out.data()[i], 2, 16, QChar('0'));
+        }
+        debug << s;
+    }
+}
+
 void IAX::send_call()
 {
-	if (m_wt) {
-		send_disconnect();
-	}
     uint16_t scall = htons(m_scallno | 0x8000);
 	m_oseq = m_iseq = 0;
 	QByteArray out;
@@ -180,6 +210,9 @@ void IAX::send_call()
 	out.append('\x00');
 	out.append('\x00');
 	out.append(AST_FORMAT_ULAW);
+    out.append(IAX_IE_CALLTOKEN);
+    out.append(m_calltoken.size());
+    out.append(m_calltoken);
 	m_timestamp = QDateTime::currentMSecsSinceEpoch();
 	m_udp->writeDatagram(out, m_address, m_port);
 
@@ -505,6 +538,11 @@ void IAX::send_registration(uint16_t dcall)
 	out.append(IAX_IE_REFRESH);
 	out.append(0x02);
 	out.append((char *)&refresh, 2);			// refresh time = 60 secs
+    if(!dcall){
+        out.append(IAX_IE_CALLTOKEN);
+        out.append(m_calltoken.size());
+        out.append(m_calltoken);
+    }
 	m_udp->writeDatagram(out, m_address, m_port);
 
     if(m_debug){
@@ -556,14 +594,14 @@ void IAX::hostname_lookup(QHostInfo i)
 		m_regtimer = new QTimer();
 		connect(m_udp, SIGNAL(readyRead()), this, SLOT(process_udp()));
 		if (m_wt) {
-			connect(m_regtimer, SIGNAL(timeout()), this, SLOT(send_call()));
-			send_call();
-			//m_regtimer->start(240000);
+            m_regreq = false;
 		} else {
-			connect(m_regtimer, SIGNAL(timeout()), this, SLOT(send_registration()));
-			send_registration(0);
+            m_regreq = true;
+            connect(m_regtimer, SIGNAL(timeout()), this, SLOT(send_calltoken_request()));
+            //send_registration(0);
 			m_regtimer->start(60000);
 		}
+        send_calltoken_request();
 		m_timestamp = QDateTime::currentMSecsSinceEpoch();
 	}
 }
@@ -614,8 +652,9 @@ void IAX::process_udp()
 		uint16_t scallno = (((buf.data()[2] & 0x7f) << 8) | ((uint8_t)buf.data()[3]));
 		send_ack(scallno, dcallno, 2, 2);
 		if(m_modeinfo.status == CONNECTING){
+            m_regreq = false;
             qDebug() << "send_call() called";
-			send_call();
+            send_calltoken_request();
 		}
 	}
 	else if((buf.data()[0] & 0x80) &&
@@ -624,6 +663,23 @@ void IAX::process_udp()
 	{
 		m_modeinfo.status = DISCONNECTED;
 	}
+    else if((buf.data()[0] & 0x80) &&
+             (buf.data()[10] == AST_FRAME_IAX) &&
+             (buf.data()[11] == IAX_COMMAND_CALLTOKEN) &&
+             (buf.data()[12] == IAX_IE_CALLTOKEN) )
+    {
+        m_calltoken.clear();
+        m_calltoken.append(&(buf.data()[14]), buf.data()[13]);
+        uint16_t dcallno = (((buf.data()[0] & 0x7f) << 8) | ((uint8_t)buf.data()[1]));
+        uint16_t scallno = (((buf.data()[2] & 0x7f) << 8) | ((uint8_t)buf.data()[3]));
+        send_ack(scallno, dcallno, 1, 1);
+        if(m_regreq){
+            send_registration(0);
+        }
+        else{
+            send_call();
+        }
+    }
 	else if( (buf.data()[0] & 0x80) &&
 		(buf.data()[10] == AST_FRAME_IAX) &&
 		(buf.data()[11] == IAX_COMMAND_AUTHREQ) &&
@@ -795,6 +851,7 @@ void IAX::process_udp()
 }
 
 void IAX::connected() {
+    m_regreq = true;
 	m_modeinfo.status = CONNECTED_RW;
 	m_txtimer = new QTimer();
 	connect(m_txtimer, SIGNAL(timeout()), this, SLOT(transmit()));
@@ -862,8 +919,6 @@ void IAX::stop_tx()
 {
 	m_tx = false;
 	send_radio_key(false);
-	//QByteArray tx("#", 1);
-	//send_dtmf(tx);
 }
 
 void IAX::transmit()
@@ -904,7 +959,7 @@ void IAX::transmit()
 	if (!m_wt || m_tx) {
 		m_udp->writeDatagram(out, m_address, m_port);
 	}
-#ifdef DEBUGG
+#ifdef DEBUG
 	fprintf(stderr, "SEND: ");
 	for(int i = 0; i < out.size(); ++i){
 		fprintf(stderr, "%02x ", (unsigned char)out.data()[i]);

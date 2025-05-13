@@ -56,7 +56,9 @@
 #define IAX_COMMAND_REGAUTH			14
 #define IAX_COMMAND_REGACK			15
 #define IAX_COMMAND_REGREJ			16
+#define IAX_COMMAND_REGREL			17
 #define IAX_COMMAND_VNAK			18
+#define IAX_COMMAND_CALLTOKEN		40
 
 #define IAX_IE_CALLED_NUMBER		1
 #define IAX_IE_CALLING_NUMBER		2
@@ -81,5 +83,6 @@
 #define IAX_IE_RR_DELAY             49
 #define IAX_IE_RR_DROPPED           50
 #define IAX_IE_RR_OOO               51
+#define IAX_IE_CALLTOKEN			54
 
 #endif // IAXDEFINES_H

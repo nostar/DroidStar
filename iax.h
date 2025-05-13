@@ -38,6 +38,7 @@ private slots:
 	void send_disconnect();
 	void hostname_lookup(QHostInfo i);
 	void send_registration(uint16_t dcall = 0);
+    void send_calltoken_request();
 	void send_call();
 	void send_call_auth();
     void send_ack(uint16_t, uint16_t, uint8_t, uint8_t, uint32_t ts = 0);
@@ -59,6 +60,7 @@ private:
 	QString m_username;
 	QString m_password;
 	QString m_callingname;
+    QByteArray m_calltoken;
 	QString m_node;
 	QString m_context;
 	QString m_host;
@@ -87,6 +89,7 @@ private:
 	uint16_t m_ttscnt;
 	int m_cnt;
 	bool m_wt;
+    bool m_regreq;
 #ifdef USE_FLITE
 	cst_voice *voice_slt;
 	cst_voice *voice_kal;

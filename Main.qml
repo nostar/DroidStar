@@ -494,6 +494,7 @@ ApplicationWindow {
 				if(mainTab.comboMode.currentText != "REF"){
 					mainTab.comboModule.enabled = false;
 				}
+				droidstar.set_debug(settingsTab.debugBox.checked);
             }
 			if(c === 2){
 				mainTab.connectbutton.text = "Disconnect";
@@ -521,7 +522,6 @@ ApplicationWindow {
 				mainTab.buttonTX.enabled = true;
 				mainTab.btntxt.color = "black";
 				mainTab.agcBox.checked = true;
-                droidstar.set_debug(settingsTab.debugBox.checked);
 			}
 			if(c === 3){
 			}
