@@ -98,7 +98,7 @@ void SerialAMBE::connect_to_serial(QString p)
 	const QString blankString = "N/A";
 	int br = 460800;
 
-	if((m_protocol != "P25") && (m_protocol != "M17") && (p != "")){
+	if((m_protocol != "P25") && (m_protocol != "M17") && (p != "None")  && (p != "Software vocoder")){
 #ifndef Q_OS_ANDROID
 		m_serial = new QSerialPort;
 		QSerialPortInfo info(*m_serial);

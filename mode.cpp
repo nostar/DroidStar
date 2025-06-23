@@ -181,7 +181,7 @@ void Mode::begin_connect()
 {
 	m_modeinfo.status = CONNECTING;
 
-    if((m_vocoder != "") && (m_mode != "M17")){
+    if((m_vocoder != "None") && (m_vocoder != "Software vocoder") && (m_mode != "M17")){
         m_hwrx = true;
         m_hwtx = true;
         m_modeinfo.hw_vocoder_loaded = true;
@@ -280,6 +280,9 @@ void Mode::stop_tx()
 
 bool Mode::load_vocoder_plugin()
 {
+	if(m_vocoder == "None") {
+		return false;
+	}
 #ifdef VOCODER_PLUGIN
 	QString config_path = QStandardPaths::writableLocation(QStandardPaths::ConfigLocation);
 #if !defined(Q_OS_ANDROID) && !defined(Q_OS_WIN)
