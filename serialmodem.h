@@ -44,6 +44,7 @@ private slots:
 	void receive_serial(QByteArray);
     void config_modem();
 	void process_modem();
+	void get_status_modem();
 	void set_freq();
 	void set_config();
 	void set_mode(uint8_t);
@@ -57,6 +58,7 @@ private:
 	uint8_t m_protocol;
 	uint32_t m_baudrate;
 	QTimer *m_modemtimer;
+	QTimer *m_statustimer;
 	uint8_t packet_size;
 	QQueue<char> m_serialdata;
 	uint32_t m_rxfreq;

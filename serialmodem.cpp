@@ -22,6 +22,7 @@
 #include "MMDVMDefines.h"
 
 //#define DEBUGHW
+#define MMDVM_TIMEOUT_MS 250
 
 SerialModem::SerialModem(QString mode)
 {
@@ -113,7 +114,9 @@ void SerialModem::connect_to_serial(QString p)
 
 	if (m_serial->open(QIODevice::ReadWrite)) {
 		m_modemtimer = new QTimer();
+		m_statustimer = new QTimer();
 		connect(m_modemtimer, SIGNAL(timeout()), this, SLOT(process_modem()));
+		connect(m_statustimer, SIGNAL(timeout()), this, SLOT(get_status_modem()));
 		m_modemtimer->start(19);
 #ifndef Q_OS_ANDROID
 		connect(m_serial, &QSerialPort::readyRead, this, &SerialModem::process_serial);
@@ -122,6 +125,7 @@ void SerialModem::connect_to_serial(QString p)
 		connect(m_serial, SIGNAL(data_received(QByteArray)), this, SLOT(receive_serial(QByteArray)));
 #endif
 		m_serial->setRequestToSend(true);
+		m_statustimer->start(MMDVM_TIMEOUT_MS);
 	}
 }
 
@@ -156,7 +160,9 @@ void SerialModem::receive_serial(QByteArray d)
 
 void SerialModem::process_serial()
 {
+	m_statustimer->stop();
 	QByteArray d = m_serial->readAll();
+	m_statustimer->start(MMDVM_TIMEOUT_MS);
 
 	for(int i = 0; i < d.size(); i++){
 		m_serialdata.enqueue(d[i]);
@@ -198,7 +204,7 @@ void SerialModem::process_modem()
 
 		else if(r == MMDVM_ACK){
 			qDebug() << "Received MMDVM_ACK";
-			//<---->2 - mmdvm, 4 - OpenGD77 trx
+			//	2 - mmdvm, 4 - OpenGD77 trx
 			if( (m_serialdata.size() > 3) && ( (m_serialdata[3] == 2) || (m_serialdata[3] == 4) ) ){
 				emit connected(true);
 			}
@@ -239,6 +245,16 @@ void SerialModem::process_modem()
 			emit modem_data_ready(out);
 		}
 	}
+}
+
+void SerialModem::get_status_modem()
+{
+	QByteArray a;
+	a.clear();
+	a.append(MMDVM_FRAME_START);
+	a.append(3);
+	a.append(MMDVM_GET_STATUS);
+	m_serial->write(a);
 }
 
 void SerialModem::set_freq()
@@ -425,7 +441,9 @@ void SerialModem::set_mode(uint8_t m)
 
 void SerialModem::write(QByteArray b)
 {
+	m_statustimer->stop();
 	m_serial->write(b);
+	m_statustimer->start(MMDVM_TIMEOUT_MS);
 #ifdef DEBUGHW
 	fprintf(stderr, "MODEMTX %d:%d:", b.size(), m_serialdata.size());
 	for(int i = 0; i < b.size(); ++i){
