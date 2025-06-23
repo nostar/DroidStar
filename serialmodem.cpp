@@ -198,7 +198,8 @@ void SerialModem::process_modem()
 
 		else if(r == MMDVM_ACK){
 			qDebug() << "Received MMDVM_ACK";
-			if( (m_serialdata.size() > 3) && (m_serialdata[3] == 2) ){
+			//<---->2 - mmdvm, 4 - OpenGD77 trx
+			if( (m_serialdata.size() > 3) && ( (m_serialdata[3] == 2) || (m_serialdata[3] == 4) ) ){
 				emit connected(true);
 			}
 			for(int i = 0; i < s; ++i){
@@ -216,6 +217,11 @@ void SerialModem::process_modem()
 					m_version.append(m_serialdata[desc_offset+i]);
 				}
 				qDebug() << "MMDVM Protocol " << m_protocol << ": " << m_version;
+#ifdef DEBUGHW
+				fprintf(stderr, "MMDVM Protocol %d version %s", m_protocol, m_version.toStdString().c_str());
+				fprintf(stderr, "\n");
+				fflush(stderr);
+#endif
 			}
 			QThread::msleep(100);
 			set_freq();
