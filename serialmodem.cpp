@@ -238,6 +238,13 @@ void SerialModem::process_modem()
 			}
 		}
 
+		else if(r == MMDVM_GET_STATUS){
+			qDebug() << "Received MMDVM_GET_STATUS";
+			for(int i = 0; i < s; ++i){
+				m_serialdata.dequeue();
+			}
+		}
+
 		else if(m_serialdata.size() >= s){
 			for(int i = 0; i < s; ++i){
 				out.append(m_serialdata.dequeue());
