@@ -164,7 +164,9 @@ void Mode::mmdvm_connect_status(bool s)
 
 void Mode::in_audio_vol_changed(qreal v)
 {
-	m_audio->set_input_volume(v / m_attenuation);
+	if (m_audio) {
+		m_audio->set_input_volume(v / m_attenuation);
+	}
 }
 
 void Mode::out_audio_vol_changed(qreal v)

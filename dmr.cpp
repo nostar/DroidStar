@@ -202,7 +202,9 @@ void DMR::process_udp()
 			t = 0x42;
 		}
 		else if((uint8_t)buf.data()[15] & 0x01){
-			m_audio->start_playback();
+			if (m_audio) {
+				m_audio->start_playback();
+			}
 			if(!m_rxtimer->isActive()){
 				m_rxtimer->start(m_rxtimerint);
 			}
@@ -234,7 +236,9 @@ void DMR::process_udp()
 		(m_modeinfo.status == CONNECTED_RW))
 	{
 		if(!m_tx && ( (m_modeinfo.stream_state == STREAM_LOST) || (m_modeinfo.stream_state == STREAM_END) || (m_modeinfo.stream_state == STREAM_IDLE) )){
-			m_audio->start_playback();
+			if (m_audio) {
+				m_audio->start_playback();
+			}
 			if(!m_rxtimer->isActive()){
 				m_rxtimer->start(m_rxtimerint);
 			}
@@ -311,8 +315,10 @@ void DMR::setup_connection()
 	m_ping_timer = new QTimer();
 	connect(m_ping_timer, SIGNAL(timeout()), this, SLOT(send_ping()));
 	m_ping_timer->start(5000);
-	m_audio = new AudioEngine(m_audioin, m_audioout);
-	m_audio->init();
+	if (m_modeinfo.sw_vocoder_loaded) {
+		m_audio = new AudioEngine(m_audioin, m_audioout);
+		m_audio->init();
+	}
 }
 
 void DMR::hostname_lookup(QHostInfo i)
@@ -456,7 +462,7 @@ void DMR::transmit()
 	}
 #endif
 	if(m_ttsid == 0){
-		if(m_audio->read(pcm, 160)){
+		if(m_audio && m_audio->read(pcm, 160)){
 		}
 		else{
 			return;
@@ -542,13 +548,15 @@ void DMR::send_frame()
 		m_udp->writeDatagram(txdata, m_address, m_modeinfo.port);
 		m_txtimer->stop();
 
-		if(m_ttsid == 0){
+		if(m_ttsid == 0 && m_audio){
 			m_audio->stop_capture();
 		}
 
 		m_modeinfo.stream_state = STREAM_IDLE;
 	}
-	emit update_output_level(m_audio->level() * 8);
+	if (m_audio) {
+		emit update_output_level(m_audio->level() * 8);
+	}
 	emit update(m_modeinfo);
 
     if(m_debug){
@@ -947,7 +955,7 @@ void DMR::process_rx_data()
 #if !defined(Q_OS_IOS)
 			m_ambedev->decode(ambe);
 
-			if(m_ambedev->get_audio(pcm)){
+			if(m_audio && m_ambedev->get_audio(pcm)){
 				m_audio->write(pcm, 160);
 				emit update_output_level(m_audio->level());
 			}
@@ -964,13 +972,17 @@ void DMR::process_rx_data()
 			else{
 				memset(pcm, 0, 160 * sizeof(int16_t));
 			}
-			m_audio->write(pcm, 160);
-			emit update_output_level(m_audio->level());
+			if (m_audio) {
+				m_audio->write(pcm, 160);
+				emit update_output_level(m_audio->level());
+			}
 		}
 	}
 	else if ( ((m_modeinfo.stream_state == STREAM_END) || (m_modeinfo.stream_state == STREAM_LOST)) && (m_rxmodemq.size() < 50) ){
 		m_rxtimer->stop();
-		m_audio->stop_playback();
+		if (m_audio) {
+			m_audio->stop_playback();
+		}
 		m_rxwatchdog = 0;
 		m_modeinfo.streamid = 0;
 		m_rxcodecq.clear();

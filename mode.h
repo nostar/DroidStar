@@ -193,7 +193,7 @@ protected:
 	QTimer *m_ping_timer;
 	QTimer *m_txtimer;
 	QTimer *m_rxtimer;
-	AudioEngine *m_audio;
+	AudioEngine *m_audio = nullptr;
 	QString m_audioin;
 	QString m_audioout;
     bool m_mdirect;
