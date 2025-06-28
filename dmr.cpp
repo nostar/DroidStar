@@ -412,19 +412,25 @@ void DMR::process_modem_data(QByteArray d)
 		else if(m_dataType == DT_TERMINATOR_WITH_LC){
 			m_modeinfo.stream_state = STREAM_IDLE;
 		}
+		if(m_dataType != DT_TERMINATOR_WITH_LC){
+			m_dmrcnt = 0;
+		}
 
-		m_dmrcnt = 0;
 		m_bptc.decode(p_frame + 4, lcData);
 		m_txdstid = lcData[3U] << 16 | lcData[4U] << 8 | lcData[5U];
 		m_txsrcid = lcData[6U] << 16 | lcData[7U] << 8 | lcData[8U];
 		m_flco = FLCO(lcData[0U] & 0x3FU);
+		if (!m_dmrcnt) {
+			m_txstreamid = static_cast<uint32_t>(::rand());
+		}
 		build_frame();
 		::memcpy(m_dmrFrame + 20U, p_frame + 4, 33U);
 		txdata.append((char *)m_dmrFrame, 55);
 		m_udp->writeDatagram(txdata, m_address, m_modeinfo.port);
+		++m_dmrcnt;
 	}
 	else {
-		m_dataType = (m_dmrcnt % 6U) ? DT_VOICE : DT_VOICE_SYNC;
+		m_dataType = ((m_dmrcnt-1) % 6U) ? DT_VOICE : DT_VOICE_SYNC;
 		build_frame();
 		::memcpy(m_dmrFrame + 20U, p_frame + 4, 33U);
 		txdata.append((char *)m_dmrFrame, 55);
