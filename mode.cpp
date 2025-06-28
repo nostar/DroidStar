@@ -266,7 +266,7 @@ void Mode::start_tx()
 	}
 #endif
 	if(!m_txtimer->isActive()){
-		if(m_ttsid == 0){
+		if(m_ttsid == 0 && m_audio){
 			m_audio->set_input_buffer_size(640);
 			m_audio->start_capture();
 			//audioin->start(&audio_buffer);
