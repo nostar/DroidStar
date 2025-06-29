@@ -984,7 +984,7 @@ void DMR::process_rx_data()
 			}
 		}
 	}
-	else if ( ((m_modeinfo.stream_state == STREAM_END) || (m_modeinfo.stream_state == STREAM_LOST)) && (m_rxmodemq.size() < 50) ){
+	else if ( ((m_modeinfo.stream_state == STREAM_END) || (m_modeinfo.stream_state == STREAM_LOST)) && (m_rxmodemq.size() < 37) ){
 		m_rxtimer->stop();
 		if (m_audio) {
 			m_audio->stop_playback();
