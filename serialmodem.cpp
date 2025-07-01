@@ -229,13 +229,13 @@ void SerialModem::process_modem()
 				fflush(stderr);
 #endif
 			}
+			for(int i = 0; i < s; ++i){
+				m_serialdata.dequeue();
+			}
 			QThread::msleep(100);
 			set_freq();
 			QThread::msleep(100);
 			set_config();
-			for(int i = 0; i < s; ++i){
-				m_serialdata.dequeue();
-			}
 		}
 
 		else if(r == MMDVM_GET_STATUS){
