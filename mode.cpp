@@ -211,6 +211,7 @@ void Mode::begin_connect()
         connect(m_modem, SIGNAL(connected(bool)), this, SLOT(mmdvm_connect_status(bool)));
         connect(m_modem, SIGNAL(modem_data_ready(QByteArray)), this, SLOT(process_modem_data(QByteArray)));
         connect(m_modem, SIGNAL(modem_ready()), this, SLOT(host_lookup()));
+        connect(this, SIGNAL(update_mode(uint8_t)), m_modem, SLOT(set_mode(uint8_t)));
         m_modem->connect_to_serial(m_modemport);
 #endif
     }

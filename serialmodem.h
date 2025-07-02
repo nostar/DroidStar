@@ -39,6 +39,8 @@ public:
 	void connect_to_serial(QString);
 	QString get_mmdvm_version(){ return m_version; }
 	void write(QByteArray);
+public slots:
+	void set_mode(uint8_t);
 private slots:
 	void process_serial();
 	void receive_serial(QByteArray);
@@ -47,7 +49,6 @@ private slots:
 	void get_status_modem();
 	void set_freq();
 	void set_config();
-	void set_mode(uint8_t);
 private:
 #ifndef Q_OS_ANDROID
 	QSerialPort *m_serial;

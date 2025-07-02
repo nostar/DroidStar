@@ -186,6 +186,7 @@ void DMR::process_udp()
 	}
 	if((buf.size() != 55) && ( (m_modeinfo.stream_state == STREAM_LOST) || (m_modeinfo.stream_state == STREAM_END) )){
 		m_modeinfo.stream_state = STREAM_IDLE;
+		emit update_mode(MODE_IDLE);
 	}
 	if((buf.size() == 55) &&
 		(::memcmp(buf.data(), "DMRD", 4U) == 0) &&
@@ -209,6 +210,7 @@ void DMR::process_udp()
 				m_rxtimer->start(m_rxtimerint);
 			}
 			m_modeinfo.stream_state = STREAM_NEW;
+			emit update_mode(MODE_DMR);
 			m_modeinfo.ts = QDateTime::currentMSecsSinceEpoch();
 			m_modeinfo.srcid = (uint32_t)((buf.data()[5] << 16) | ((buf.data()[6] << 8) & 0xff00) | (buf.data()[7] & 0xff));
 			m_modeinfo.dstid = (uint32_t)((buf.data()[8] << 16) | ((buf.data()[9] << 8) & 0xff00) | (buf.data()[10] & 0xff));
@@ -226,9 +228,6 @@ void DMR::process_udp()
 //			m_rxmodemq.append(t);
 			m_rxmodemq.append(0);
 
-			if(m_modeinfo.stream_state == STREAM_END){
-				full_lc_encode((uint8_t*)&buf.data()[20], DT_TERMINATOR_WITH_LC);
-			}
 			addDMRDataSync((uint8_t*)&buf.data()[20], 0);
 
 			for(int i = 0; i < 33; ++i){
@@ -288,9 +287,6 @@ void DMR::process_udp()
 			if(!t) {
 				addDMRAudioSync((uint8_t*)&buf.data()[20], 0);
 			}
-			if(!t && m_modeinfo.stream_state == STREAM_IDLE) {
-				full_lc_encode((uint8_t*)&buf.data()[20], DT_VOICE_LC_HEADER);
-			}
 
 			for(int i = 0; i < 33; ++i){
 				m_rxmodemq.append(buf.data()[20+i]);
@@ -333,6 +329,7 @@ void DMR::setup_connection()
 		m_audio = new AudioEngine(m_audioin, m_audioout);
 		m_audio->init();
 	}
+	emit update_mode(MODE_IDLE);
 }
 
 void DMR::hostname_lookup(QHostInfo i)

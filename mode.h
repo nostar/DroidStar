@@ -137,6 +137,7 @@ signals:
 	void update(Mode::MODEINFO);
     void update_log(QString);
 	void update_output_level(unsigned short);
+	void update_mode(uint8_t);
 protected slots:
 	virtual void send_disconnect(){}
 	virtual void hostname_lookup(QHostInfo){}
