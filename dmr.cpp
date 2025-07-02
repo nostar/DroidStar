@@ -186,7 +186,6 @@ void DMR::process_udp()
 	}
 	if((buf.size() != 55) && ( (m_modeinfo.stream_state == STREAM_LOST) || (m_modeinfo.stream_state == STREAM_END) )){
 		m_modeinfo.stream_state = STREAM_IDLE;
-		emit update_mode(MODE_IDLE);
 	}
 	if((buf.size() == 55) &&
 		(::memcmp(buf.data(), "DMRD", 4U) == 0) &&
@@ -1005,6 +1004,7 @@ void DMR::process_rx_data()
 		m_rxcodecq.clear();
 		qDebug() << "DMR playback stopped";
 		m_modeinfo.stream_state = STREAM_IDLE;
+		emit update_mode(MODE_IDLE);
 		return;
 	}
 }
