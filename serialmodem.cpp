@@ -262,6 +262,14 @@ void SerialModem::get_status_modem()
 	a.append(3);
 	a.append(MMDVM_GET_STATUS);
 	m_serial->write(a);
+#ifdef DEBUGHW
+	fprintf(stderr, "MODEMTX %d:%d:", a.size(), m_serialdata.size());
+	for(int i = 0; i < a.size(); ++i){
+		fprintf(stderr, "%02x ", (uint8_t)a.data()[i]);
+	}
+	fprintf(stderr, "\n");
+	fflush(stderr);
+#endif
 }
 
 void SerialModem::set_freq()
@@ -444,6 +452,14 @@ void SerialModem::set_mode(uint8_t m)
 	out.append(MMDVM_SET_MODE);
 	out.append(m);
 	m_serial->write(out);
+#ifdef DEBUGHW
+	fprintf(stderr, "MODEMTX %d:%d:", out.size(), m_serialdata.size());
+	for(int i = 0; i < out.size(); ++i){
+		fprintf(stderr, "%02x ", (unsigned char)out.data()[i]);
+	}
+	fprintf(stderr, "\n");
+	fflush(stderr);
+#endif
 }
 
 void SerialModem::write(QByteArray b)
