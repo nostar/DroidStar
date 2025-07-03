@@ -328,7 +328,6 @@ void DMR::setup_connection()
 		m_audio = new AudioEngine(m_audioin, m_audioout);
 		m_audio->init();
 	}
-	emit update_mode(MODE_IDLE);
 }
 
 void DMR::hostname_lookup(QHostInfo i)

@@ -57,6 +57,7 @@ private:
 #endif
 	QString m_version;
 	uint8_t m_protocol;
+	uint8_t m_configured;
 	uint32_t m_baudrate;
 	QTimer *m_modemtimer;
 	QTimer *m_statustimer;

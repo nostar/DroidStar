@@ -32,6 +32,7 @@ SerialModem::SerialModem(QString mode)
 	m_dmrColorCode = 1;
 	m_m17TXHang = 5;
 	m_ax25Enabled = false;
+	m_configured = 0;
 }
 
 SerialModem::~SerialModem()
@@ -148,7 +149,6 @@ void SerialModem::config_modem()
     fprintf(stderr, "\n");
     fflush(stderr);
 #endif
-    emit modem_ready();
 }
 
 void SerialModem::receive_serial(QByteArray d)
@@ -197,17 +197,16 @@ void SerialModem::process_modem()
 			for(int i = 0; i < s; ++i){
 				m_serialdata.dequeue();
 			}
-			if( (m_serialdata.size() > 3) && (m_serialdata[3] == 2) ){
+//			if( (m_serialdata.size() > 3) && (m_serialdata[3] == 2) ){
 
-			}
+//			}
 		}
 
 		else if(r == MMDVM_ACK){
 			qDebug() << "Received MMDVM_ACK";
-			//	2 - mmdvm, 4 - OpenGD77 trx
-			if( (m_serialdata.size() > 3) && ( (m_serialdata[3] == 2) || (m_serialdata[3] == 4) ) ){
-				emit connected(true);
-			}
+//			if( (m_serialdata.size() > 3) && ( (m_serialdata[3] == 2) || (m_serialdata[3] == 4) ) ){
+
+//			}
 			for(int i = 0; i < s; ++i){
 				m_serialdata.dequeue();
 			}
@@ -228,14 +227,13 @@ void SerialModem::process_modem()
 				fprintf(stderr, "\n");
 				fflush(stderr);
 #endif
+				emit modem_ready();
+				m_configured = 1;
 			}
 			for(int i = 0; i < s; ++i){
 				m_serialdata.dequeue();
 			}
-			QThread::msleep(100);
-			set_freq();
-			QThread::msleep(100);
-			set_config();
+			return; //need for m_configured
 		}
 
 		else if(r == MMDVM_GET_STATUS){
@@ -251,6 +249,18 @@ void SerialModem::process_modem()
 			}
 			emit modem_data_ready(out);
 		}
+	}
+	//need receive and enqueu serial data before send new command
+	if (m_configured == 1) {
+		set_freq();
+		m_configured++;
+		return;
+	}
+	//need receive and enqueu serial data before send new command
+	if (m_configured == 2) {
+		set_config();
+		m_configured++;
+		emit connected(true);
 	}
 }
 
