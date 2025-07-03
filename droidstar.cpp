@@ -450,6 +450,7 @@ void DroidStar::process_connect()
 				}
 			}
 			m_mode->set_dmr_params(m_essid, dmrpass, m_latitude, m_longitude, m_location, m_description, m_freq, m_url, m_swid, m_pkgid, m_dmropts);
+			m_mode->set_dmr_cc(m_dmrColorCode);
 			connect(this, SIGNAL(dmr_tgid_changed(int)), m_mode, SLOT(dmr_tgid_changed(int)));
 			connect(this, SIGNAL(dmrpc_state_changed(int)), m_mode, SLOT(dmrpc_state_changed(int)));
 			connect(this, SIGNAL(slot_changed(int)), m_mode, SLOT(slot_changed(int)));

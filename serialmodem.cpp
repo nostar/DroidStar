@@ -486,3 +486,8 @@ void SerialModem::write(QByteArray b)
 	fflush(stderr);
 #endif
 }
+
+void SerialModem::set_cc(uint32_t cc)
+{
+	m_dmrColorCode = cc;
+}

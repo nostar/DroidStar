@@ -39,6 +39,7 @@ public:
 	void connect_to_serial(QString);
 	QString get_mmdvm_version(){ return m_version; }
 	void write(QByteArray);
+	void set_cc(uint32_t);
 public slots:
 	void set_mode(uint8_t);
 private slots:
