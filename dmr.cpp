@@ -433,6 +433,14 @@ void DMR::send_disconnect()
 
 void DMR::process_modem_data(QByteArray d)
 {
+	if (m_tx){
+		if (m_audio) {
+			m_audio->stop_playback();
+		}
+		m_rxcodecq.clear();
+		return;
+	}
+
 	QByteArray txdata;
 	uint8_t lcData[12U];
 
@@ -569,13 +577,15 @@ void DMR::transmit()
 void DMR::send_frame()
 {
 	QByteArray txdata;
+	static uint32_t txcnt;
 
 	m_txsrcid = m_dmrid;
 	if(m_tx){
 		m_modeinfo.stream_state = TRANSMITTING;
 		m_modeinfo.slot = m_txslot;
 
-		if(!m_dmrcnt){
+		if(!txcnt){
+			m_dmrcnt = 0;
             encode_header(DT_VOICE_LC_HEADER);
 			m_txstreamid = static_cast<uint32_t>(::rand());
 			m_flco = m_txflco;
@@ -612,6 +622,7 @@ void DMR::send_frame()
 			};
 		}
 
+		++txcnt;
 		++m_dmrcnt;
 /*
 		if(!m_dmrcnt){
@@ -651,6 +662,7 @@ void DMR::send_frame()
 		}
 
 		m_txtimer->stop();
+		txcnt = 0;
 
 		if(m_ttsid == 0 && m_audio){
 			m_audio->stop_capture();
