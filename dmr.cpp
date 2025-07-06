@@ -425,6 +425,13 @@ void DMR::process_modem_data(QByteArray d)
 			m_dmrcnt = 0;
 		}
 
+		if (m_audio) {
+			m_audio->start_playback();
+		}
+		if(!m_rxtimer->isActive()){
+			m_rxtimer->start(m_rxtimerint);
+		}
+		m_rxwatchdog = 0;
 		m_bptc.decode(p_frame + 4, lcData);
 		m_txdstid = lcData[3U] << 16 | lcData[4U] << 8 | lcData[5U];
 		m_txsrcid = lcData[6U] << 16 | lcData[7U] << 8 | lcData[8U];
@@ -440,9 +447,26 @@ void DMR::process_modem_data(QByteArray d)
 	}
 	else {
 		m_dataType = ((m_dmrcnt-1) % 6U) ? DT_VOICE : DT_VOICE_SYNC;
+		m_rxwatchdog = 0;
 		build_frame();
 		::memcpy(m_dmrFrame + 20U, p_frame + 4, 33U);
 		txdata.append((char *)m_dmrFrame, 55);
+
+		uint8_t dmrframe[33];
+		uint8_t dmr3ambe[27];
+		// get the 33 bytes ambe
+		memcpy(dmrframe, m_dmrFrame + 20U, 33);
+		// extract the 3 ambe frames
+		memcpy(dmr3ambe, dmrframe, 14);
+		dmr3ambe[13] &= 0xF0;
+		dmr3ambe[13] |= (dmrframe[19] & 0x0F);
+		memcpy(&dmr3ambe[14], &dmrframe[20], 13);
+
+		for(int i = 0; i < 3; ++i){
+			for(int j = 0; j < 9; ++j){
+				m_rxcodecq.append(dmr3ambe[j + (9*i)]);
+			}
+		}
 		m_udp->writeDatagram(txdata, m_address, m_modeinfo.port);
 		++m_dmrcnt;
 	}
@@ -940,12 +964,25 @@ void DMR::process_rx_data()
 	static uint8_t cnt = 0;
 
 	if(m_rxwatchdog++ > 100){
-		qDebug() << "DMR RX stream timeout ";
-		m_rxwatchdog = 0;
-		m_modeinfo.stream_state = STREAM_LOST;
-		m_modeinfo.ts = QDateTime::currentMSecsSinceEpoch();
-		emit update(m_modeinfo);
-		m_modeinfo.streamid = 0;
+		//receive RF from modem
+		if( m_modeinfo.stream_state == TRANSMITTING_MODEM) {
+			m_rxtimer->stop();
+			if (m_audio) {
+				m_audio->stop_playback();
+			}
+			m_rxwatchdog = 0;
+			m_rxcodecq.clear();
+			m_dmrcnt = 0;
+			m_modeinfo.stream_state = STREAM_IDLE;
+		//receive network stream
+		} else {
+			qDebug() << "DMR RX stream timeout ";
+			m_rxwatchdog = 0;
+			m_modeinfo.stream_state = STREAM_LOST;
+			m_modeinfo.ts = QDateTime::currentMSecsSinceEpoch();
+			emit update(m_modeinfo);
+			m_modeinfo.streamid = 0;
+		}
 	}
 
 	if((m_rxmodemq.size() > 2) && (++cnt >= 3)){
@@ -993,6 +1030,7 @@ void DMR::process_rx_data()
 			}
 		}
 	}
+	//receive network stream
 	else if ( ((m_modeinfo.stream_state == STREAM_END) || (m_modeinfo.stream_state == STREAM_LOST)) && (m_rxmodemq.size() < 37) ){
 		m_rxtimer->stop();
 		if (m_audio) {
@@ -1004,6 +1042,16 @@ void DMR::process_rx_data()
 		qDebug() << "DMR playback stopped";
 		m_modeinfo.stream_state = STREAM_IDLE;
 		emit update_mode(MODE_IDLE);
-		return;
+	}
+	//receive RF from modem
+	else if (m_dmrcnt && (m_modeinfo.stream_state == STREAM_IDLE) && (m_rxcodecq.size() < 9)){
+		m_rxtimer->stop();
+		if (m_audio) {
+			m_audio->stop_playback();
+		}
+		m_rxwatchdog = 0;
+		m_rxcodecq.clear();
+		m_dmrcnt = 0;
+		qDebug() << "DMR RF playback stopped";
 	}
 }
