@@ -250,13 +250,13 @@ void SerialModem::process_modem()
 			emit modem_data_ready(out);
 		}
 	}
-	//need receive and enqueu serial data before send new command
+	//need receive and dequeue serial data (MMDVM_ACK) before send new command
 	if (m_configured == 1) {
 		set_freq();
 		m_configured++;
 		return;
 	}
-	//need receive and enqueu serial data before send new command
+	//need receive and dequeue serial data (MMDVM_ACK) before send new command
 	if (m_configured == 2) {
 		set_config();
 		m_configured++;

@@ -193,13 +193,12 @@ void DMR::process_udp()
 		(m_modeinfo.status == CONNECTED_RW))
 	{
 		m_rxwatchdog = 0;
-//        uint8_t t = 0;
+
 		if((uint8_t)buf.data()[15] & 0x02){
 			qDebug() << "DMR RX EOT";
 			m_modeinfo.stream_state = STREAM_END;
 			m_modeinfo.ts = QDateTime::currentMSecsSinceEpoch();
 			m_modeinfo.streamid = 0;
-//			t = 0x42;
 		}
 		else if((uint8_t)buf.data()[15] & 0x01){
 			if (m_audio) {
@@ -217,14 +216,13 @@ void DMR::process_udp()
 			m_modeinfo.streamid = (uint32_t)((buf.data()[16] << 24) | ((buf.data()[17] << 16) & 0xff0000) | ((buf.data()[18] << 8) & 0xff00) | (buf.data()[19] & 0xff));
 			m_modeinfo.frame_number = (uint8_t)buf.data()[4];
 			m_modeinfo.slot = (buf.data()[15] & 0x80) ? 2 : 1;
-//			t = 0x41;
+
 			qDebug() << "New DMR stream from " << m_modeinfo.srcid << " to " << m_modeinfo.dstid;
 		}
 		if(m_modem){
 			m_rxmodemq.append(MMDVM_FRAME_START);
 			m_rxmodemq.append(0x25);
 			m_rxmodemq.append(MMDVM_DMR_DATA2);
-//			m_rxmodemq.append(t);
 			m_rxmodemq.append(0);
 
 			addDMRDataSync((uint8_t*)&buf.data()[20], 0);
@@ -275,12 +273,10 @@ void DMR::process_udp()
 
 		if(m_modem){
 			uint8_t t = ((uint8_t)buf.data()[15] & 0x0f);
-//			if(!t) t = 0x20;
 
 			m_rxmodemq.append(MMDVM_FRAME_START);
 			m_rxmodemq.append(0x25);
 			m_rxmodemq.append(MMDVM_DMR_DATA2);
-//			m_rxmodemq.append(t);
 			m_rxmodemq.append(0);
 
 			if(!t) {
