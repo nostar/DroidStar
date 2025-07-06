@@ -469,6 +469,7 @@ void DMR::process_modem_data(QByteArray d)
 		m_txdstid = lcData[3U] << 16 | lcData[4U] << 8 | lcData[5U];
 		m_txsrcid = lcData[6U] << 16 | lcData[7U] << 8 | lcData[8U];
 		m_flco = FLCO(lcData[0U] & 0x3FU);
+		m_txslot = m_modeinfo.slot = 2;
 		if (!m_dmrcnt) {
 			m_txstreamid = static_cast<uint32_t>(::rand());
 		}
@@ -507,6 +508,7 @@ void DMR::process_modem_data(QByteArray d)
 		}
 		++m_dmrcnt;
 	}
+	emit update(m_modeinfo);
 
     if(m_debug){
         QDebug debug = qDebug();
