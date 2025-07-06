@@ -44,6 +44,7 @@ private slots:
     void cc_changed(int cc) {m_txcc = cc;}
 	void slot_changed(int s) {m_txslot = s + 1; }
 	void send_frame();
+	void mmdvm_direct_connect();
 private:
 	uint32_t m_essid;
 	QString m_password;

@@ -220,7 +220,7 @@ void Mode::begin_connect()
 
 void Mode::host_lookup()
 {
-    if(m_mdirect && (m_mode == "M17")){ // MMDVM_DIRECT currently only supported by M17
+    if(m_mdirect && ((m_mode == "M17") || (m_mode == "DMR"))){ // MMDVM_DIRECT currently only supported by M17 and DMR
         mmdvm_direct_connect();
     }
     else if(m_ipv6 && (m_modeinfo.host != "none")){

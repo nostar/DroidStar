@@ -330,6 +330,27 @@ void DMR::setup_connection()
 	}
 }
 
+void DMR::mmdvm_direct_connect()
+{
+	if (m_modemport != "") {
+		//m_mbeenc->set_gain_adjust(2.5);
+		m_modeinfo.sw_vocoder_loaded = load_vocoder_plugin();
+		if (!m_modeinfo.sw_vocoder_loaded) {
+			qDebug() << "No vocoder, cant do MMDVM_DIRECT";
+			return;
+		}
+		m_modeinfo.status = CONNECTED_RW;
+		m_txtimer = new QTimer();
+		connect(m_txtimer, SIGNAL(timeout()), this, SLOT(transmit()));
+		m_rxtimer = new QTimer();
+		connect(m_rxtimer, SIGNAL(timeout()), this, SLOT(process_rx_data()));
+		m_audio = new AudioEngine(m_audioin, m_audioout);
+		m_audio->init();
+	} else {
+		qDebug() << "No modem, cant do MMDVM_DIRECT";
+	}
+}
+
 void DMR::hostname_lookup(QHostInfo i)
 {
 	if (!i.addresses().isEmpty()) {
@@ -383,6 +404,10 @@ void DMR::send_ping()
 
 void DMR::send_disconnect()
 {
+    if(m_mdirect){
+                return;
+        }
+
 	QByteArray out;
 	out.append('R');
 	out.append('P');
@@ -442,7 +467,9 @@ void DMR::process_modem_data(QByteArray d)
 		build_frame();
 		::memcpy(m_dmrFrame + 20U, p_frame + 4, 33U);
 		txdata.append((char *)m_dmrFrame, 55);
-		m_udp->writeDatagram(txdata, m_address, m_modeinfo.port);
+		if (!m_mdirect) {
+			m_udp->writeDatagram(txdata, m_address, m_modeinfo.port);
+		}
 		++m_dmrcnt;
 	}
 	else {
@@ -467,7 +494,9 @@ void DMR::process_modem_data(QByteArray d)
 				m_rxcodecq.append(dmr3ambe[j + (9*i)]);
 			}
 		}
-		m_udp->writeDatagram(txdata, m_address, m_modeinfo.port);
+		if (!m_mdirect) {
+			m_udp->writeDatagram(txdata, m_address, m_modeinfo.port);
+		}
 		++m_dmrcnt;
 	}
 
@@ -567,7 +596,9 @@ void DMR::send_frame()
 
 		build_frame();
 		txdata.append((char *)m_dmrFrame, 55);
-		m_udp->writeDatagram(txdata, m_address, m_modeinfo.port);
+		if (!m_mdirect) {
+			m_udp->writeDatagram(txdata, m_address, m_modeinfo.port);
+		}
 		if(m_modem){
 			m_rxwatchdog = 0;
 			m_rxmodemq.append(MMDVM_FRAME_START);
@@ -603,7 +634,9 @@ void DMR::send_frame()
 		build_frame();
 		m_ttscnt = 0;
 		txdata.append((char *)m_dmrFrame, 55);
-		m_udp->writeDatagram(txdata, m_address, m_modeinfo.port);
+		if (!m_mdirect) {
+			m_udp->writeDatagram(txdata, m_address, m_modeinfo.port);
+		}
 		if(m_modem){
 			m_rxwatchdog = 0;
 			m_rxmodemq.append(MMDVM_FRAME_START);
