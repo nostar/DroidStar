@@ -549,6 +549,13 @@ void DMR::send_frame()
 		if(!m_dmrcnt){
             encode_header(DT_VOICE_LC_HEADER);
 			m_txstreamid = static_cast<uint32_t>(::rand());
+			if(m_modem){
+				if(!m_rxtimer->isActive()){
+					m_rxtimer->start(m_rxtimerint);
+				}
+				m_rxwatchdog = 0;
+				emit update_mode(MODE_DMR);
+			}
 		}
 		else{
 			::memcpy(m_dmrFrame + 20U, m_ambe, 13U);
@@ -561,6 +568,18 @@ void DMR::send_frame()
 		build_frame();
 		txdata.append((char *)m_dmrFrame, 55);
 		m_udp->writeDatagram(txdata, m_address, m_modeinfo.port);
+		if(m_modem){
+			m_rxwatchdog = 0;
+			m_rxmodemq.append(MMDVM_FRAME_START);
+			m_rxmodemq.append(0x25);
+			m_rxmodemq.append(MMDVM_DMR_DATA2);
+			m_rxmodemq.append(0);
+
+			for(int i = 0; i < 33; ++i){
+				m_rxmodemq.append(m_dmrFrame[20+i]);
+			};
+		}
+
 		++m_dmrcnt;
 /*
 		if(!m_dmrcnt){
@@ -585,6 +604,18 @@ void DMR::send_frame()
 		m_ttscnt = 0;
 		txdata.append((char *)m_dmrFrame, 55);
 		m_udp->writeDatagram(txdata, m_address, m_modeinfo.port);
+		if(m_modem){
+			m_rxwatchdog = 0;
+			m_rxmodemq.append(MMDVM_FRAME_START);
+			m_rxmodemq.append(0x25);
+			m_rxmodemq.append(MMDVM_DMR_DATA2);
+			m_rxmodemq.append(0);
+
+			for(int i = 0; i < 33; ++i){
+				m_rxmodemq.append(m_dmrFrame[20+i]);
+			};
+		}
+
 		m_txtimer->stop();
 
 		if(m_ttsid == 0 && m_audio){
@@ -612,7 +643,6 @@ void DMR::send_frame()
 uint8_t * DMR::get_eot()
 {
 	encode_header(DT_TERMINATOR_WITH_LC);
-	m_dmrcnt = 0;
 	return m_dmrFrame;
 }
 
@@ -1043,8 +1073,8 @@ void DMR::process_rx_data()
 		m_modeinfo.stream_state = STREAM_IDLE;
 		emit update_mode(MODE_IDLE);
 	}
-	//receive RF from modem
-	else if (m_dmrcnt && (m_modeinfo.stream_state == STREAM_IDLE) && (m_rxcodecq.size() < 9)){
+	//receive RF from modem and tx
+	else if (m_dmrcnt && (m_modeinfo.stream_state == STREAM_IDLE) && (m_rxcodecq.size() < 9) && (m_rxmodemq.size() < 37)){
 		m_rxtimer->stop();
 		if (m_audio) {
 			m_audio->stop_playback();
@@ -1052,6 +1082,7 @@ void DMR::process_rx_data()
 		m_rxwatchdog = 0;
 		m_rxcodecq.clear();
 		m_dmrcnt = 0;
-		qDebug() << "DMR RF playback stopped";
+		qDebug() << "DMR RF playback or tx stopped";
+		emit update_mode(MODE_IDLE);
 	}
 }
