@@ -578,6 +578,7 @@ void DMR::send_frame()
 		if(!m_dmrcnt){
             encode_header(DT_VOICE_LC_HEADER);
 			m_txstreamid = static_cast<uint32_t>(::rand());
+			m_flco = m_txflco;
 			if(m_modem){
 				if(!m_rxtimer->isActive()){
 					m_rxtimer->start(m_rxtimerint);
