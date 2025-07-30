@@ -9,7 +9,7 @@ The DudeStar application used the Qt Widgets UI, while DroidStar uses the Qt Qui
 # M17 support 
 The Codec2 vocoder library is open source and is included as a C++ implementation of the original C library taken from the mvoice project.  More info on M17 can be found here: https://m17project.org/
 
-M17 SMS type (0x06) packet support has been added to DroidStar.  A text input and SMS send button is available in the log tab when in M17 mode.
+M17 SMS type (0x05) packet support has been added to DroidStar.  A text input and SMS send button is available in the log tab when in M17 mode.
 
 # MMDVM support -- work in progress
 DroidStar supports MMDVM and MMDVM_HS (hotspot) modems, with basic (possibly buggy) support for M17, D-STAR, Fusion, and DMR.  Support for P25 and NXDN coming soon.  When connecting to a digital mode reflector/DMR server and selecting an MMDVM device under Modems, then DroidStar acts as a hotspot/repeater.  When 'MMDVM Direct' (currently M17 only) is selected as the host, then DroidStar becomes a stand-alone transceiver.
