@@ -33,6 +33,7 @@
 
 #include "defines.h"
 #include "quantise.h"
+#include "msvc_compat.h"
 #include "lpc.h"
 #include "kiss_fft.h"
 
@@ -69,11 +70,11 @@ int CQuantize::lspd_bits(int i)
 void CQuantize::encode_lspds_scalar(int indexes[], float lsp[], int order)
 {
 	int   i,k,m;
-	float lsp_hz[order];
-	float lsp__hz[order];
-	float dlsp[order];
-	float dlsp_[order];
-	float wt[order];
+	VLA(float, lsp_hz, order);
+	VLA(float, lsp__hz, order);
+	VLA(float, dlsp, order);
+	VLA(float, dlsp_, order);
+	VLA(float, wt, order);
 	const float *cb;
 	float se;
 

@@ -32,6 +32,7 @@
 #include <stdbool.h>
 #include <string.h>
 #include <math.h>
+#include "msvc_compat.h"
 
 #include "nlp.h"
 #include "lpc.h"
@@ -1690,8 +1691,8 @@ void CCodec2::lsp_to_lpc(float *lsp, float *ak, int order)
 	int i,j;
 	float xout1,xout2,xin1,xin2;
 	float *pw,*n1,*n2,*n3,*n4 = 0;
-	float freq[order];
-	float Wp[(order * 4) + 2];
+	VLA(float, freq, order);
+	VLA(float, Wp, (order * 4) + 2);
 
 	/* convert from radians to the x=cos(w) domain */
 

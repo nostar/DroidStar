@@ -35,6 +35,7 @@
 #include <math.h>
 #include "defines.h"
 #include "lpc.h"
+#include "msvc_compat.h"
 
 /*---------------------------------------------------------------------------*\
 
@@ -159,7 +160,9 @@ void Clpc::levinson_durbin(
 	int order		/* order of the LPC analysis */
 )
 {
-	float a[order+1][order+1];
+	VLA(float, a_storage, (order+1) * (order+1));
+	// Use macro for 2D array access: a[i][j] becomes a_storage[i*(order+1)+j]
+	#define a(i,j) a_storage[(i)*(order+1)+(j)]
 	float sum, e, k;
 	int i,j;				/* loop variables */
 
@@ -169,22 +172,24 @@ void Clpc::levinson_durbin(
 	{
 		sum = 0.0;
 		for(j=1; j<=i-1; j++)
-			sum += a[i-1][j]*R[i-j];
+			sum += a(i-1,j)*R[i-j];
 		k = -1.0*(R[i] + sum)/e;		/* Equation 38b, Makhoul */
 		if (fabsf(k) > 1.0)
 			k = 0.0;
 
-		a[i][i] = k;
+		a(i,i) = k;
 
 		for(j=1; j<=i-1; j++)
-			a[i][j] = a[i-1][j] + k*a[i-1][i-j];	/* Equation 38c, Makhoul */
+			a(i,j) = a(i-1,j) + k*a(i-1,i-j);	/* Equation 38c, Makhoul */
 
 		e *= (1-k*k);				/* Equation 38d, Makhoul */
 	}
 
 	for(i=1; i<=order; i++)
-		lpcs[i] = a[order][i];
+		lpcs[i] = a(order,i);
 	lpcs[0] = 1.0;
+	
+	#undef a
 }
 
 /*---------------------------------------------------------------------------*\
