@@ -159,8 +159,35 @@ jobs:
         file "${{ steps.build_info.outputs.app_name }}.app/Contents/MacOS/DroidStar"
         lipo -info "${{ steps.build_info.outputs.app_name }}.app/Contents/MacOS/DroidStar" || echo "lipo failed"
         
-        echo "=== Testing app launch (basic) ==="
-        "${{ steps.build_info.outputs.app_name }}.app/Contents/MacOS/DroidStar" --version || echo "Version check failed, continuing..."
+        echo "=== Checking app bundle structure ==="
+        echo "Info.plist exists: $(test -f "${{ steps.build_info.outputs.app_name }}.app/Contents/Info.plist" && echo "YES" || echo "NO")"
+        echo "Executable exists: $(test -f "${{ steps.build_info.outputs.app_name }}.app/Contents/MacOS/DroidStar" && echo "YES" || echo "NO")"
+        echo "Frameworks bundled: $(ls "${{ steps.build_info.outputs.app_name }}.app/Contents/Frameworks/" | wc -l) items"
+        
+        echo "=== Bundle verification (CI-safe) ==="
+        # Verify app bundle is properly structured and deployable without GUI launch
+        if [ -f "${{ steps.build_info.outputs.app_name }}.app/Contents/MacOS/DroidStar" ]; then
+          echo "✅ Main executable exists"
+          
+          # Check if dependencies are properly bundled
+          if otool -L "${{ steps.build_info.outputs.app_name }}.app/Contents/MacOS/DroidStar" | grep -q "@executable_path"; then
+            echo "✅ App appears to be properly deployed with bundled dependencies"
+          else
+            echo "⚠️ Warning: App may not be fully portable - some dependencies not bundled"
+          fi
+          
+          # Verify executable permissions
+          if [ -x "${{ steps.build_info.outputs.app_name }}.app/Contents/MacOS/DroidStar" ]; then
+            echo "✅ Executable has proper permissions"
+          else
+            echo "⚠️ Warning: Executable may not have proper permissions"
+          fi
+          
+          echo "✅ App bundle verification completed successfully"
+        else
+          echo "❌ Error: Main executable not found"
+          exit 1
+        fi
     
     - name: Create DMG package
       if: ${{ inputs.create_dmg }}
