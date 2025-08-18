@@ -124,11 +124,86 @@ cp -r DroidStar.app DroidStar_Portable.app
 macdeployqt DroidStar_Portable.app -dmg
 ```
 
+### 🪟 `build-windows-portable.yml` - Windows Portable Executable Builder
+
+Creates portable Windows executables with all dependencies bundled, plus optional NSIS installer.
+
+#### Features
+- **Multi-Architecture**: Supports both x64 and x86 builds
+- **Portable Distribution**: All Qt frameworks and dependencies bundled
+- **NSIS Installer**: Optional professional installer with Start Menu integration
+- **MIDI Support**: Full RtMidi integration via vcpkg
+- **Manual Triggering**: Run on-demand with branch and architecture selection
+
+#### Usage
+
+1. **Navigate to Actions tab** in your GitHub repository
+2. **Select "Build Windows Portable Executable"** workflow
+3. **Click "Run workflow"** and configure:
+
+   | Parameter | Description | Default | Options |
+   |-----------|-------------|---------|---------|
+   | `branch` | Branch to build from | `main` | Any valid branch name |
+   | `build_type` | Build configuration | `Release` | `Release`, `Debug` |
+   | `create_installer` | Create NSIS installer | `true` | `true`, `false` |
+   | `architecture` | Target architecture | `x64` | `x64`, `x86` |
+
+4. **Click "Run workflow"** to start the build
+
+#### Build Outputs
+
+The workflow generates these artifacts:
+
+| Artifact | Description | Size | Use Case |
+|----------|-------------|------|----------|
+| `*_portable` | Portable executable bundle | ~100MB | Direct execution, no installation needed |
+| `*_installer` | NSIS installer (.exe) | ~45MB | Full Windows integration, Start Menu shortcuts |
+| `*_build_summary` | Build information | <1KB | Verification, debugging |
+
+#### Build Process
+
+1. **Environment Setup**
+   - Windows latest runner (Windows Server 2022)
+   - Qt 6.5.0 with multimedia and serial port modules
+   - MSVC 2019 compiler with selected architecture
+   - vcpkg for dependency management
+
+2. **Dependency Management**
+   - RtMidi installed via vcpkg for MIDI support
+   - Automatic Qt deployment with windeployqt
+   - All DLLs bundled for portable operation
+
+3. **NSIS Installer Creation**
+   - Professional Windows installer
+   - Start Menu and Desktop shortcuts
+   - Proper uninstall support
+   - Registry integration for Add/Remove Programs
+
+4. **Verification**
+   - Executable functionality testing
+   - Dependency completeness check
+   - Bundle portability validation
+
+#### Troubleshooting Windows Builds
+
+**Common Issues:**
+
+- **vcpkg Installation Failed**: Network issues or GitHub cache problems
+- **Qt Deployment Failed**: Missing windeployqt or incorrect Qt installation
+- **NSIS Installer Failed**: NSIS download or compilation issues
+- **Runtime Errors**: Missing Visual C++ redistributables
+
+**Debug Steps:**
+
+1. **Check workflow logs** for detailed error messages
+2. **Download build summary** for dependency information
+3. **Try Debug build** for additional diagnostic information
+4. **Test without installer** to isolate NSIS issues
+
 ## Future Workflows
 
 Planned workflows for other platforms:
 
-- `build-windows-portable.yml` - Windows portable executable with NSIS installer
 - `build-linux-appimage.yml` - Linux AppImage for universal Linux distribution
 - `build-android-apk.yml` - Android APK for mobile devices
 

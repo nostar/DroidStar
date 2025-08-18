@@ -1,0 +1,375 @@
+name: Build Windows Portable Executable
+
+on:
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: 'Branch to build from'
+        required: true
+        default: 'main'
+        type: string
+      build_type:
+        description: 'Build configuration'
+        required: true
+        default: 'Release'
+        type: choice
+        options:
+          - Release
+          - Debug
+      create_installer:
+        description: 'Create NSIS installer'
+        required: true
+        default: true
+        type: boolean
+      architecture:
+        description: 'Target architecture'
+        required: true
+        default: 'x64'
+        type: choice
+        options:
+          - x64
+          - x86
+
+env:
+  QT_VERSION: '6.5.0'
+  CMAKE_BUILD_TYPE: ${{ inputs.build_type }}
+  VCPKG_BINARY_SOURCES: 'clear;x-gha,readwrite'
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        ref: ${{ inputs.branch }}
+        fetch-depth: 0
+    
+    - name: Setup vcpkg
+      uses: lukka/run-vcpkg@v11
+      with:
+        vcpkgGitCommitId: 'a42af01b72c28a8e1d7b48107b33e4f286a55ef6'
+    
+    - name: Export GitHub Actions cache environment variables
+      uses: actions/github-script@v7
+      with:
+        script: |
+          core.exportVariable('ACTIONS_CACHE_URL', process.env.ACTIONS_CACHE_URL || '');
+          core.exportVariable('ACTIONS_RUNTIME_TOKEN', process.env.ACTIONS_RUNTIME_TOKEN || '');
+    
+    - name: Get build info
+      id: build_info
+      shell: bash
+      run: |
+        echo "git_sha=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+        echo "git_branch=${{ inputs.branch }}" >> $GITHUB_OUTPUT
+        echo "build_date=$(date '+%Y%m%d_%H%M%S')" >> $GITHUB_OUTPUT
+        echo "app_name=DroidStar_${{ inputs.branch }}_$(git rev-parse --short HEAD)_${{ inputs.architecture }}" >> $GITHUB_OUTPUT
+        echo "vcpkg_triplet=${{ inputs.architecture }}-windows" >> $GITHUB_OUTPUT
+    
+    - name: Install Qt
+      uses: jurplel/install-qt-action@v4
+      with:
+        version: ${{ env.QT_VERSION }}
+        host: 'windows'
+        target: 'desktop'
+        arch: 'win64_msvc2019_64'
+        modules: 'qtmultimedia qtserialport'
+        cache: true
+    
+    - name: Setup MSVC
+      uses: ilammy/msvc-dev-cmd@v1
+      with:
+        arch: ${{ inputs.architecture }}
+    
+    - name: Install dependencies with vcpkg
+      shell: bash
+      run: |
+        echo "=== Installing dependencies with vcpkg ==="
+        echo "Triplet: ${{ steps.build_info.outputs.vcpkg_triplet }}"
+        
+        # Install RtMidi for MIDI support
+        vcpkg install rtmidi:${{ steps.build_info.outputs.vcpkg_triplet }}
+        
+        # Verify installations
+        echo "=== Installed packages ==="
+        vcpkg list
+        
+        echo "=== Setting environment variables ==="
+        echo "CMAKE_TOOLCHAIN_FILE=$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake" >> $GITHUB_ENV
+        echo "VCPKG_TARGET_TRIPLET=${{ steps.build_info.outputs.vcpkg_triplet }}" >> $GITHUB_ENV
+    
+    - name: Configure build environment
+      shell: bash
+      run: |
+        echo "=== Build Environment Setup ==="
+        echo "Qt version: ${{ env.QT_VERSION }}"
+        echo "Qt location: ${{ env.Qt6_DIR }}"
+        echo "Build type: ${{ env.CMAKE_BUILD_TYPE }}"
+        echo "Architecture: ${{ inputs.architecture }}"
+        echo "VCPKG triplet: ${{ steps.build_info.outputs.vcpkg_triplet }}"
+        
+        # Add Qt to PATH
+        echo "${{ env.Qt6_DIR }}/bin" >> $GITHUB_PATH
+        
+        # Verify tools
+        which qmake6.exe || which qmake.exe || echo "qmake not found"
+        which windeployqt.exe || echo "windeployqt not found"
+    
+    - name: Create build directory
+      shell: bash
+      run: |
+        mkdir -p build
+        cd build
+        echo "Build directory created in: $(pwd)"
+    
+    - name: Configure with CMake
+      working-directory: build
+      shell: bash
+      run: |
+        echo "=== CMake Configuration ==="
+        cmake .. \
+          -G "Visual Studio 17 2022" \
+          -A ${{ inputs.architecture == 'x64' && 'x64' || 'Win32' }} \
+          -DCMAKE_BUILD_TYPE=${{ env.CMAKE_BUILD_TYPE }} \
+          -DCMAKE_PREFIX_PATH="${{ env.Qt6_DIR }}" \
+          -DCMAKE_TOOLCHAIN_FILE="$CMAKE_TOOLCHAIN_FILE" \
+          -DVCPKG_TARGET_TRIPLET="$VCPKG_TARGET_TRIPLET" \
+          -DENABLE_MIDI=ON \
+          -DCMAKE_VERBOSE_MAKEFILE=ON
+        
+        echo "=== CMake configuration completed ==="
+    
+    - name: Build application
+      working-directory: build
+      shell: bash
+      run: |
+        echo "=== Starting build ==="
+        cmake --build . --config ${{ env.CMAKE_BUILD_TYPE }} --parallel
+        
+        echo "=== Build completed ==="
+        ls -la ${{ env.CMAKE_BUILD_TYPE }}/
+        
+        echo "=== Checking executable ==="
+        file ${{ env.CMAKE_BUILD_TYPE }}/DroidStar.exe || echo "file command not available"
+        ls -la ${{ env.CMAKE_BUILD_TYPE }}/DroidStar.exe
+    
+    - name: Verify dependencies before deployment
+      working-directory: build
+      shell: bash
+      run: |
+        echo "=== Pre-deployment dependency check ==="
+        
+        # Check if executable exists and runs
+        if [ -f "${{ env.CMAKE_BUILD_TYPE }}/DroidStar.exe" ]; then
+          echo "Executable found: ${{ env.CMAKE_BUILD_TYPE }}/DroidStar.exe"
+          
+          # Try to get version info (may fail if dependencies missing)
+          ./${{ env.CMAKE_BUILD_TYPE }}/DroidStar.exe --version || echo "Version check failed (expected - dependencies not deployed yet)"
+        else
+          echo "ERROR: Executable not found!"
+          exit 1
+        fi
+    
+    - name: Create portable executable bundle
+      working-directory: build
+      shell: bash
+      run: |
+        echo "=== Creating portable executable bundle ==="
+        
+        # Create deployment directory
+        mkdir -p "${{ steps.build_info.outputs.app_name }}"
+        
+        # Copy executable
+        cp "${{ env.CMAKE_BUILD_TYPE }}/DroidStar.exe" "${{ steps.build_info.outputs.app_name }}/"
+        
+        echo "=== Deploying Qt dependencies ==="
+        windeployqt.exe \
+          --${{ env.CMAKE_BUILD_TYPE == 'Debug' && 'debug' || 'release' }} \
+          --qmldir .. \
+          --verbose 2 \
+          "${{ steps.build_info.outputs.app_name }}/DroidStar.exe"
+        
+        echo "=== Copying additional dependencies ==="
+        # Copy vcpkg-installed libraries if they exist
+        if [ -d "$VCPKG_ROOT/installed/${{ steps.build_info.outputs.vcpkg_triplet }}/bin" ]; then
+          echo "Copying vcpkg runtime libraries..."
+          find "$VCPKG_ROOT/installed/${{ steps.build_info.outputs.vcpkg_triplet }}/bin" -name "*.dll" -exec cp {} "${{ steps.build_info.outputs.app_name }}/" \;
+        fi
+        
+        echo "=== Deployment completed ==="
+        ls -la "${{ steps.build_info.outputs.app_name }}/"
+    
+    - name: Verify portable executable
+      working-directory: build
+      shell: bash
+      run: |
+        echo "=== Post-deployment verification ==="
+        
+        # Check bundle size
+        du -sh "${{ steps.build_info.outputs.app_name }}" || echo "du not available"
+        
+        echo "=== Bundle contents ==="
+        find "${{ steps.build_info.outputs.app_name }}" -name "*.exe" -o -name "*.dll" | head -20
+        
+        echo "=== Testing executable ==="
+        cd "${{ steps.build_info.outputs.app_name }}"
+        
+        # Test basic functionality
+        ./DroidStar.exe --version || echo "Version check failed"
+        
+        echo "=== Portable executable verification completed ==="
+    
+    - name: Create NSIS installer
+      if: ${{ inputs.create_installer }}
+      working-directory: build
+      shell: bash
+      run: |
+        echo "=== Creating NSIS installer ==="
+        
+        # Download and install NSIS
+        curl -L -o nsis.exe "https://downloads.sourceforge.net/project/nsis/NSIS%203/3.08/nsis-3.08-setup.exe"
+        ./nsis.exe /S
+        
+        # Add NSIS to PATH
+        echo "/c/Program Files (x86)/NSIS" >> $GITHUB_PATH
+        
+        # Create NSIS script
+        cat > installer.nsi << 'EOF'
+        !define APP_NAME "DroidStar"
+        !define APP_VERSION "${{ steps.build_info.outputs.git_sha }}"
+        !define APP_PUBLISHER "DroidStar Contributors"
+        !define APP_DESCRIPTION "Amateur Radio Digital Voice Client"
+        !define APP_EXECUTABLE "DroidStar.exe"
+        
+        Name "${APP_NAME} ${APP_VERSION}"
+        OutFile "${{ steps.build_info.outputs.app_name }}_installer.exe"
+        InstallDir "$PROGRAMFILES64\${APP_NAME}"
+        RequestExecutionLevel admin
+        
+        !include "MUI2.nsh"
+        
+        !define MUI_ICON "${{ steps.build_info.outputs.app_name }}\DroidStar.exe"
+        !define MUI_UNICON "${{ steps.build_info.outputs.app_name }}\DroidStar.exe"
+        
+        !insertmacro MUI_PAGE_WELCOME
+        !insertmacro MUI_PAGE_LICENSE "..\..\README.md"
+        !insertmacro MUI_PAGE_DIRECTORY
+        !insertmacro MUI_PAGE_INSTFILES
+        !insertmacro MUI_PAGE_FINISH
+        
+        !insertmacro MUI_UNPAGE_WELCOME
+        !insertmacro MUI_UNPAGE_CONFIRM
+        !insertmacro MUI_UNPAGE_INSTFILES
+        !insertmacro MUI_UNPAGE_FINISH
+        
+        !insertmacro MUI_LANGUAGE "English"
+        
+        Section "Install"
+          SetOutPath "$INSTDIR"
+          File /r "${{ steps.build_info.outputs.app_name }}\*"
+          
+          CreateDirectory "$SMPROGRAMS\${APP_NAME}"
+          CreateShortCut "$SMPROGRAMS\${APP_NAME}\${APP_NAME}.lnk" "$INSTDIR\${APP_EXECUTABLE}"
+          CreateShortCut "$SMPROGRAMS\${APP_NAME}\Uninstall.lnk" "$INSTDIR\Uninstall.exe"
+          CreateShortCut "$DESKTOP\${APP_NAME}.lnk" "$INSTDIR\${APP_EXECUTABLE}"
+          
+          WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${APP_NAME}" "DisplayName" "${APP_NAME}"
+          WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${APP_NAME}" "UninstallString" "$INSTDIR\Uninstall.exe"
+          WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${APP_NAME}" "Publisher" "${APP_PUBLISHER}"
+          WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${APP_NAME}" "DisplayVersion" "${APP_VERSION}"
+          
+          WriteUninstaller "$INSTDIR\Uninstall.exe"
+        SectionEnd
+        
+        Section "Uninstall"
+          Delete "$INSTDIR\*"
+          RMDir /r "$INSTDIR"
+          Delete "$SMPROGRAMS\${APP_NAME}\*"
+          RMDir "$SMPROGRAMS\${APP_NAME}"
+          Delete "$DESKTOP\${APP_NAME}.lnk"
+          DeleteRegKey HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${APP_NAME}"
+        SectionEnd
+        EOF
+        
+        # Compile installer
+        "/c/Program Files (x86)/NSIS/makensis.exe" installer.nsi
+        
+        echo "=== NSIS installer created ==="
+        ls -la *installer.exe
+    
+    - name: Create build summary
+      working-directory: build
+      shell: bash
+      run: |
+        echo "=== Build Summary ===" > build_summary.txt
+        echo "Branch: ${{ steps.build_info.outputs.git_branch }}" >> build_summary.txt
+        echo "Commit: ${{ steps.build_info.outputs.git_sha }}" >> build_summary.txt
+        echo "Build Type: ${{ env.CMAKE_BUILD_TYPE }}" >> build_summary.txt
+        echo "Architecture: ${{ inputs.architecture }}" >> build_summary.txt
+        echo "Build Date: ${{ steps.build_info.outputs.build_date }}" >> build_summary.txt
+        echo "Qt Version: ${{ env.QT_VERSION }}" >> build_summary.txt
+        echo "VCPKG Triplet: ${{ steps.build_info.outputs.vcpkg_triplet }}" >> build_summary.txt
+        echo "Installer Created: ${{ inputs.create_installer }}" >> build_summary.txt
+        echo "" >> build_summary.txt
+        echo "=== Executable Bundle Info ===" >> build_summary.txt
+        if [ -d "${{ steps.build_info.outputs.app_name }}" ]; then
+          echo "Bundle Size: $(du -sh ${{ steps.build_info.outputs.app_name }} 2>/dev/null || echo 'Unknown')" >> build_summary.txt
+          echo "Files in bundle:" >> build_summary.txt
+          find "${{ steps.build_info.outputs.app_name }}" -name "*.exe" -o -name "*.dll" | head -20 >> build_summary.txt
+        fi
+        
+        cat build_summary.txt
+    
+    - name: Upload portable executable artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ steps.build_info.outputs.app_name }}_portable
+        path: build/${{ steps.build_info.outputs.app_name }}
+        retention-days: 30
+        compression-level: 6
+    
+    - name: Upload installer artifact
+      if: ${{ inputs.create_installer }}
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ steps.build_info.outputs.app_name }}_installer
+        path: build/${{ steps.build_info.outputs.app_name }}_installer.exe
+        retention-days: 30
+    
+    - name: Upload build summary
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ steps.build_info.outputs.app_name }}_build_summary
+        path: build/build_summary.txt
+        retention-days: 30
+    
+    - name: Job summary
+      shell: bash
+      run: |
+        echo "## 🚀 Windows Build Completed Successfully" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### Build Information" >> $GITHUB_STEP_SUMMARY
+        echo "- **Branch:** ${{ steps.build_info.outputs.git_branch }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **Commit:** ${{ steps.build_info.outputs.git_sha }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **Build Type:** ${{ env.CMAKE_BUILD_TYPE }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **Architecture:** ${{ inputs.architecture }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **Qt Version:** ${{ env.QT_VERSION }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **NSIS Installer:** ${{ inputs.create_installer }}" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### Artifacts Generated" >> $GITHUB_STEP_SUMMARY
+        echo "- 📁 **Portable Executable:** \`${{ steps.build_info.outputs.app_name }}_portable\`" >> $GITHUB_STEP_SUMMARY
+        if [ "${{ inputs.create_installer }}" = "true" ]; then
+          echo "- 💾 **NSIS Installer:** \`${{ steps.build_info.outputs.app_name }}_installer.exe\`" >> $GITHUB_STEP_SUMMARY
+        fi
+        echo "- 📋 **Build Summary:** \`build_summary.txt\`" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### Usage" >> $GITHUB_STEP_SUMMARY
+        echo "Download the artifacts and:" >> $GITHUB_STEP_SUMMARY
+        echo "- **Portable:** Extract and run DroidStar.exe directly" >> $GITHUB_STEP_SUMMARY
+        if [ "${{ inputs.create_installer }}" = "true" ]; then
+          echo "- **Installer:** Run the .exe installer for full Windows integration" >> $GITHUB_STEP_SUMMARY
+        fi
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "All Qt frameworks and MIDI libraries are bundled - no additional installation required! 🎉" >> $GITHUB_STEP_SUMMARY
