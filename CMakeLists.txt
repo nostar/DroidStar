@@ -205,6 +205,25 @@ target_compile_definitions(DroidStar PRIVATE
     VERSION_NUMBER="${VERSION_NUMBER}"
 )
 
+# Handle MSVC C99/C11 compatibility issues
+if(MSVC)
+    # Enable C++14 for better MSVC compatibility
+    target_compile_features(DroidStar PRIVATE cxx_std_14)
+    
+    # Add MSVC-specific flags to handle codec2 VLA issues
+    target_compile_options(DroidStar PRIVATE
+        /wd4996  # Disable deprecated function warnings
+        /wd4244  # Disable conversion warnings
+        /wd4305  # Disable truncation warnings
+    )
+    
+    # Define _CRT_SECURE_NO_WARNINGS to avoid MSVC secure warnings
+    target_compile_definitions(DroidStar PRIVATE
+        _CRT_SECURE_NO_WARNINGS
+        _USE_MATH_DEFINES
+    )
+endif()
+
 target_link_libraries(DroidStar PRIVATE
     Qt::Core
     Qt::Gui

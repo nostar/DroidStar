@@ -21,8 +21,6 @@
 #include <QTimer>
 
 #ifdef Q_OS_WIN
-#include <QApplication>
-#include <QWidget>
 #include <QGuiApplication>
 #include <qpa/qplatformnativeinterface.h>
 #endif
@@ -418,19 +416,14 @@ void GlobalHotkey::handleHotkeyReleased()
 bool GlobalHotkey::registerWindowsHotkey(uint32_t keyCode, uint32_t modifiers)
 {
 	// Get the main window handle
-	QWidget *activeWindow = QApplication::activeWindow();
 	HWND hwnd = nullptr;
 	
-	if (activeWindow) {
-		hwnd = (HWND)activeWindow->winId();
-	} else {
-		// Fallback to getting any window handle
-		auto app = qobject_cast<QGuiApplication*>(QCoreApplication::instance());
-		if (app) {
-			auto windows = app->allWindows();
-			if (!windows.isEmpty()) {
-				hwnd = (HWND)windows.first()->winId();
-			}
+	// Get any available window handle from QGuiApplication
+	auto app = qobject_cast<QGuiApplication*>(QCoreApplication::instance());
+	if (app) {
+		auto windows = app->allWindows();
+		if (!windows.isEmpty()) {
+			hwnd = (HWND)windows.first()->winId();
 		}
 	}
 	
@@ -459,18 +452,14 @@ bool GlobalHotkey::registerWindowsHotkey(uint32_t keyCode, uint32_t modifiers)
 
 void GlobalHotkey::unregisterWindowsHotkey()
 {
-	QWidget *activeWindow = QApplication::activeWindow();
 	HWND hwnd = nullptr;
 	
-	if (activeWindow) {
-		hwnd = (HWND)activeWindow->winId();
-	} else {
-		auto app = qobject_cast<QGuiApplication*>(QCoreApplication::instance());
-		if (app) {
-			auto windows = app->allWindows();
-			if (!windows.isEmpty()) {
-				hwnd = (HWND)windows.first()->winId();
-			}
+	// Get any available window handle from QGuiApplication
+	auto app = qobject_cast<QGuiApplication*>(QCoreApplication::instance());
+	if (app) {
+		auto windows = app->allWindows();
+		if (!windows.isEmpty()) {
+			hwnd = (HWND)windows.first()->winId();
 		}
 	}
 	
