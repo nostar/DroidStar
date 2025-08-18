@@ -20,6 +20,8 @@
 
 #include <QObject>
 #include "mode.h"
+#include "globalhotkey.h"
+#include "midihotkey.h"
 
 class DroidStar : public QObject
 {
@@ -64,6 +66,7 @@ signals:
     void dst_changed(QString);
     void debug_changed(bool);
     void update_devices();
+	void ptt_hotkey_toggled(bool transmitting);
 public slots:
 	void set_callsign(const QString &callsign) {  m_callsign = callsign.simplified(); save_settings(); }
 	void set_dmrtgid(const QString &dmrtgid) { m_dmr_destid = dmrtgid.simplified().toUInt(); save_settings(); }
@@ -143,6 +146,7 @@ public slots:
 	void press_tx();
 	void release_tx();
 	void click_tx(bool);
+	void handlePttToggle(bool transmitting);
     void m17_sms_pressed(QString sms) { emit m17_send_sms(sms.left(822)); }
 	void process_settings();
 	void check_host_files();
@@ -255,6 +259,31 @@ public slots:
 	void tts_changed(QString);
 	void tts_text_changed(QString);
 	void obtain_asl_wt_creds();
+	QString get_ptt_hotkey() { return m_globalHotkey ? m_globalHotkey->currentHotkey() : ""; }
+	bool set_ptt_hotkey(const QString &hotkey);
+	bool get_ptt_toggle_mode() { 
+		bool result = m_globalHotkey ? m_globalHotkey->isToggleMode() : false; 
+		qDebug() << "get_ptt_toggle_mode() returning:" << result;
+		return result; 
+	}
+	void set_ptt_toggle_mode(bool enabled);
+	Q_INVOKABLE void force_ptt_mode() { 
+		qDebug() << "DroidStar::force_ptt_mode() called";
+		if (m_globalHotkey) m_globalHotkey->forcePttMode(); 
+	}
+
+	// MIDI hotkey methods
+	Q_INVOKABLE QStringList get_midi_devices();
+	Q_INVOKABLE bool set_midi_device(const QString &deviceName);
+	Q_INVOKABLE QString get_current_midi_device();
+	Q_INVOKABLE bool set_midi_hotkey(int noteNumber, int channel = -1);
+	Q_INVOKABLE void clear_midi_hotkey();
+	Q_INVOKABLE bool has_midi_hotkey();
+	Q_INVOKABLE void set_midi_toggle_mode(bool enabled);
+	Q_INVOKABLE bool get_midi_toggle_mode();
+	Q_INVOKABLE void set_midi_velocity_threshold(int threshold);
+	Q_INVOKABLE int get_midi_velocity_threshold();
+	Q_INVOKABLE bool is_midi_supported();
 private:
 	int connect_status;
 	bool m_update_host_files;
@@ -372,6 +401,8 @@ private:
 #ifdef Q_OS_ANDROID
     AndroidSerialPort *m_USBmonitor;
 #endif
+	GlobalHotkey *m_globalHotkey;
+	MidiHotkey *m_midiHotkey;
 
 private slots:
 #ifdef Q_OS_ANDROID

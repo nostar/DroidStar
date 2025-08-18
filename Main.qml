@@ -454,6 +454,8 @@ ApplicationWindow {
 			settingsTab.modemP25TXLevelEdit.text = droidstar.get_modemP25TxLevel()
 			settingsTab.modemNXDNTXLevelEdit.text = droidstar.get_modemNXDNTxLevel();
 			settingsTab.modemBaudEdit.text = droidstar.get_modemBaud();
+			settingsTab.pttHotkeyEdit.text = droidstar.get_ptt_hotkey();
+			settingsTab.pttToggleMode.toggleEnabled = droidstar.get_ptt_toggle_mode();
 
 			hostsTab.hostsTextEdit.text = droidstar.get_local_hosts();
         }
@@ -462,6 +464,19 @@ ApplicationWindow {
 		}
 		function onOpen_vocoder_dialog() {
 			vocoderDialog.open();
+		}
+
+		function onPtt_hotkey_toggled(transmitting) {
+			console.log("QML: onPtt_hotkey_toggled called with transmitting:", transmitting);
+			mainTab.buttonTX.tx = transmitting;
+			if (transmitting) {
+				console.log("QML: Setting TX button to transmitting state (white)");
+				mainTab.btntxt.color = "white";
+			} else {
+				console.log("QML: Setting TX button to idle state (black)");
+				mainTab.btntxt.color = "black";
+				mainTab.btntxt.text = "TX";
+			}
 		}
 
 		function onConnect_status_changed(c) {
