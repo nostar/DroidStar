@@ -49,6 +49,8 @@ Item {
 	property alias comboModem: _comboModem
 	property alias comboPlayback: _comboPlayback
 	property alias comboCapture: _comboCapture
+	property alias pttHotkeyEdit: _pttHotkeyEdit
+	property alias pttToggleMode: _pttToggleMode
 	property alias modemRXFreqEdit: _modemRXFreqEdit
 	property alias modemTXFreqEdit: _modemTXFreqEdit
 	property alias modemRXOffsetEdit: _modemRXOffsetEdit
@@ -74,7 +76,7 @@ Item {
 		anchors.fill: parent
 		contentWidth: parent.width
         contentHeight: _debugBox.y +
-                       _debugBox.height + 10
+                       _debugBox.height + 40
 		flickableDirection: Flickable.VerticalFlick
 		clip: true
 		ScrollBar.vertical: ScrollBar {}
@@ -638,9 +640,250 @@ Item {
 			text: qsTr("Use IPv6 when available")
 		}
 		Text {
-			id: _vocoderURLlabel
+			id: _pttHotkeyLabel
 			x: 10
 			y: 990
+			width: 80
+			height: 25
+			text: qsTr("PTT Hotkey")
+			color: "white"
+			verticalAlignment: Text.AlignVCenter
+		}
+		TextField {
+			id: _pttHotkeyEdit
+			x: 100
+			y: _pttHotkeyLabel.y
+			width: parent.width - 220
+			height: 25
+			selectByMouse: true
+			placeholderText: qsTr("e.g. Cmd+Shift+T")
+			onEditingFinished: {
+				if (droidstar.set_ptt_hotkey(_pttHotkeyEdit.text)) {
+					_pttHotkeyStatus.text = "✓ Active"
+					_pttHotkeyStatus.color = "lightgreen"
+				} else {
+					_pttHotkeyStatus.text = "✗ Failed"
+					_pttHotkeyStatus.color = "red"
+				}
+			}
+		}
+		Text {
+			id: _pttHotkeyStatus
+			x: _pttHotkeyEdit.x + _pttHotkeyEdit.width + 10
+			y: _pttHotkeyLabel.y
+			width: 100
+			height: 25
+			text: qsTr("✓ Active")
+			color: "lightgreen"
+			verticalAlignment: Text.AlignVCenter
+		}
+		Row {
+			x: 10
+			y: 1020
+			spacing: 10
+			
+			Text {
+				y: 2
+				color: "white"
+				text: qsTr("PTT Mode:")
+				verticalAlignment: Text.AlignVCenter
+			}
+			
+			Button {
+				id: _pttToggleMode
+				width: 160
+				height: 25
+				property bool toggleEnabled: false
+				text: toggleEnabled ? qsTr("Toggle Mode (ON)") : qsTr("Hold Mode (OFF)")
+				onClicked: {
+					toggleEnabled = !toggleEnabled;
+					droidstar.set_ptt_toggle_mode(toggleEnabled);
+				}
+			}
+			
+			Text {
+				y: 2
+				color: "lightgray"
+				text: _pttToggleMode.toggleEnabled ? qsTr("Press once to start/stop") : qsTr("Hold to transmit")
+				verticalAlignment: Text.AlignVCenter
+			}
+		}
+		
+		// MIDI Configuration Section
+		Text {
+			id: _midiSectionLabel
+			x: 10
+			y: 1050
+			width: 80
+			height: 25
+			text: qsTr("MIDI PTT")
+			color: "white"
+			font.bold: true
+			verticalAlignment: Text.AlignVCenter
+		}
+		
+		Text {
+			id: _midiDeviceLabel
+			x: 10
+			y: 1080
+			width: 80
+			height: 25
+			text: qsTr("MIDI Device")
+			color: "white"
+			verticalAlignment: Text.AlignVCenter
+		}
+		ComboBox {
+			id: _midiDeviceCombo
+			x: 100
+			y: _midiDeviceLabel.y
+			width: parent.width - 110
+			height: 30
+			model: droidstar.is_midi_supported() ? droidstar.get_midi_devices() : ["MIDI not supported"]
+			enabled: droidstar.is_midi_supported()
+			onCurrentTextChanged: {
+				if (enabled && currentText !== "MIDI not supported" && currentText !== "") {
+					droidstar.set_midi_device(currentText);
+				}
+			}
+		}
+		
+		Text {
+			id: _midiNoteLabel
+			x: 10
+			y: 1120
+			width: 80
+			height: 25
+			text: qsTr("MIDI Note")
+			color: "white"
+			verticalAlignment: Text.AlignVCenter
+		}
+		SpinBox {
+			id: _midiNoteSpinBox
+			x: 100
+			y: _midiNoteLabel.y
+			width: 100
+			height: 25
+			from: 0
+			to: 127
+			value: 60  // Middle C
+			enabled: droidstar.is_midi_supported()
+			onValueChanged: {
+				if (enabled) {
+					droidstar.set_midi_hotkey(value, _midiChannelSpinBox.value - 1);
+				}
+			}
+		}
+		Text {
+			id: _midiNoteHelper
+			x: _midiNoteSpinBox.x + _midiNoteSpinBox.width + 10
+			y: _midiNoteLabel.y
+			width: 100
+			height: 25
+			text: qsTr("(C4 = 60)")
+			color: "lightgray"
+			verticalAlignment: Text.AlignVCenter
+		}
+		
+		Text {
+			id: _midiChannelLabel
+			x: 10
+			y: 1150
+			width: 80
+			height: 25
+			text: qsTr("MIDI Channel")
+			color: "white"
+			verticalAlignment: Text.AlignVCenter
+		}
+		SpinBox {
+			id: _midiChannelSpinBox
+			x: 100
+			y: _midiChannelLabel.y
+			width: 100
+			height: 25
+			from: 0
+			to: 16
+			value: 0  // Any channel
+			enabled: droidstar.is_midi_supported()
+			onValueChanged: {
+				if (enabled) {
+					droidstar.set_midi_hotkey(_midiNoteSpinBox.value, value - 1);
+				}
+			}
+		}
+		Text {
+			id: _midiChannelHelper
+			x: _midiChannelSpinBox.x + _midiChannelSpinBox.width + 10
+			y: _midiChannelLabel.y
+			width: 100
+			height: 25
+			text: qsTr("(0 = Any)")
+			color: "lightgray"
+			verticalAlignment: Text.AlignVCenter
+		}
+		
+		Text {
+			id: _midiVelocityLabel
+			x: 10
+			y: 1180
+			width: 80
+			height: 25
+			text: qsTr("Min Velocity")
+			color: "white"
+			verticalAlignment: Text.AlignVCenter
+		}
+		SpinBox {
+			id: _midiVelocitySpinBox
+			x: 100
+			y: _midiVelocityLabel.y
+			width: 100
+			height: 25
+			from: 1
+			to: 127
+			value: 64
+			enabled: droidstar.is_midi_supported()
+			onValueChanged: {
+				if (enabled) {
+					droidstar.set_midi_velocity_threshold(value);
+				}
+			}
+		}
+		
+		Row {
+			x: 10
+			y: 1210
+			spacing: 10
+			
+			Text {
+				y: 2
+				color: "white"
+				text: qsTr("MIDI Mode:")
+				verticalAlignment: Text.AlignVCenter
+			}
+			
+			Button {
+				id: _midiToggleMode
+				width: 160
+				height: 25
+				property bool toggleEnabled: false
+				text: toggleEnabled ? qsTr("Toggle Mode (ON)") : qsTr("Hold Mode (OFF)")
+				enabled: droidstar.is_midi_supported()
+				onClicked: {
+					toggleEnabled = !toggleEnabled;
+					droidstar.set_midi_toggle_mode(toggleEnabled);
+				}
+			}
+			
+			Text {
+				y: 2
+				color: "lightgray"
+				text: _midiToggleMode.toggleEnabled ? qsTr("Press once to start/stop") : qsTr("Hold to transmit")
+				verticalAlignment: Text.AlignVCenter
+			}
+		}
+		Text {
+			id: _vocoderURLlabel
+			x: 10
+			y: 1250
 			width: 80
 			height: 25
 			text: qsTr("Vocoder URL")
@@ -658,7 +901,7 @@ Item {
 		Button {
 			id: vocoderButton
 			x: 10
-			y: 1020
+			y: 1280
 			width: 150
 			height: 30
 			text: qsTr("Download vocoder")
@@ -671,7 +914,7 @@ Item {
 		Text {
 			id: _modemRXFreqLabel
 			x: 10
-			y: 1090
+			y: 1320
 			width: 60
 			height: 25
 			text: qsTr("RX Freq")
@@ -709,7 +952,7 @@ Item {
 		Text {
 			id: _modemRXOffsetLabel
 			x: 10
-			y: 1120
+			y: 1350
 			width: 100
 			height: 25
 			text: qsTr("RX Offset")
@@ -747,7 +990,7 @@ Item {
 		Text {
 			id: _modemRXLevelLabel
 			x: 10
-			y: 1150
+			y: 1380
 			width: 100
 			height: 25
 			text: qsTr("RX Level")
@@ -785,7 +1028,7 @@ Item {
 		Text {
 			id: _modemRXDCOffsetLabel
 			x: 10
-			y: 1180
+			y: 1410
 			width: 100
 			height: 25
 			text: qsTr("RX DC Offset")
@@ -823,7 +1066,7 @@ Item {
 		Text {
 			id: _modemRFLevelLabel
 			x: 10
-			y: 1210
+			y: 1440
 			width: 100
 			height: 25
 			text: qsTr("RF Level")
@@ -861,7 +1104,7 @@ Item {
 		Text {
 			id: _modemCWIdTXLevelLabel
 			x: 10
-			y: 1240
+			y: 1470
 			width: 100
 			height: 25
 			text: qsTr("CWIdTXLevel")
@@ -899,7 +1142,7 @@ Item {
 		Text {
 			id: _modemDMRTXLevelLabel
 			x: 10
-			y: 1270
+			y: 1500
 			width: 100
 			height: 25
 			text: qsTr("DMRTXLevel")
@@ -937,7 +1180,7 @@ Item {
 		Text {
 			id: _modemP25TXLevelLabel
 			x: 10
-			y: 1300
+			y: 1530
 			width: 100
 			height: 25
 			text: qsTr("P25TXLevel")
@@ -975,7 +1218,7 @@ Item {
 		Text {
 			id: _modemBaudLabel
 			x: 10
-			y: 1330
+			y: 1560
 			width: 100
 			height: 25
 			text: qsTr("Baud")
@@ -994,7 +1237,7 @@ Item {
         CheckBox {
             id: _mmdvmBox
             x: 10
-            y: 1360
+            y: 1590
             width: parent.width
             height: 25
             text: qsTr("MMDVM_DIRECT")
@@ -1005,7 +1248,7 @@ Item {
         CheckBox {
             id: _debugBox
             x: 10
-            y: 1390
+            y: 1620
             width: parent.width
             height: 25
             text: qsTr("Debug output to stderr")

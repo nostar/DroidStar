@@ -34,6 +34,8 @@ qt_add_executable(DroidStar WIN32 MACOSX_BUNDLE
     dcs.cpp dcs.h
     dmr.cpp dmr.h
     droidstar.cpp droidstar.h
+    globalhotkey.cpp globalhotkey.h
+    midihotkey.cpp midihotkey.h
     httpmanager.cpp httpmanager.h
     iax.cpp iax.h
     iaxdefines.h
@@ -97,6 +99,107 @@ execute_process(
     OUTPUT_STRIP_TRAILING_WHITESPACE
 )
 
+# Check for RtMidi support
+option(ENABLE_MIDI "Enable MIDI hotkey support" ON)
+
+if(ENABLE_MIDI)
+    set(MIDI_FOUND FALSE)
+    
+    # Try to find RtMidi using pkg-config first (preferred method)
+    find_package(PkgConfig QUIET)
+    if(PkgConfig_FOUND)
+        pkg_check_modules(RTMIDI rtmidi)
+        if(RTMIDI_FOUND)
+            message(STATUS "Found RtMidi via pkg-config: ${RTMIDI_VERSION}")
+            target_compile_definitions(DroidStar PRIVATE ENABLE_MIDI)
+            target_include_directories(DroidStar PRIVATE ${RTMIDI_INCLUDE_DIRS})
+            target_link_libraries(DroidStar PRIVATE ${RTMIDI_LIBRARIES})
+            target_link_directories(DroidStar PRIVATE ${RTMIDI_LIBRARY_DIRS})
+            set(MIDI_FOUND TRUE)
+        endif()
+    endif()
+    
+    # If pkg-config didn't work, try platform-specific detection
+    if(NOT MIDI_FOUND)
+        # Try to find RtMidi header
+        find_path(RTMIDI_INCLUDE_DIR 
+            NAMES RtMidi.h rtmidi/RtMidi.h
+            PATHS 
+                /usr/include
+                /usr/local/include
+                /opt/homebrew/include
+                $ENV{RTMIDI_DIR}/include
+        )
+        
+        # Try to find RtMidi library
+        find_library(RTMIDI_LIBRARY
+            NAMES rtmidi
+            PATHS
+                /usr/lib
+                /usr/local/lib
+                /opt/homebrew/lib
+                $ENV{RTMIDI_DIR}/lib
+        )
+        
+        if(RTMIDI_INCLUDE_DIR AND RTMIDI_LIBRARY)
+            message(STATUS "Found RtMidi: ${RTMIDI_LIBRARY}")
+            target_compile_definitions(DroidStar PRIVATE ENABLE_MIDI)
+            target_include_directories(DroidStar PRIVATE ${RTMIDI_INCLUDE_DIR})
+            target_link_libraries(DroidStar PRIVATE ${RTMIDI_LIBRARY})
+            set(MIDI_FOUND TRUE)
+            
+            # Add platform-specific libraries and definitions
+            if(WIN32)
+                # Windows: Add Windows Multimedia library
+                target_link_libraries(DroidStar PRIVATE winmm)
+                target_compile_definitions(DroidStar PRIVATE __WINDOWS_MM__)
+                message(STATUS "MIDI: Added Windows Multimedia support")
+                
+            elseif(UNIX AND NOT APPLE)
+                # Linux: Check for ALSA and JACK
+                find_package(ALSA QUIET)
+                if(ALSA_FOUND)
+                    target_link_libraries(DroidStar PRIVATE ${ALSA_LIBRARIES})
+                    target_include_directories(DroidStar PRIVATE ${ALSA_INCLUDE_DIRS})
+                    target_compile_definitions(DroidStar PRIVATE __LINUX_ALSA__)
+                    message(STATUS "MIDI: Added ALSA support")
+                endif()
+                
+                # Check for JACK
+                find_library(JACK_LIBRARY NAMES jack)
+                if(JACK_LIBRARY)
+                    target_link_libraries(DroidStar PRIVATE ${JACK_LIBRARY})
+                    target_compile_definitions(DroidStar PRIVATE __UNIX_JACK__)
+                    message(STATUS "MIDI: Added JACK support")
+                endif()
+                
+                # Always add pthread for Linux
+                find_package(Threads REQUIRED)
+                target_link_libraries(DroidStar PRIVATE Threads::Threads)
+                
+            elseif(APPLE)
+                # macOS: Add CoreMIDI framework (already handled by RtMidi)
+                target_compile_definitions(DroidStar PRIVATE __MACOSX_CORE__)
+                message(STATUS "MIDI: Added CoreMIDI support")
+            endif()
+        endif()
+    endif()
+    
+    if(NOT MIDI_FOUND)
+        message(WARNING "RtMidi not found. MIDI support will be disabled.")
+        message(STATUS "To enable MIDI support:")
+        if(WIN32)
+            message(STATUS "  Windows: Install RtMidi via vcpkg or build from source")
+        elseif(UNIX AND NOT APPLE)
+            message(STATUS "  Linux: sudo apt-get install librtmidi-dev (Ubuntu/Debian)")
+            message(STATUS "         sudo dnf install rtmidi-devel (Fedora)")
+            message(STATUS "         sudo pacman -S rtmidi (Arch)")
+        elseif(APPLE)
+            message(STATUS "  macOS: brew install rtmidi")
+        endif()
+    endif()
+endif()
+
 target_compile_definitions(DroidStar PRIVATE
     QT_DEPRECATED_WARNINGS
     VERSION_NUMBER="${VERSION_NUMBER}"
@@ -115,6 +218,18 @@ if(UNIX AND NOT IOS)
     target_link_libraries(DroidStar PRIVATE
         Qt::SerialPort
     )
+    
+    # Add X11 libraries for Linux global hotkeys
+    if(NOT APPLE)
+        find_package(X11 QUIET)
+        if(X11_FOUND)
+            target_link_libraries(DroidStar PRIVATE ${X11_LIBRARIES})
+            target_include_directories(DroidStar PRIVATE ${X11_INCLUDE_DIR})
+            message(STATUS "Found X11 libraries for global hotkeys")
+        else()
+            message(WARNING "X11 libraries not found. Global hotkeys may not work on Linux.")
+        endif()
+    endif()
 endif()
 
 if(WIN32)
@@ -135,6 +250,7 @@ if(APPLE)
     set_target_properties(DroidStar PROPERTIES MACOSX_BUNDLE_INFO_PLIST ${CMAKE_CURRENT_SOURCE_DIR}/Info.plist)
     target_link_libraries(DroidStar PRIVATE
         "-framework AVFoundation"
+        "-framework Carbon"
     )
 endif()
 

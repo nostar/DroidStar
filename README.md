@@ -14,6 +14,37 @@ M17 SMS type (0x06) packet support has been added to DroidStar.  A text input an
 # MMDVM support -- work in progress
 DroidStar supports MMDVM and MMDVM_HS (hotspot) modems, with basic (possibly buggy) support for M17, D-STAR, Fusion, and DMR.  Support for P25 and NXDN coming soon.  When connecting to a digital mode reflector/DMR server and selecting an MMDVM device under Modems, then DroidStar acts as a hotspot/repeater.  When 'MMDVM Direct' (currently M17 only) is selected as the host, then DroidStar becomes a stand-alone transceiver.
 
+# PTT Hotkey Support
+DroidStar includes comprehensive Push-to-Talk (PTT) support via both keyboard hotkeys and MIDI devices:
+
+## Keyboard PTT Hotkeys
+- **Cross-platform support**: macOS (Carbon), Windows (RegisterHotKey), Linux (X11)
+- **Global hotkeys**: Work even when DroidStar is not in focus
+- **Two operation modes**: Hold-to-talk (PTT) or Toggle mode
+- **Configurable key combinations**: Support for Ctrl, Shift, Alt/Option, Cmd/Win modifiers
+- **Background operation**: No need to switch to DroidStar window to transmit
+
+Default hotkeys:
+- **macOS**: `Cmd+Shift+T`
+- **Windows**: `Ctrl+Shift+T`
+- **Linux**: `Ctrl+Shift+T`
+
+## MIDI PTT Support
+Use MIDI controllers, keyboards, foot pedals, or any MIDI device to trigger transmission. Features include:
+
+- **Cross-platform support**: Windows (Windows MM), Linux (ALSA/JACK), macOS (CoreMIDI)
+- **Flexible configuration**: Any MIDI note (0-127) on any channel (1-16)
+- **Two operation modes**: Hold-to-talk (PTT) or Toggle mode
+- **Velocity sensitivity**: Configurable minimum velocity threshold
+- **Background operation**: Works even when DroidStar is not in focus
+
+To enable MIDI support, install the RtMidi library:
+- **Linux**: `sudo apt-get install librtmidi-dev` (Ubuntu/Debian) or equivalent
+- **Windows**: Install via vcpkg or build from source
+- **macOS**: `brew install rtmidi`
+
+Configure PTT settings in the Settings tab under "PTT Hotkeys" and "MIDI PTT". See [MIDI_SUPPORT.md](MIDI_SUPPORT.md) for detailed setup instructions.
+
 # Software vocoder plugin API
 There is a vocoder plugin API available for loading of vocoder software.  Any vocoder plugin used with DroidStar should be properly licensed by the user if any copyright patents apply.  Do not use any patented vocoder plugin that you are not licensed to use.  I have no information regarding aquiring a software vocoder.
 
@@ -64,7 +95,159 @@ IAX 12345 wt 4569 allstar-public allstar
 When 'wt' is used instead of an IP address, then wt will be replaced by XXXXX.nodes.allstarlink.org, where XXXXX is the specified none number.  Then you must add you ASL web portal password to ASL password under settings.  This is *NOT* the password for your node, this is the password you made to login to the ASL website.
 
 # General building instructions
-This software is written primarily in C++ on Linux and requires Qt6 >= Qt6.5, and naturally the devel packages to build.  Java, QML (Javascript based), and C# code is also used where necessary.  The preferred way to obtain Qt is to use the Qt open source online installer from the Qt website.  Run this installer as a user (not root) to keep the Qt installation separate from your system libs.  Select the option as shown in this pic https://imgur.com/i0WuFCY which will install everything under ~/Qt.
+This software is written primarily in C++ and requires Qt6 >= Qt6.5, and naturally the development packages to build.  Java, QML (Javascript based), and C# code is also used where necessary.  The preferred way to obtain Qt is to use the Qt open source online installer from the Qt website.  Run this installer as a user (not root) to keep the Qt installation separate from your system libs.  Select the option as shown in this pic https://imgur.com/i0WuFCY which will install everything under ~/Qt.
+
+## Building on macOS
+
+### Prerequisites
+1. **Xcode Command Line Tools** (required for compiler and system frameworks):
+   ```bash
+   xcode-select --install
+   ```
+
+2. **Homebrew** (package manager):
+   ```bash
+   /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+   ```
+
+### Required Dependencies
+Install the essential build dependencies:
+
+```bash
+# Core build tools and Qt6
+brew install cmake qt
+
+# MIDI support (optional but recommended)
+brew install rtmidi
+
+# Git (if not already installed)
+brew install git
+```
+
+### Building DroidStar
+1. **Clone the repository**:
+   ```bash
+   git clone https://github.com/nostar/DroidStar.git
+   cd DroidStar
+   ```
+
+2. **Create build directory and configure**:
+   ```bash
+   mkdir build
+   cd build
+   cmake ..
+   ```
+
+3. **Build the application**:
+   ```bash
+   make -j$(sysctl -n hw.ncpu)
+   ```
+
+4. **Run DroidStar**:
+   ```bash
+   # Run directly from build directory
+   ./DroidStar.app/Contents/MacOS/DroidStar
+   
+   # Or copy to Applications folder (optional)
+   cp -r DroidStar.app /Applications/
+   open /Applications/DroidStar.app
+   ```
+
+### Optional Features
+- **MIDI PTT Support**: Requires `rtmidi` (install with `brew install rtmidi`)
+- **Additional Audio Codecs**: May require additional development libraries
+
+### Troubleshooting macOS Build Issues
+- **Qt not found**: Ensure Qt6 is properly installed via Homebrew. You can check with `brew list qt`
+- **CMake errors**: Make sure you have the latest CMake version with `brew upgrade cmake`
+- **Missing frameworks**: Xcode Command Line Tools must be installed for Carbon framework support
+- **Permission issues**: DroidStar requires accessibility permissions for global hotkeys. You'll be prompted to grant these when first using PTT hotkeys.
+
+### macOS-Specific Features
+- **Global Hotkeys**: Uses Carbon framework for system-wide PTT key capture
+- **Background Operation**: Works even when DroidStar is not the active application
+- **Native Integration**: Follows macOS UI conventions and supports native features
+
+## Creating Portable macOS Distribution
+
+To create a portable version of DroidStar that can be distributed to other macOS users without requiring them to install dependencies:
+
+### Automated Deployment (Recommended)
+Use the provided deployment script:
+
+```bash
+# Basic portable app bundle
+./deploy_macos.sh
+
+# Create portable app with code signing (requires Developer ID)
+./deploy_macos.sh --codesign "Developer ID Application: Your Name"
+
+# Create notarized app for distribution (requires Apple Developer account)
+./deploy_macos.sh --notarize "Developer ID Application: Your Name"
+
+# Clean build and create portable version
+./deploy_macos.sh --clean
+```
+
+### Manual Deployment Steps
+If you prefer to do the steps manually:
+
+1. **Build the application**:
+   ```bash
+   mkdir build && cd build
+   cmake ..
+   make -j$(sysctl -n hw.ncpu)
+   ```
+
+2. **Create portable app bundle**:
+   ```bash
+   cp -r DroidStar.app DroidStar_Portable.app
+   macdeployqt DroidStar_Portable.app
+   ```
+
+3. **Create DMG for distribution** (optional):
+   ```bash
+   macdeployqt DroidStar_Portable.app -dmg
+   ```
+
+### Distribution Package Details
+- **App Bundle**: Self-contained `.app` with all dependencies (~74MB)
+- **DMG Image**: Compressed disk image for easy distribution (~37MB)
+- **Compatibility**: Works on any macOS system with same or newer macOS version
+- **Dependencies**: All Qt frameworks and MIDI libraries bundled internally
+
+### Code Signing and Notarization (Optional)
+For wider distribution, especially outside the Mac App Store:
+
+```bash
+# Sign with Developer ID (removes "Unknown Developer" warning)
+./deploy_macos.sh --codesign "Developer ID Application: Your Name"
+
+# Sign and prepare for notarization (required for Gatekeeper compatibility)
+./deploy_macos.sh --notarize "Developer ID Application: Your Name"
+```
+
+**Requirements for code signing:**
+- Apple Developer ID certificate
+- Keychain with valid certificates
+- For notarization: Apple Developer account and app-specific password
+
+### Testing Portability
+To verify the app is truly portable:
+
+```bash
+# Check dependencies are bundled
+otool -L DroidStar_Portable.app/Contents/MacOS/DroidStar
+
+# Test on system without Homebrew dependencies
+# All paths should be @executable_path/... or system frameworks
+```
+
+### Distribution Best Practices
+1. **DMG Distribution**: Provide the `.dmg` file for easy installation
+2. **Instructions**: Include setup instructions for first-time users
+3. **Accessibility**: Inform users about accessibility permissions for global hotkeys
+4. **MIDI Setup**: Provide MIDI device configuration guidance if relevant
 
 In an effort to encourage others to build from source on multiple platforms, there are no longer any external build dependencies.  In order to build DroidStar with no internal AMBE vocoder, uncomment the the following line in the CMakeLists.txt file:
 ```

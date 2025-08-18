@@ -58,6 +58,14 @@ DroidStar::DroidStar(QObject *parent) :
 	check_host_files();
 	discover_devices();
 	process_settings();
+	
+	// Initialize global hotkey system
+	m_globalHotkey = new GlobalHotkey(this);
+	connect(m_globalHotkey, &GlobalHotkey::toggleStateChanged, this, &DroidStar::handlePttToggle);
+	
+	// Initialize MIDI hotkey system
+	m_midiHotkey = new MidiHotkey(this);
+	connect(m_midiHotkey, &MidiHotkey::toggleStateChanged, this, &DroidStar::handlePttToggle);
 
 	qDebug() << "CPU arch: " << QSysInfo::currentCpuArchitecture();
 	qDebug() << "Build ABI: " << QSysInfo::buildAbi();
@@ -1497,15 +1505,142 @@ void DroidStar::set_input_volume(qreal v)
 
 void DroidStar::press_tx()
 {
+	qDebug() << "DroidStar::press_tx() called";
 	emit tx_pressed();
 }
 
 void DroidStar::release_tx()
 {
+	qDebug() << "DroidStar::release_tx() called";
 	emit tx_released();
 }
 
 void DroidStar::click_tx(bool tx)
 {
 	emit tx_clicked(tx);
+}
+
+bool DroidStar::set_ptt_hotkey(const QString &hotkey)
+{
+	if (m_globalHotkey) {
+		return m_globalHotkey->registerHotkey(hotkey);
+	}
+	return false;
+}
+
+void DroidStar::set_ptt_toggle_mode(bool enabled)
+{
+	qDebug() << "DroidStar::set_ptt_toggle_mode called with enabled:" << enabled;
+	if (m_globalHotkey) {
+		m_globalHotkey->setToggleMode(enabled);
+		qDebug() << "GlobalHotkey toggle mode updated to:" << enabled;
+	}
+}
+
+void DroidStar::handlePttToggle(bool transmitting)
+{
+	qDebug() << "DroidStar::handlePttToggle() called with transmitting:" << transmitting;
+	
+	if (m_globalHotkey && m_globalHotkey->isToggleMode()) {
+		// Use click_tx for toggle mode (like the TX button)
+		qDebug() << "Using click_tx for toggle mode";
+		click_tx(transmitting);
+		// Notify UI to update button state
+		qDebug() << "Emitting ptt_hotkey_toggled signal with transmitting:" << transmitting;
+		emit ptt_hotkey_toggled(transmitting);
+	} else {
+		// Use press/release for hold mode
+		qDebug() << "Using press/release for hold mode";
+		if (transmitting) {
+			press_tx();
+		} else {
+			release_tx();
+		}
+		// Also emit signal for UI updates in PTT mode
+		qDebug() << "Emitting ptt_hotkey_toggled signal for PTT mode with transmitting:" << transmitting;
+		emit ptt_hotkey_toggled(transmitting);
+	}
+}
+
+// MIDI hotkey methods
+QStringList DroidStar::get_midi_devices()
+{
+	if (m_midiHotkey) {
+		return m_midiHotkey->getAvailableMidiDevices();
+	}
+	return QStringList();
+}
+
+bool DroidStar::set_midi_device(const QString &deviceName)
+{
+	if (m_midiHotkey) {
+		return m_midiHotkey->openMidiDevice(deviceName);
+	}
+	return false;
+}
+
+QString DroidStar::get_current_midi_device()
+{
+	if (m_midiHotkey) {
+		return m_midiHotkey->currentMidiDevice();
+	}
+	return QString();
+}
+
+bool DroidStar::set_midi_hotkey(int noteNumber, int channel)
+{
+	if (m_midiHotkey) {
+		return m_midiHotkey->setMidiHotkey(noteNumber, channel);
+	}
+	return false;
+}
+
+void DroidStar::clear_midi_hotkey()
+{
+	if (m_midiHotkey) {
+		m_midiHotkey->clearMidiHotkey();
+	}
+}
+
+bool DroidStar::has_midi_hotkey()
+{
+	if (m_midiHotkey) {
+		return m_midiHotkey->hasMidiHotkey();
+	}
+	return false;
+}
+
+void DroidStar::set_midi_toggle_mode(bool enabled)
+{
+	if (m_midiHotkey) {
+		m_midiHotkey->setToggleMode(enabled);
+	}
+}
+
+bool DroidStar::get_midi_toggle_mode()
+{
+	if (m_midiHotkey) {
+		return m_midiHotkey->isToggleMode();
+	}
+	return false;
+}
+
+void DroidStar::set_midi_velocity_threshold(int threshold)
+{
+	if (m_midiHotkey) {
+		m_midiHotkey->setVelocityThreshold(threshold);
+	}
+}
+
+int DroidStar::get_midi_velocity_threshold()
+{
+	if (m_midiHotkey) {
+		return m_midiHotkey->velocityThreshold();
+	}
+	return 64;
+}
+
+bool DroidStar::is_midi_supported()
+{
+	return MidiHotkey::isMidiSupported();
 }
