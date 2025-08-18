@@ -6,11 +6,11 @@ This directory contains GitHub Actions workflows for building and distributing D
 
 ### 📱 `build-macos-portable.yml` - macOS Portable Binary Builder
 
-Creates universal macOS application bundles that can be distributed without requiring users to install dependencies.
+Creates ARM64 macOS application bundles optimized for Apple Silicon Macs.
 
 #### Features
-- **Universal Binary**: Builds for both ARM64 (Apple Silicon) and x86_64 (Intel) architectures
-- **ARM Priority**: Optimized for Apple Silicon Macs with Intel compatibility
+- **ARM64 Native**: Optimized for Apple Silicon Macs (M1, M2, M3+ processors)
+- **Modern macOS**: Targets current Mac hardware with best performance
 - **Portable Distribution**: All Qt frameworks and dependencies bundled within app
 - **Manual Triggering**: Run on-demand with branch selection
 - **Code Signing Support**: Optional code signing for trusted distribution
@@ -62,10 +62,10 @@ The workflow generates these artifacts:
    - Qt 6.5.0 with multimedia and serial port modules
    - Homebrew dependencies (cmake, rtmidi, pkg-config)
 
-2. **Universal Binary Configuration**
-   - Target architectures: `arm64;x86_64` 
+2. **ARM64 Native Configuration**
+   - Target architecture: `arm64` (Apple Silicon)
    - Deployment target: macOS 11.0+
-   - ARM64 priority for optimal Apple Silicon performance
+   - Optimized for M1, M2, M3+ processors
 
 3. **Dependency Bundling**
    - Qt frameworks copied to app bundle
