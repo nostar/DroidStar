@@ -213,7 +213,7 @@ If you prefer to do the steps manually:
 ### Distribution Package Details
 - **App Bundle**: Self-contained `.app` with all dependencies (~74MB)
 - **DMG Image**: Compressed disk image for easy distribution (~37MB)
-- **Compatibility**: Works on any macOS system with same or newer macOS version
+- **Compatibility**: ARM64 architecture for Apple Silicon Macs (M1, M2, M3+)
 - **Dependencies**: All Qt frameworks and MIDI libraries bundled internally
 
 ### Code Signing and Notarization (Optional)

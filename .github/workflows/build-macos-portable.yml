@@ -75,8 +75,8 @@ jobs:
     
     - name: Configure build environment
       run: |
-        # Set up universal binary support
-        echo "CMAKE_OSX_ARCHITECTURES=arm64;x86_64" >> $GITHUB_ENV
+        # Set up ARM64 build (modern Macs, matches Homebrew architecture)
+        echo "CMAKE_OSX_ARCHITECTURES=arm64" >> $GITHUB_ENV
         echo "CMAKE_OSX_DEPLOYMENT_TARGET=11.0" >> $GITHUB_ENV
         
         # Add Qt to PATH
@@ -237,7 +237,7 @@ jobs:
         echo "- **Branch:** ${{ steps.build_info.outputs.git_branch }}" >> $GITHUB_STEP_SUMMARY
         echo "- **Commit:** ${{ steps.build_info.outputs.git_sha }}" >> $GITHUB_STEP_SUMMARY
         echo "- **Build Type:** ${{ env.CMAKE_BUILD_TYPE }}" >> $GITHUB_STEP_SUMMARY
-        echo "- **Architecture:** Universal (arm64 + x86_64)" >> $GITHUB_STEP_SUMMARY
+        echo "- **Architecture:** ARM64 (Apple Silicon)" >> $GITHUB_STEP_SUMMARY
         echo "- **Qt Version:** ${{ env.QT_VERSION }}" >> $GITHUB_STEP_SUMMARY
         echo "- **Code Signed:** ${{ inputs.code_sign }}" >> $GITHUB_STEP_SUMMARY
         echo "- **DMG Created:** ${{ inputs.create_dmg }}" >> $GITHUB_STEP_SUMMARY
