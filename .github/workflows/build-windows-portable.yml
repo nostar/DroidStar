@@ -29,6 +29,11 @@ on:
         options:
           - x64
           - x86
+      enable_midi:
+        description: 'Enable MIDI support (may fail on some runners)'
+        required: true
+        default: true
+        type: boolean
 
 env:
   QT_VERSION: '6.5.0'
@@ -88,17 +93,43 @@ jobs:
       run: |
         echo "=== Installing dependencies with vcpkg ==="
         echo "Triplet: ${{ steps.build_info.outputs.vcpkg_triplet }}"
+        echo "MIDI requested: ${{ inputs.enable_midi }}"
         
-        # Install RtMidi for MIDI support
-        vcpkg install rtmidi:${{ steps.build_info.outputs.vcpkg_triplet }}
+        # Set up vcpkg environment
+        echo "CMAKE_TOOLCHAIN_FILE=$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake" >> $GITHUB_ENV
+        echo "VCPKG_TARGET_TRIPLET=${{ steps.build_info.outputs.vcpkg_triplet }}" >> $GITHUB_ENV
+        
+        if [ "${{ inputs.enable_midi }}" = "true" ]; then
+          # Try to install RtMidi for MIDI support with multiple fallback strategies
+          echo "Attempting to install RtMidi..."
+          
+          # Strategy 1: Standard installation
+          if vcpkg install rtmidi:${{ steps.build_info.outputs.vcpkg_triplet }} --clean-after-build; then
+            echo "RtMidi installed successfully"
+            echo "ENABLE_MIDI=ON" >> $GITHUB_ENV
+          else
+            echo "WARNING: Standard RtMidi installation failed, trying alternatives..."
+            
+            # Strategy 2: Try with older vcpkg commit or different approach
+            vcpkg update-baseline || echo "Baseline update failed"
+            
+            if vcpkg install rtmidi:${{ steps.build_info.outputs.vcpkg_triplet }} --clean-after-build --recurse; then
+              echo "RtMidi installed successfully with recurse option"
+              echo "ENABLE_MIDI=ON" >> $GITHUB_ENV
+            else
+              echo "WARNING: All RtMidi installation attempts failed"
+              echo "Building without MIDI support"
+              echo "ENABLE_MIDI=OFF" >> $GITHUB_ENV
+            fi
+          fi
+        else
+          echo "MIDI support disabled by user"
+          echo "ENABLE_MIDI=OFF" >> $GITHUB_ENV
+        fi
         
         # Verify installations
         echo "=== Installed packages ==="
         vcpkg list
-        
-        echo "=== Setting environment variables ==="
-        echo "CMAKE_TOOLCHAIN_FILE=$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake" >> $GITHUB_ENV
-        echo "VCPKG_TARGET_TRIPLET=${{ steps.build_info.outputs.vcpkg_triplet }}" >> $GITHUB_ENV
     
     - name: Configure build environment
       shell: bash
@@ -129,6 +160,7 @@ jobs:
       shell: bash
       run: |
         echo "=== CMake Configuration ==="
+        echo "MIDI support: $ENABLE_MIDI"
         cmake .. \
           -G "Visual Studio 17 2022" \
           -A ${{ inputs.architecture == 'x64' && 'x64' || 'Win32' }} \
@@ -136,7 +168,7 @@ jobs:
           -DCMAKE_PREFIX_PATH="${{ env.Qt6_DIR }}" \
           -DCMAKE_TOOLCHAIN_FILE="$CMAKE_TOOLCHAIN_FILE" \
           -DVCPKG_TARGET_TRIPLET="$VCPKG_TARGET_TRIPLET" \
-          -DENABLE_MIDI=ON \
+          -DENABLE_MIDI=$ENABLE_MIDI \
           -DCMAKE_VERBOSE_MAKEFILE=ON
         
         echo "=== CMake configuration completed ==="
@@ -311,6 +343,7 @@ jobs:
         echo "Build Date: ${{ steps.build_info.outputs.build_date }}" >> build_summary.txt
         echo "Qt Version: ${{ env.QT_VERSION }}" >> build_summary.txt
         echo "VCPKG Triplet: ${{ steps.build_info.outputs.vcpkg_triplet }}" >> build_summary.txt
+        echo "MIDI Support: $ENABLE_MIDI" >> build_summary.txt
         echo "Installer Created: ${{ inputs.create_installer }}" >> build_summary.txt
         echo "" >> build_summary.txt
         echo "=== Executable Bundle Info ===" >> build_summary.txt
@@ -356,6 +389,7 @@ jobs:
         echo "- **Build Type:** ${{ env.CMAKE_BUILD_TYPE }}" >> $GITHUB_STEP_SUMMARY
         echo "- **Architecture:** ${{ inputs.architecture }}" >> $GITHUB_STEP_SUMMARY
         echo "- **Qt Version:** ${{ env.QT_VERSION }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **MIDI Support:** $ENABLE_MIDI" >> $GITHUB_STEP_SUMMARY
         echo "- **NSIS Installer:** ${{ inputs.create_installer }}" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
         echo "### Artifacts Generated" >> $GITHUB_STEP_SUMMARY
