@@ -147,6 +147,7 @@ Creates portable Windows executables with all dependencies bundled, plus optiona
    | `build_type` | Build configuration | `Release` | `Release`, `Debug` |
    | `create_installer` | Create NSIS installer | `true` | `true`, `false` |
    | `architecture` | Target architecture | `x64` | `x64`, `x86` |
+   | `enable_midi` | Enable MIDI support | `true` | `true`, `false` |
 
 4. **Click "Run workflow"** to start the build
 
@@ -189,6 +190,7 @@ The workflow generates these artifacts:
 **Common Issues:**
 
 - **vcpkg Installation Failed**: Network issues or GitHub cache problems
+- **RtMidi/MIDI Installation Failed**: MSYS2 mirror issues (workflow will fallback to no MIDI)
 - **Qt Deployment Failed**: Missing windeployqt or incorrect Qt installation
 - **NSIS Installer Failed**: NSIS download or compilation issues
 - **Runtime Errors**: Missing Visual C++ redistributables
@@ -196,9 +198,10 @@ The workflow generates these artifacts:
 **Debug Steps:**
 
 1. **Check workflow logs** for detailed error messages
-2. **Download build summary** for dependency information
-3. **Try Debug build** for additional diagnostic information
-4. **Test without installer** to isolate NSIS issues
+2. **Download build summary** for dependency and MIDI status information
+3. **Try without MIDI** (`enable_midi: false`) if RtMidi installation fails
+4. **Try Debug build** for additional diagnostic information
+5. **Test without installer** to isolate NSIS issues
 
 ## Future Workflows
 
