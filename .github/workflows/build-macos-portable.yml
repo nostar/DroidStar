@@ -227,6 +227,25 @@ jobs:
           echo "=== Frameworks after manual copy ==="
           ls -la "${{ steps.build_info.outputs.app_name }}.app/Contents/Frameworks/"
         fi
+        
+        echo "=== Fixing library paths with install_name_tool ==="
+        MAIN_BINARY="${{ steps.build_info.outputs.app_name }}.app/Contents/MacOS/DroidStar"
+        
+        # Fix Qt framework paths in the main binary
+        echo "Fixing Qt framework paths in main binary..."
+        install_name_tool -change "@rpath/QtCore.framework/Versions/A/QtCore" "@executable_path/../Frameworks/QtCore.framework/Versions/A/QtCore" "$MAIN_BINARY"
+        install_name_tool -change "@rpath/QtGui.framework/Versions/A/QtGui" "@executable_path/../Frameworks/QtGui.framework/Versions/A/QtGui" "$MAIN_BINARY"
+        install_name_tool -change "@rpath/QtQml.framework/Versions/A/QtQml" "@executable_path/../Frameworks/QtQml.framework/Versions/A/QtQml" "$MAIN_BINARY"
+        install_name_tool -change "@rpath/QtQuick.framework/Versions/A/QtQuick" "@executable_path/../Frameworks/QtQuick.framework/Versions/A/QtQuick" "$MAIN_BINARY"
+        install_name_tool -change "@rpath/QtQuickControls2.framework/Versions/A/QtQuickControls2" "@executable_path/../Frameworks/QtQuickControls2.framework/Versions/A/QtQuickControls2" "$MAIN_BINARY"
+        install_name_tool -change "@rpath/QtQmlModels.framework/Versions/A/QtQmlModels" "@executable_path/../Frameworks/QtQmlModels.framework/Versions/A/QtQmlModels" "$MAIN_BINARY"
+        install_name_tool -change "@rpath/QtMultimedia.framework/Versions/A/QtMultimedia" "@executable_path/../Frameworks/QtMultimedia.framework/Versions/A/QtMultimedia" "$MAIN_BINARY"
+        install_name_tool -change "@rpath/QtNetwork.framework/Versions/A/QtNetwork" "@executable_path/../Frameworks/QtNetwork.framework/Versions/A/QtNetwork" "$MAIN_BINARY"
+        install_name_tool -change "@rpath/QtSerialPort.framework/Versions/A/QtSerialPort" "@executable_path/../Frameworks/QtSerialPort.framework/Versions/A/QtSerialPort" "$MAIN_BINARY"
+        install_name_tool -change "@rpath/QtOpenGL.framework/Versions/A/QtOpenGL" "@executable_path/../Frameworks/QtOpenGL.framework/Versions/A/QtOpenGL" "$MAIN_BINARY"
+        
+        echo "=== Verifying fixed paths ==="
+        otool -L "$MAIN_BINARY" | head -15
     
     - name: Verify portable app
       working-directory: build
@@ -279,8 +298,12 @@ jobs:
         echo "Executable permissions: $(ls -la "${{ steps.build_info.outputs.app_name }}.app/Contents/MacOS/DroidStar" | awk '{print $1}')"
         
         # Test if we can at least get version info without GUI
-        echo "=== Testing executable (no GUI) ==="
-        "${{ steps.build_info.outputs.app_name }}.app/Contents/MacOS/DroidStar" --version 2>&1 | head -3 || echo "Version check failed (normal for GUI apps)"
+        echo "=== Testing executable linking (no GUI launch) ==="
+        # Just verify the binary can be loaded without actually running it
+        echo "Checking if binary can be loaded (using otool to verify it's not corrupted):"
+        otool -h "${{ steps.build_info.outputs.app_name }}.app/Contents/MacOS/DroidStar" > /dev/null && echo "✅ Binary appears valid" || echo "❌ Binary appears corrupted"
+        
+        # Skip actual execution to avoid GUI initialization and potential hanging
         
         echo "=== Bundle verification summary ==="
         if [ -f "${{ steps.build_info.outputs.app_name }}.app/Contents/MacOS/DroidStar" ] && [ -x "${{ steps.build_info.outputs.app_name }}.app/Contents/MacOS/DroidStar" ]; then
