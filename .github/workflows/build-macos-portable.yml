@@ -180,43 +180,59 @@ jobs:
         echo "=== Post-deployment verification ==="
         echo "App size: $(du -sh ${{ steps.build_info.outputs.app_name }}.app)"
         
+        echo "=== Checking complete app bundle structure ==="
+        find "${{ steps.build_info.outputs.app_name }}.app" -type f | head -20
+        
         echo "=== Checking bundled frameworks ==="
-        ls -la "${{ steps.build_info.outputs.app_name }}.app/Contents/Frameworks/" | head -10
+        if [ -d "${{ steps.build_info.outputs.app_name }}.app/Contents/Frameworks/" ]; then
+          ls -la "${{ steps.build_info.outputs.app_name }}.app/Contents/Frameworks/" | head -10
+          echo "Framework count: $(ls "${{ steps.build_info.outputs.app_name }}.app/Contents/Frameworks/" | wc -l)"
+        else
+          echo "❌ No Frameworks directory found!"
+        fi
+        
+        echo "=== Checking Qt plugins ==="
+        if [ -d "${{ steps.build_info.outputs.app_name }}.app/Contents/PlugIns/" ]; then
+          find "${{ steps.build_info.outputs.app_name }}.app/Contents/PlugIns/" -name "*.dylib" | head -10
+        else
+          echo "❌ No PlugIns directory found!"
+        fi
         
         echo "=== Final dependency check ==="
-        otool -L "${{ steps.build_info.outputs.app_name }}.app/Contents/MacOS/DroidStar" | head -15
+        otool -L "${{ steps.build_info.outputs.app_name }}.app/Contents/MacOS/DroidStar"
+        
+        echo "=== Checking for broken links ==="
+        BROKEN_DEPS=$(otool -L "${{ steps.build_info.outputs.app_name }}.app/Contents/MacOS/DroidStar" | grep -v "@executable_path" | grep -v "@loader_path" | grep -v "/usr/lib" | grep -v "/System" | tail -n +2 | awk '{print $1}' | while read dep; do
+          if [ ! -f "$dep" ]; then
+            echo "BROKEN: $dep"
+          fi
+        done)
+        
+        if [ -n "$BROKEN_DEPS" ]; then
+          echo "❌ Found broken dependencies:"
+          echo "$BROKEN_DEPS"
+        else
+          echo "✅ No broken external dependencies found"
+        fi
         
         echo "=== Verifying architecture of deployed app ==="
         file "${{ steps.build_info.outputs.app_name }}.app/Contents/MacOS/DroidStar"
         lipo -info "${{ steps.build_info.outputs.app_name }}.app/Contents/MacOS/DroidStar" || echo "lipo failed"
         
-        echo "=== Checking app bundle structure ==="
+        echo "=== Checking app bundle requirements ==="
         echo "Info.plist exists: $(test -f "${{ steps.build_info.outputs.app_name }}.app/Contents/Info.plist" && echo "YES" || echo "NO")"
         echo "Executable exists: $(test -f "${{ steps.build_info.outputs.app_name }}.app/Contents/MacOS/DroidStar" && echo "YES" || echo "NO")"
-        echo "Frameworks bundled: $(ls "${{ steps.build_info.outputs.app_name }}.app/Contents/Frameworks/" | wc -l) items"
+        echo "Executable permissions: $(ls -la "${{ steps.build_info.outputs.app_name }}.app/Contents/MacOS/DroidStar" | awk '{print $1}')"
         
-        echo "=== Bundle verification (CI-safe) ==="
-        # Verify app bundle is properly structured and deployable without GUI launch
-        if [ -f "${{ steps.build_info.outputs.app_name }}.app/Contents/MacOS/DroidStar" ]; then
-          echo "✅ Main executable exists"
-          
-          # Check if dependencies are properly bundled
-          if otool -L "${{ steps.build_info.outputs.app_name }}.app/Contents/MacOS/DroidStar" | grep -q "@executable_path"; then
-            echo "✅ App appears to be properly deployed with bundled dependencies"
-          else
-            echo "⚠️ Warning: App may not be fully portable - some dependencies not bundled"
-          fi
-          
-          # Verify executable permissions
-          if [ -x "${{ steps.build_info.outputs.app_name }}.app/Contents/MacOS/DroidStar" ]; then
-            echo "✅ Executable has proper permissions"
-          else
-            echo "⚠️ Warning: Executable may not have proper permissions"
-          fi
-          
-          echo "✅ App bundle verification completed successfully"
+        # Test if we can at least get version info without GUI
+        echo "=== Testing executable (no GUI) ==="
+        "${{ steps.build_info.outputs.app_name }}.app/Contents/MacOS/DroidStar" --version 2>&1 | head -3 || echo "Version check failed (normal for GUI apps)"
+        
+        echo "=== Bundle verification summary ==="
+        if [ -f "${{ steps.build_info.outputs.app_name }}.app/Contents/MacOS/DroidStar" ] && [ -x "${{ steps.build_info.outputs.app_name }}.app/Contents/MacOS/DroidStar" ]; then
+          echo "✅ Main executable exists and is executable"
         else
-          echo "❌ Error: Main executable not found"
+          echo "❌ Main executable missing or not executable"
           exit 1
         fi
     
