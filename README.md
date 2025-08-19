@@ -243,9 +243,25 @@ otool -L DroidStar_Portable.app/Contents/MacOS/DroidStar
 # All paths should be @executable_path/... or system frameworks
 ```
 
+### Running Unsigned Portable Apps
+
+Due to macOS security restrictions on unsigned applications, users may need to remove quarantine attributes before running the portable app:
+
+```bash
+# Remove quarantine attributes to allow the app to run
+xattr -cr /path/to/DroidStar.app
+```
+
+**Alternative methods to run unsigned apps:**
+1. **Right-click method**: Right-click the app → Open → Click "Open" in the security dialog
+2. **System Settings**: Try to open normally → Go to System Settings → Privacy & Security → Click "Open Anyway"
+3. **Command line**: Use the `xattr -cr` command above (recommended for development)
+
+**Note**: This step is only needed for unsigned builds. Once proper code signing is implemented, this won't be necessary.
+
 ### Distribution Best Practices
 1. **DMG Distribution**: Provide the `.dmg` file for easy installation
-2. **Instructions**: Include setup instructions for first-time users
+2. **Instructions**: Include setup instructions for first-time users, especially the `xattr -cr` step for unsigned builds
 3. **Accessibility**: Inform users about accessibility permissions for global hotkeys
 4. **MIDI Setup**: Provide MIDI device configuration guidance if relevant
 
