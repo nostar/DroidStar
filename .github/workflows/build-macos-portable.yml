@@ -62,7 +62,7 @@ jobs:
     
     - name: Install dependencies via Homebrew
       run: |
-        # Update Homebrew and install dependencies
+        # Update Homebrew and install dependencies (avoid Qt to prevent conflicts)
         brew update
         brew install cmake rtmidi pkg-config
         
@@ -72,6 +72,13 @@ jobs:
         pkg-config --modversion rtmidi
         echo "Qt version: ${{ env.QT_VERSION }}"
         echo "Qt location: ${{ env.Qt6_DIR }}"
+        
+        # Verify Qt installation from GitHub Actions
+        echo "=== Qt verification ==="
+        ls -la "${{ env.Qt6_DIR }}/lib" | head -10
+        echo "macdeployqt location:"
+        which macdeployqt
+        ls -la "${{ env.Qt6_DIR }}/bin/macdeployqt"
     
     - name: Configure build environment
       run: |
@@ -131,15 +138,24 @@ jobs:
         echo "=== Creating portable app bundle ==="
         cp -r DroidStar.app "${{ steps.build_info.outputs.app_name }}.app"
         
+        echo "=== Qt environment debug ==="
+        echo "Qt6_DIR: ${{ env.Qt6_DIR }}"
+        echo "PATH: $PATH"
+        echo "Using macdeployqt from: ${{ env.Qt6_DIR }}/bin/macdeployqt"
+        ls -la "${{ env.Qt6_DIR }}/bin/macdeployqt"
+        
+        # Use the specific macdeployqt from our Qt installation
+        MACDEPLOYQT="${{ env.Qt6_DIR }}/bin/macdeployqt"
+        
         echo "=== Deploying Qt frameworks and dependencies ==="
         if [ "${{ inputs.code_sign }}" = "true" ] && [ -n "${{ secrets.DEVELOPER_ID_APPLICATION }}" ]; then
           echo "Code signing enabled"
-          macdeployqt "${{ steps.build_info.outputs.app_name }}.app" \
+          "$MACDEPLOYQT" "${{ steps.build_info.outputs.app_name }}.app" \
             -codesign="${{ secrets.DEVELOPER_ID_APPLICATION }}" \
             -verbose=2
         else
           echo "Building without code signing"
-          macdeployqt "${{ steps.build_info.outputs.app_name }}.app" \
+          "$MACDEPLOYQT" "${{ steps.build_info.outputs.app_name }}.app" \
             -verbose=2
         fi
     
