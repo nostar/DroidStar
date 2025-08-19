@@ -246,6 +246,38 @@ jobs:
         
         echo "=== Verifying fixed paths ==="
         otool -L "$MAIN_BINARY" | head -15
+        
+        echo "=== Copying QML modules ==="
+        # Copy QML modules from Qt installation to ensure version compatibility
+        QT_QML_SOURCE="$QT_ROOT_DIR/qml"
+        APP_QML_TARGET="${{ steps.build_info.outputs.app_name }}.app/Contents/Resources/qml"
+        
+        if [ -d "$QT_QML_SOURCE" ]; then
+          echo "Copying QML modules from $QT_QML_SOURCE to $APP_QML_TARGET"
+          mkdir -p "$APP_QML_TARGET"
+          
+          # Copy essential QML modules that DroidStar uses
+          for module in QtQuick QtQuick.* Qt.* QtQml QtCore QtMultimedia; do
+            if [ -d "$QT_QML_SOURCE/$module" ]; then
+              echo "Copying QML module: $module"
+              cp -R "$QT_QML_SOURCE/$module" "$APP_QML_TARGET/"
+            fi
+          done
+          
+          echo "QML modules copied:"
+          ls -la "$APP_QML_TARGET" | head -10
+        else
+          echo "⚠️ QML modules not found at $QT_QML_SOURCE"
+        fi
+        
+        echo "=== Re-signing app after QML addition ==="
+        # Re-sign all QML plugins to maintain code signing consistency
+        find "${{ steps.build_info.outputs.app_name }}.app/Contents/Resources/qml" -name "*.dylib" | while read plugin; do
+          codesign --force --sign - "$plugin" 2>/dev/null || echo "Failed to sign $(basename "$plugin")"
+        done
+        
+        # Re-sign the entire app bundle
+        codesign --force --sign - "${{ steps.build_info.outputs.app_name }}.app"
     
     - name: Verify portable app
       working-directory: build
