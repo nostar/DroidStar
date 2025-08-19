@@ -22,13 +22,15 @@
 
 #ifdef Q_OS_WIN
 #include <QGuiApplication>
-#include <qpa/qplatformnativeinterface.h>
+#include <windows.h>
 #endif
 
 #ifdef Q_OS_LINUX
 #include <QGuiApplication>
-#include <qpa/qplatformnativeinterface.h>
 #include <X11/XKBlib.h>
+#include <X11/Xlib.h>
+#include <xcb/xcb.h>
+#include <xcb/xproto.h>
 #endif
 
 #ifdef Q_OS_MACOS

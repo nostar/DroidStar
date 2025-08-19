@@ -119,8 +119,8 @@ void CQuantize::encode_lspds_scalar(int indexes[], float lsp[], int order)
 void CQuantize::decode_lspds_scalar( float lsp_[], int indexes[], int   order)
 {
 	int   i,k;
-	float lsp__hz[order];
-	float dlsp_[order];
+	VLA(float, lsp__hz, order);
+	VLA(float, dlsp_, order);
 	const float *cb;
 
 	for(i=0; i<order; i++)
@@ -493,8 +493,8 @@ float CQuantize::decode_Wo(C2CONST *c2const, int index, int bits)
 float CQuantize::speech_to_uq_lsps(float lsp[], float ak[], float Sn[], float w[], int m_pitch, int order)
 {
 	int   i, roots;
-	float Wn[m_pitch];
-	float R[order+1];
+	VLA(float, Wn, m_pitch);
+	VLA(float, R, order+1);
 	float e, E;
 	Clpc lpc;
 
@@ -555,7 +555,7 @@ void CQuantize::encode_lsps_scalar(int indexes[], float lsp[], int order)
 {
 	int    i,k,m;
 	float  wt[1];
-	float  lsp_hz[order];
+	VLA(float, lsp_hz, order);
 	const float *cb;
 	float se;
 
@@ -591,7 +591,7 @@ void CQuantize::encode_lsps_scalar(int indexes[], float lsp[], int order)
 void CQuantize::decode_lsps_scalar(float lsp[], int indexes[], int order)
 {
 	int    i,k;
-	float  lsp_hz[order];
+	VLA(float, lsp_hz, order);
 	const float *cb;
 
 	for(i=0; i<order; i++)
