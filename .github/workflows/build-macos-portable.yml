@@ -60,6 +60,24 @@ jobs:
         modules: 'qtmultimedia qtserialport'
         cache: true
     
+    - name: Set Qt environment variables
+      run: |
+        # The Qt installer puts Qt in a predictable location
+        QT_ROOT_DIR="/Users/runner/work/DroidStar/Qt/${{ env.QT_VERSION }}/macos"
+        echo "QT_ROOT_DIR=$QT_ROOT_DIR" >> $GITHUB_ENV
+        echo "Qt6_DIR=$QT_ROOT_DIR" >> $GITHUB_ENV
+        echo "CMAKE_PREFIX_PATH=$QT_ROOT_DIR" >> $GITHUB_ENV
+        
+        # Add Qt binaries to PATH
+        echo "$QT_ROOT_DIR/bin" >> $GITHUB_PATH
+        
+        # Verify the Qt installation
+        echo "=== Qt Installation Verification ==="
+        echo "Qt root: $QT_ROOT_DIR"
+        ls -la "$QT_ROOT_DIR" || echo "Qt root directory not found"
+        ls -la "$QT_ROOT_DIR/bin" || echo "Qt bin directory not found"
+        ls -la "$QT_ROOT_DIR/lib" | head -5 || echo "Qt lib directory not found"
+    
     - name: Install dependencies via Homebrew
       run: |
         # Update Homebrew and install dependencies (avoid Qt to prevent conflicts)
@@ -71,14 +89,14 @@ jobs:
         cmake --version
         pkg-config --modversion rtmidi
         echo "Qt version: ${{ env.QT_VERSION }}"
-        echo "Qt location: ${{ env.Qt6_DIR }}"
+        echo "Qt location: $QT_ROOT_DIR"
         
         # Verify Qt installation from GitHub Actions
         echo "=== Qt verification ==="
-        ls -la "${{ env.Qt6_DIR }}/lib" | head -10
+        ls -la "$QT_ROOT_DIR/lib" | head -10
         echo "macdeployqt location:"
         which macdeployqt
-        ls -la "${{ env.Qt6_DIR }}/bin/macdeployqt"
+        ls -la "$QT_ROOT_DIR/bin/macdeployqt"
     
     - name: Configure build environment
       run: |
@@ -86,10 +104,7 @@ jobs:
         echo "CMAKE_OSX_ARCHITECTURES=arm64" >> $GITHUB_ENV
         echo "CMAKE_OSX_DEPLOYMENT_TARGET=11.0" >> $GITHUB_ENV
         
-        # Add Qt to PATH
-        echo "${{ env.Qt6_DIR }}/bin" >> $GITHUB_PATH
-        
-        # Verify Qt tools
+        # Verify Qt tools are available
         which qmake6 || which qmake
         which macdeployqt
     
@@ -106,7 +121,7 @@ jobs:
           -DCMAKE_BUILD_TYPE=${{ env.CMAKE_BUILD_TYPE }} \
           -DCMAKE_OSX_ARCHITECTURES="${{ env.CMAKE_OSX_ARCHITECTURES }}" \
           -DCMAKE_OSX_DEPLOYMENT_TARGET=${{ env.CMAKE_OSX_DEPLOYMENT_TARGET }} \
-          -DCMAKE_PREFIX_PATH="${{ env.Qt6_DIR }}" \
+          -DCMAKE_PREFIX_PATH="${{ env.CMAKE_PREFIX_PATH }}" \
           -DENABLE_MIDI=ON \
           -DCMAKE_VERBOSE_MAKEFILE=ON
     
@@ -139,13 +154,13 @@ jobs:
         cp -r DroidStar.app "${{ steps.build_info.outputs.app_name }}.app"
         
         echo "=== Qt environment debug ==="
-        echo "Qt6_DIR: ${{ env.Qt6_DIR }}"
+        echo "QT_ROOT_DIR: $QT_ROOT_DIR"
         echo "PATH: $PATH"
-        echo "Using macdeployqt from: ${{ env.Qt6_DIR }}/bin/macdeployqt"
-        ls -la "${{ env.Qt6_DIR }}/bin/macdeployqt"
+        echo "Using macdeployqt from: $QT_ROOT_DIR/bin/macdeployqt"
+        ls -la "$QT_ROOT_DIR/bin/macdeployqt"
         
         # Use the specific macdeployqt from our Qt installation
-        MACDEPLOYQT="${{ env.Qt6_DIR }}/bin/macdeployqt"
+        MACDEPLOYQT="$QT_ROOT_DIR/bin/macdeployqt"
         
         echo "=== Deploying Qt frameworks and dependencies ==="
         if [ "${{ inputs.code_sign }}" = "true" ] && [ -n "${{ secrets.DEVELOPER_ID_APPLICATION }}" ]; then
