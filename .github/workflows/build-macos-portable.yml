@@ -162,16 +162,70 @@ jobs:
         # Use the specific macdeployqt from our Qt installation
         MACDEPLOYQT="$QT_ROOT_DIR/bin/macdeployqt"
         
+        echo "=== Pre-deployment dependency check ==="
+        echo "Before macdeployqt:"
+        otool -L "${{ steps.build_info.outputs.app_name }}.app/Contents/MacOS/DroidStar" | head -10
+        
         echo "=== Deploying Qt frameworks and dependencies ==="
+        echo "macdeployqt command: $MACDEPLOYQT"
+        echo "Target app: ${{ steps.build_info.outputs.app_name }}.app"
+        
+        # Run macdeployqt and capture both stdout and stderr
         if [ "${{ inputs.code_sign }}" = "true" ] && [ -n "${{ secrets.DEVELOPER_ID_APPLICATION }}" ]; then
           echo "Code signing enabled"
+          echo "Running: $MACDEPLOYQT ${{ steps.build_info.outputs.app_name }}.app -codesign=${{ secrets.DEVELOPER_ID_APPLICATION }} -verbose=2"
           "$MACDEPLOYQT" "${{ steps.build_info.outputs.app_name }}.app" \
             -codesign="${{ secrets.DEVELOPER_ID_APPLICATION }}" \
-            -verbose=2
+            -verbose=2 2>&1 | tee macdeployqt_output.log
+          MACDEPLOYQT_EXIT_CODE=${PIPESTATUS[0]}
         else
           echo "Building without code signing"
+          echo "Running: $MACDEPLOYQT ${{ steps.build_info.outputs.app_name }}.app -verbose=2"
           "$MACDEPLOYQT" "${{ steps.build_info.outputs.app_name }}.app" \
-            -verbose=2
+            -verbose=2 2>&1 | tee macdeployqt_output.log
+          MACDEPLOYQT_EXIT_CODE=${PIPESTATUS[0]}
+        fi
+        
+        echo "=== macdeployqt results ==="
+        echo "Exit code: $MACDEPLOYQT_EXIT_CODE"
+        echo "Output:"
+        cat macdeployqt_output.log
+        
+        if [ $MACDEPLOYQT_EXIT_CODE -ne 0 ]; then
+          echo "❌ macdeployqt failed with exit code $MACDEPLOYQT_EXIT_CODE"
+          exit 1
+        fi
+        
+        echo "=== Post-deployment dependency check ==="
+        echo "After macdeployqt:"
+        otool -L "${{ steps.build_info.outputs.app_name }}.app/Contents/MacOS/DroidStar" | head -10
+        
+        echo "=== Check what frameworks were actually copied ==="
+        if [ -d "${{ steps.build_info.outputs.app_name }}.app/Contents/Frameworks/" ]; then
+          echo "Frameworks directory exists:"
+          ls -la "${{ steps.build_info.outputs.app_name }}.app/Contents/Frameworks/"
+        else
+          echo "❌ No Frameworks directory created by macdeployqt!"
+          
+          echo "=== Manual framework bundling attempt ==="
+          mkdir -p "${{ steps.build_info.outputs.app_name }}.app/Contents/Frameworks/"
+          
+          # Try to find and copy Qt frameworks manually
+          echo "Available Qt frameworks:"
+          ls -la "$QT_ROOT_DIR/lib/"*.framework/ | head -5
+          
+          echo "Attempting manual copy of essential frameworks..."
+          for framework in QtCore QtGui QtQml QtQuick QtQuickControls2 QtMultimedia QtNetwork QtSerialPort QtOpenGL QtQmlModels; do
+            if [ -d "$QT_ROOT_DIR/lib/${framework}.framework" ]; then
+              echo "Copying ${framework}.framework..."
+              cp -R "$QT_ROOT_DIR/lib/${framework}.framework" "${{ steps.build_info.outputs.app_name }}.app/Contents/Frameworks/"
+            else
+              echo "⚠️ ${framework}.framework not found"
+            fi
+          done
+          
+          echo "=== Frameworks after manual copy ==="
+          ls -la "${{ steps.build_info.outputs.app_name }}.app/Contents/Frameworks/"
         fi
     
     - name: Verify portable app
