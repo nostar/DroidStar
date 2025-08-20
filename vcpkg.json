@@ -1,0 +1,13 @@
+{
+  "name": "droidstar",
+  "version": "1.0.0",
+  "description": "Amateur Radio Digital Voice Client",
+  "dependencies": [
+    {
+      "name": "rtmidi",
+      "features": [],
+      "platform": "windows"
+    }
+  ],
+  "builtin-baseline": "ee0973d8090e4e3e452244bb50d34c25fe907dc2"
+}

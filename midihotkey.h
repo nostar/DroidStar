@@ -23,9 +23,8 @@
 #include <QStringList>
 #include <QTimer>
 
-#ifdef ENABLE_MIDI
-#include "RtMidi.h"
-#endif
+// Forward declaration to avoid including MIDI headers
+class MidiHotkeyImpl;
 
 class MidiHotkey : public QObject
 {
@@ -40,21 +39,21 @@ public:
 	bool openMidiDevice(const QString &deviceName);
 	bool openMidiDevice(int deviceIndex);
 	void closeMidiDevice();
-	bool isMidiDeviceOpen() const { return m_midiDeviceOpen; }
-	QString currentMidiDevice() const { return m_currentMidiDevice; }
+	bool isMidiDeviceOpen() const;
+	QString currentMidiDevice() const;
 
 	// MIDI hotkey configuration
 	bool setMidiHotkey(int noteNumber, int channel = -1); // -1 = any channel
 	void clearMidiHotkey();
-	bool hasMidiHotkey() const { return m_midiHotkeyEnabled; }
+	bool hasMidiHotkey() const;
 	
 	// Toggle mode support
-	void setToggleMode(bool enabled) { m_toggleMode = enabled; saveSettings(); }
-	bool isToggleMode() const { return m_toggleMode; }
+	void setToggleMode(bool enabled);
+	bool isToggleMode() const;
 	
 	// Velocity sensitivity
-	void setVelocityThreshold(int threshold) { m_velocityThreshold = threshold; saveSettings(); }
-	int velocityThreshold() const { return m_velocityThreshold; }
+	void setVelocityThreshold(int threshold);
+	int velocityThreshold() const;
 
 	// Static method to check if MIDI support is compiled in
 	static bool isMidiSupported();
@@ -65,43 +64,12 @@ signals:
 	void toggleStateChanged(bool transmitting);
 	void midiDeviceError(const QString &error);
 
-private:
-#ifdef ENABLE_MIDI
-	RtMidiIn *m_midiIn;
-	static void midiCallback(double deltaTime, std::vector<unsigned char> *message, void *userData);
-#endif
-	
-	bool m_midiDeviceOpen;
-	QString m_currentMidiDevice;
-	int m_currentMidiDeviceIndex;
-	
-	// Hotkey configuration
-	bool m_midiHotkeyEnabled;
-	int m_hotkeyNoteNumber;
-	int m_hotkeyChannel; // -1 = any channel
-	int m_velocityThreshold;
-	
-	// Toggle mode state
-	bool m_toggleMode;
-	bool m_transmitting;
-	
-	// Settings
-	QSettings *m_settings;
-	
-	// Methods
-	void handleMidiMessage(const std::vector<unsigned char> &message);
-	void saveSettings();
-	void loadSettings();
-	
-	// MIDI message parsing
-	bool isNoteOn(const std::vector<unsigned char> &message) const;
-	bool isNoteOff(const std::vector<unsigned char> &message) const;
-	int getNoteNumber(const std::vector<unsigned char> &message) const;
-	int getChannel(const std::vector<unsigned char> &message) const;
-	int getVelocity(const std::vector<unsigned char> &message) const;
-
 private slots:
 	void emitToggleStateChanged(bool transmitting);
+
+private:
+	// PIMPL pointer - all MIDI implementation is hidden
+	MidiHotkeyImpl *m_impl;
 };
 
 #endif // MIDIHOTKEY_H

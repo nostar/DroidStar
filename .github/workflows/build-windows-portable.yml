@@ -51,10 +51,55 @@ jobs:
         ref: ${{ inputs.branch }}
         fetch-depth: 0
     
-    - name: Setup vcpkg
-      uses: lukka/run-vcpkg@v11
-      with:
-        vcpkgGitCommitId: 'a42af01b72c28a8e1d7b48107b33e4f286a55ef6'
+    - name: Verify vcpkg.json exists
+      shell: bash
+      run: |
+        echo "=== Verifying vcpkg.json file ==="
+        echo "Current working directory: $(pwd)"
+        echo "Repository contents:"
+        ls -la
+        if [ -f "vcpkg.json" ]; then
+          echo "✅ vcpkg.json found"
+          echo "File contents:"
+          cat vcpkg.json
+        else
+          echo "❌ vcpkg.json not found"
+          echo "Looking for vcpkg.json in subdirectories:"
+          find . -name "vcpkg.json" -type f || echo "No vcpkg.json files found"
+        fi
+    
+    - name: Setup vcpkg manually
+      shell: bash
+      run: |
+        echo "=== Setting up vcpkg manually ==="
+        
+        # Clone vcpkg to a temporary location
+        git clone https://github.com/microsoft/vcpkg.git vcpkg-temp
+        cd vcpkg-temp
+        
+        # Checkout the specific commit we want
+        git checkout ee0973d8090e4e3e452244bb50d34c25fe907dc2
+        
+        # Bootstrap vcpkg
+        if [[ "$RUNNER_OS" == "Windows" ]]; then
+          ./bootstrap-vcpkg.bat
+        else
+          ./bootstrap-vcpkg.sh
+        fi
+        
+        # Update vcpkg and portfiles to fix MSYS2 mirror issues
+        echo "=== Updating vcpkg portfiles ==="
+        git pull origin master || echo "Already up to date"
+        ./vcpkg update || echo "Update completed"
+        
+        # Set up environment variables
+        echo "VCPKG_ROOT=$(pwd)" >> $GITHUB_ENV
+        echo "CMAKE_TOOLCHAIN_FILE=$(pwd)/scripts/buildsystems/vcpkg.cmake" >> $GITHUB_ENV
+        echo "VCPKG_TARGET_TRIPLET=x64-windows" >> $GITHUB_ENV
+        
+        echo "✅ vcpkg setup completed"
+        echo "vcpkg version:"
+        ./vcpkg version
     
     - name: Export GitHub Actions cache environment variables
       uses: actions/github-script@v7
@@ -70,7 +115,10 @@ jobs:
         echo "git_sha=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
         echo "git_branch=${{ inputs.branch }}" >> $GITHUB_OUTPUT
         echo "build_date=$(date '+%Y%m%d_%H%M%S')" >> $GITHUB_OUTPUT
-        echo "app_name=DroidStar_${{ inputs.branch }}_$(git rev-parse --short HEAD)_${{ inputs.architecture }}" >> $GITHUB_OUTPUT
+        
+        # Sanitize branch name for artifact names (replace invalid characters with underscores)
+        SANITIZED_BRANCH=$(echo "${{ inputs.branch }}" | sed 's/["/:<>|*?\\]/_/g')
+        echo "app_name=DroidStar_${SANITIZED_BRANCH}_$(git rev-parse --short HEAD)_${{ inputs.architecture }}" >> $GITHUB_OUTPUT
         echo "vcpkg_triplet=${{ inputs.architecture }}-windows" >> $GITHUB_OUTPUT
     
     - name: Install Qt
@@ -82,6 +130,24 @@ jobs:
         arch: 'win64_msvc2019_64'
         modules: 'qtmultimedia qtserialport'
         cache: true
+        setup-python: false
+        
+    - name: Verify Qt installation
+      shell: bash
+      run: |
+        echo "=== Qt Installation Verification ==="
+        echo "Qt6_DIR: ${{ env.Qt6_DIR }}"
+        echo "PATH includes Qt: $(echo $PATH | grep -o '[^:]*Qt[^:]*' || echo 'Not found in PATH')"
+        
+        # Check if Qt CMake files are available
+        if [ -d "${{ env.Qt6_DIR }}/lib/cmake/Qt6" ]; then
+          echo "✅ Qt6 CMake files found"
+          ls "${{ env.Qt6_DIR }}/lib/cmake/Qt6" | head -5
+        else
+          echo "❌ Qt6 CMake files not found"
+          echo "Available directories in Qt6_DIR:"
+          ls "${{ env.Qt6_DIR }}" || echo "Qt6_DIR not accessible"
+        fi
     
     - name: Setup MSVC
       uses: ilammy/msvc-dev-cmd@v1
@@ -95,41 +161,127 @@ jobs:
         echo "Triplet: ${{ steps.build_info.outputs.vcpkg_triplet }}"
         echo "MIDI requested: ${{ inputs.enable_midi }}"
         
-        # Set up vcpkg environment
-        echo "CMAKE_TOOLCHAIN_FILE=$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake" >> $GITHUB_ENV
-        echo "VCPKG_TARGET_TRIPLET=${{ steps.build_info.outputs.vcpkg_triplet }}" >> $GITHUB_ENV
+        # vcpkg environment already set up in previous step
+        echo "Using vcpkg from: $VCPKG_ROOT"
+        echo "Triplet: $VCPKG_TARGET_TRIPLET"
         
         if [ "${{ inputs.enable_midi }}" = "true" ]; then
-          # Try to install RtMidi for MIDI support with multiple fallback strategies
-          echo "Attempting to install RtMidi..."
+          echo "=== Installing dependencies from vcpkg.json ==="
           
-          # Strategy 1: Standard installation
-          if vcpkg install rtmidi:${{ steps.build_info.outputs.vcpkg_triplet }} --clean-after-build; then
-            echo "RtMidi installed successfully"
-            echo "ENABLE_MIDI=ON" >> $GITHUB_ENV
+          # Use vcpkg install to process vcpkg.json dependencies
+          # Verify vcpkg.json exists in repository root
+          if [ ! -f "vcpkg.json" ]; then
+            echo "❌ vcpkg.json not found in repository root"
+            echo "ENABLE_MIDI=OFF" >> $GITHUB_ENV
           else
-            echo "WARNING: Standard RtMidi installation failed, trying alternatives..."
+            echo "✅ vcpkg.json found in repository root"
             
-            # Strategy 2: Try with older vcpkg commit or different approach
-            vcpkg update-baseline || echo "Baseline update failed"
-            
-            if vcpkg install rtmidi:${{ steps.build_info.outputs.vcpkg_triplet }} --clean-after-build --recurse; then
-              echo "RtMidi installed successfully with recurse option"
+            # Run vcpkg install from repository root (where vcpkg.json is)
+            if "$VCPKG_ROOT/vcpkg" install --triplet $VCPKG_TARGET_TRIPLET; then
+              echo "✅ Dependencies installed successfully from vcpkg.json"
               echo "ENABLE_MIDI=ON" >> $GITHUB_ENV
             else
-              echo "WARNING: All RtMidi installation attempts failed"
-              echo "Building without MIDI support"
-              echo "ENABLE_MIDI=OFF" >> $GITHUB_ENV
+              echo "❌ vcpkg.json dependency installation failed"
+              echo "Trying manual RtMidi installation as fallback..."
+              
+              if "$VCPKG_ROOT/vcpkg" install rtmidi:$VCPKG_TARGET_TRIPLET; then
+                echo "✅ RtMidi installed successfully via manual installation"
+                echo "ENABLE_MIDI=ON" >> $GITHUB_ENV
+              else
+                echo "❌ All RtMidi installation attempts failed"
+                echo "📝 Building without MIDI support due to vcpkg/MSYS2 dependency issues"
+                echo "This is often due to outdated MSYS2 mirror URLs in vcpkg portfiles"
+                echo "ENABLE_MIDI=OFF" >> $GITHUB_ENV
+              fi
             fi
           fi
         else
-          echo "MIDI support disabled by user"
+          echo "MIDI support disabled by user input"
           echo "ENABLE_MIDI=OFF" >> $GITHUB_ENV
         fi
         
         # Verify installations
         echo "=== Installed packages ==="
-        vcpkg list
+        "$VCPKG_ROOT/vcpkg" list
+        
+        # Debug RtMidi installation
+        echo "=== RtMidi installation verification ==="
+        if "$VCPKG_ROOT/vcpkg" list | grep -i rtmidi; then
+          echo "✅ RtMidi found in vcpkg packages"
+          echo "RtMidi installation details:"
+          "$VCPKG_ROOT/vcpkg" list rtmidi || echo "Could not get RtMidi details"
+          
+          # Check if headers are accessible
+          if [ -d "$VCPKG_ROOT/installed/$VCPKG_TARGET_TRIPLET/include" ]; then
+            echo "Include directory exists:"
+            ls -la "$VCPKG_ROOT/installed/$VCPKG_TARGET_TRIPLET/include" | grep -i rtmidi || echo "No RtMidi headers found"
+          fi
+        else
+          echo "❌ RtMidi not found in vcpkg packages"
+          echo "Available packages:"
+          "$VCPKG_ROOT/vcpkg" list | head -10
+        fi
+    
+    - name: RtMidi fallback installation
+      if: ${{ inputs.enable_midi }}
+      shell: bash
+      run: |
+        echo "=== RtMidi Fallback Installation ==="
+        
+        # Check if RtMidi was successfully installed by vcpkg
+        if [ ! -f "$VCPKG_ROOT/installed/$VCPKG_TARGET_TRIPLET/include/RtMidi.h" ]; then
+          echo "❌ RtMidi.h not found in vcpkg installation"
+          echo "Attempting manual fallback installation..."
+          
+          # Create the include directory if it doesn't exist
+          mkdir -p "$VCPKG_ROOT/installed/$VCPKG_TARGET_TRIPLET/include"
+          mkdir -p "$VCPKG_ROOT/installed/$VCPKG_TARGET_TRIPLET/lib"
+          mkdir -p "$VCPKG_ROOT/installed/$VCPKG_TARGET_TRIPLET/bin"
+          
+          # Clone RtMidi directly from source
+          git clone --depth 1 --branch 6.0.0 https://github.com/thestk/rtmidi.git rtmidi-fallback
+          cd rtmidi-fallback
+          
+          # Copy headers
+          echo "Copying RtMidi headers..."
+          cp RtMidi.h "$VCPKG_ROOT/installed/$VCPKG_TARGET_TRIPLET/include/"
+          
+          # Build RtMidi using CMake for Windows
+          mkdir build && cd build
+          
+          cmake .. \
+            -G "Visual Studio 17 2022" \
+            -A ${{ inputs.architecture == 'x64' && 'x64' || 'Win32' }} \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_INSTALL_PREFIX="$VCPKG_ROOT/installed/$VCPKG_TARGET_TRIPLET" \
+            -DRTMIDI_API_WINMM=ON \
+            -DRTMIDI_BUILD_TESTING=OFF
+          
+          cmake --build . --config Release
+          cmake --install . --config Release
+          
+          cd ../..
+          
+          # Verify the fallback installation
+          if [ -f "$VCPKG_ROOT/installed/$VCPKG_TARGET_TRIPLET/include/RtMidi.h" ]; then
+            echo "✅ RtMidi fallback installation successful"
+            echo "ENABLE_MIDI=ON" >> $GITHUB_ENV
+            
+            # List what was installed
+            echo "RtMidi files installed:"
+            find "$VCPKG_ROOT/installed/$VCPKG_TARGET_TRIPLET" -name "*rtmidi*" -o -name "*RtMidi*" || echo "No files found"
+          else
+            echo "❌ RtMidi fallback installation failed"
+            echo "Building without MIDI support"
+            echo "ENABLE_MIDI=OFF" >> $GITHUB_ENV
+          fi
+          
+          # Cleanup
+          rm -rf rtmidi-fallback
+        else
+          echo "✅ RtMidi.h found in vcpkg installation - no fallback needed"
+          echo "ENABLE_MIDI=ON" >> $GITHUB_ENV
+        fi
     
     - name: Configure build environment
       shell: bash
@@ -154,6 +306,38 @@ jobs:
         mkdir -p build
         cd build
         echo "Build directory created in: $(pwd)"
+        
+    - name: Prepare build environment and disable translations
+      shell: bash
+      run: |
+        echo "=== Preparing build environment ==="
+        
+        # Create build directory
+        mkdir -p build
+        
+        # Disable Qt translations completely
+        echo "QT_NO_TRANSLATION_BUILDER=1" >> $GITHUB_ENV
+        echo "QT_NO_TRANSLATION=1" >> $GITHUB_ENV
+        echo "QT_LOGGING_RULES=*=false" >> $GITHUB_ENV
+        echo "QT_SELECT=qt6" >> $GITHUB_ENV
+        
+        # Prevent lconvert from being found/used by temporarily renaming it
+        QT_LCONVERT_PATH="${{ env.Qt6_DIR }}/bin/lconvert.exe"
+        if [ -f "$QT_LCONVERT_PATH" ]; then
+          echo "Temporarily disabling lconvert to prevent translation issues"
+          mv "$QT_LCONVERT_PATH" "${QT_LCONVERT_PATH}.disabled" || echo "Could not disable lconvert"
+        fi
+        
+        # Also check for Qt translation directories and temporarily rename them
+        QT_TRANSLATIONS_DIR="${{ env.Qt6_DIR }}/translations"
+        if [ -d "$QT_TRANSLATIONS_DIR" ]; then
+          echo "Temporarily hiding Qt translations directory"
+          mv "$QT_TRANSLATIONS_DIR" "${QT_TRANSLATIONS_DIR}.disabled" || echo "Could not hide translations"
+        fi
+        
+        echo "Current directory: $(pwd)"
+        echo "Build directory created"
+        echo "=== Build environment preparation completed ==="
     
     - name: Configure with CMake
       working-directory: build
@@ -161,15 +345,36 @@ jobs:
       run: |
         echo "=== CMake Configuration ==="
         echo "MIDI support: $ENABLE_MIDI"
+        
+        # Ensure build continues regardless of MIDI status
+        if [ "$ENABLE_MIDI" = "OFF" ]; then
+          echo "⚠️ Building without MIDI support - this is acceptable"
+          echo "The build will continue and produce a working executable without MIDI hotkey features"
+        else
+          echo "✅ Building with MIDI support enabled"
+        fi
+        
+        # Set environment to prevent lconvert issues
+        export QT_LOGGING_RULES="*=false"
+        export QT_NO_TRANSLATION_BUILDER=1
+        export QT_NO_TRANSLATION=1
+        export QT_DISABLE_DEPRECATED_BEFORE=0x060000
+        
         cmake .. \
           -G "Visual Studio 17 2022" \
           -A ${{ inputs.architecture == 'x64' && 'x64' || 'Win32' }} \
           -DCMAKE_BUILD_TYPE=${{ env.CMAKE_BUILD_TYPE }} \
           -DCMAKE_PREFIX_PATH="${{ env.Qt6_DIR }}" \
+          -DQt6_DIR="${{ env.Qt6_DIR }}/lib/cmake/Qt6" \
           -DCMAKE_TOOLCHAIN_FILE="$CMAKE_TOOLCHAIN_FILE" \
           -DVCPKG_TARGET_TRIPLET="$VCPKG_TARGET_TRIPLET" \
           -DENABLE_MIDI=$ENABLE_MIDI \
-          -DCMAKE_VERBOSE_MAKEFILE=ON
+          -DCMAKE_VERBOSE_MAKEFILE=ON \
+          -DQT_NO_CREATE_VERSIONLESS_FUNCTIONS=ON \
+          -DQT_BUILD_TRANSLATIONS=OFF \
+          -DQT_BUILD_EXAMPLES=OFF \
+          -DQT_BUILD_TESTS=OFF \
+          -DCMAKE_FIND_DEBUG_MODE=ON
         
         echo "=== CMake configuration completed ==="
     
@@ -178,6 +383,13 @@ jobs:
       shell: bash
       run: |
         echo "=== Starting build ==="
+        
+        # Set environment to prevent translation issues during build
+        export QT_LOGGING_RULES="*=false"
+        export QT_NO_TRANSLATION_BUILDER=1
+        export QT_NO_TRANSLATION=1
+        export QT_DISABLE_DEPRECATED_BEFORE=0x060000
+        
         cmake --build . --config ${{ env.CMAKE_BUILD_TYPE }} --parallel
         
         echo "=== Build completed ==="
@@ -186,6 +398,27 @@ jobs:
         echo "=== Checking executable ==="
         file ${{ env.CMAKE_BUILD_TYPE }}/DroidStar.exe || echo "file command not available"
         ls -la ${{ env.CMAKE_BUILD_TYPE }}/DroidStar.exe
+        
+    - name: Restore Qt tools after build
+      shell: bash
+      run: |
+        echo "=== Restoring Qt tools ==="
+        
+        # Restore lconvert if it was disabled
+        QT_LCONVERT_PATH="${{ env.Qt6_DIR }}/bin/lconvert.exe"
+        if [ -f "${QT_LCONVERT_PATH}.disabled" ]; then
+          echo "Restoring lconvert"
+          mv "${QT_LCONVERT_PATH}.disabled" "$QT_LCONVERT_PATH" || echo "Could not restore lconvert"
+        fi
+        
+        # Restore translations directory if it was hidden
+        QT_TRANSLATIONS_DIR="${{ env.Qt6_DIR }}/translations"
+        if [ -d "${QT_TRANSLATIONS_DIR}.disabled" ]; then
+          echo "Restoring Qt translations directory"
+          mv "${QT_TRANSLATIONS_DIR}.disabled" "$QT_TRANSLATIONS_DIR" || echo "Could not restore translations"
+        fi
+        
+        echo "=== Qt tools restoration completed ==="
     
     - name: Verify dependencies before deployment
       working-directory: build
@@ -193,14 +426,29 @@ jobs:
       run: |
         echo "=== Pre-deployment dependency check ==="
         
-        # Check if executable exists and runs
+        # Check if executable exists
         if [ -f "${{ env.CMAKE_BUILD_TYPE }}/DroidStar.exe" ]; then
-          echo "Executable found: ${{ env.CMAKE_BUILD_TYPE }}/DroidStar.exe"
+          echo "✅ Executable found: ${{ env.CMAKE_BUILD_TYPE }}/DroidStar.exe"
           
-          # Try to get version info (may fail if dependencies missing)
-          ./${{ env.CMAKE_BUILD_TYPE }}/DroidStar.exe --version || echo "Version check failed (expected - dependencies not deployed yet)"
+          # Get file info without executing
+          ls -la "${{ env.CMAKE_BUILD_TYPE }}/DroidStar.exe"
+          file "${{ env.CMAKE_BUILD_TYPE }}/DroidStar.exe" || echo "file command not available"
+          
+          # Check file size to ensure it's not empty
+          FILE_SIZE=$(stat -c%s "${{ env.CMAKE_BUILD_TYPE }}/DroidStar.exe" 2>/dev/null || echo "0")
+          if [ "$FILE_SIZE" -gt 1000000 ]; then  # At least 1MB
+            echo "✅ Executable appears to be valid (size: ${FILE_SIZE} bytes)"
+          else
+            echo "⚠️ Executable seems unusually small (size: ${FILE_SIZE} bytes)"
+          fi
+          
+          # Skip version check to avoid GUI initialization issues
+          echo "Skipping version check - executable will be tested after deployment"
         else
-          echo "ERROR: Executable not found!"
+          echo "❌ ERROR: Executable not found!"
+          echo "Build directory contents:"
+          ls -la "${{ env.CMAKE_BUILD_TYPE }}/" || echo "Build directory not accessible"
+          echo "This indicates a build failure. Check the build logs above for errors."
           exit 1
         fi
     
@@ -220,6 +468,9 @@ jobs:
         windeployqt.exe \
           --${{ env.CMAKE_BUILD_TYPE == 'Debug' && 'debug' || 'release' }} \
           --qmldir .. \
+          --no-translations \
+          --no-system-d3d-compiler \
+          --no-opengl-sw \
           --verbose 2 \
           "${{ steps.build_info.outputs.app_name }}/DroidStar.exe"
         
@@ -248,8 +499,17 @@ jobs:
         echo "=== Testing executable ==="
         cd "${{ steps.build_info.outputs.app_name }}"
         
-        # Test basic functionality
-        ./DroidStar.exe --version || echo "Version check failed"
+        # Test basic functionality with timeout to prevent hanging
+        timeout 10s ./DroidStar.exe --version || echo "Version check failed or timed out (expected in CI environment)"
+        
+        # Alternative: just verify the executable is properly formed
+        if [ -f "DroidStar.exe" ]; then
+          echo "✅ Executable exists in bundle"
+          ls -la DroidStar.exe
+        else
+          echo "❌ Executable missing from bundle"
+          exit 1
+        fi
         
         echo "=== Portable executable verification completed ==="
     
@@ -260,14 +520,50 @@ jobs:
       run: |
         echo "=== Creating NSIS installer ==="
         
-        # Download and install NSIS
-        curl -L -o nsis.exe "https://downloads.sourceforge.net/project/nsis/NSIS%203/3.08/nsis-3.08-setup.exe"
-        ./nsis.exe /S
+        # Try installing NSIS via Chocolatey first (more reliable in CI)
+        echo "Attempting to install NSIS via Chocolatey..."
+        if choco install nsis -y --timeout=300 2>/dev/null; then
+          echo "✅ NSIS installed via Chocolatey"
+          NSIS_PATH="/c/Program Files (x86)/NSIS"
+        else
+          echo "Chocolatey installation failed, trying manual installation..."
+          
+          # Download NSIS installer
+          echo "Downloading NSIS..."
+          curl -L -o nsis.exe "https://downloads.sourceforge.net/project/nsis/NSIS%203/3.08/nsis-3.08-setup.exe"
+          
+          # Install NSIS with timeout and proper error handling
+          echo "Installing NSIS silently..."
+          timeout 300s ./nsis.exe /S || {
+            echo "❌ NSIS installation failed or timed out"
+            exit 1
+          }
+          
+          # Wait for installation to complete and verify
+          echo "Waiting for NSIS installation to complete..."
+          sleep 10
+          
+          NSIS_PATH="/c/Program Files (x86)/NSIS"
+        fi
+        
+        # Verify NSIS was installed
+        if [ ! -f "$NSIS_PATH/makensis.exe" ]; then
+          echo "❌ NSIS makensis.exe not found after installation"
+          echo "Available files in NSIS directory:"
+          ls -la "$NSIS_PATH/" 2>/dev/null || echo "NSIS directory not found"
+          
+          # Try alternative paths
+          echo "Searching for NSIS in alternative locations..."
+          find "/c/Program Files" -name "makensis.exe" 2>/dev/null || echo "makensis.exe not found"
+          exit 1
+        fi
+        
+        echo "✅ NSIS installed successfully at $NSIS_PATH"
         
         # Add NSIS to PATH
-        echo "/c/Program Files (x86)/NSIS" >> $GITHUB_PATH
+        echo "$NSIS_PATH" >> $GITHUB_PATH
         
-        # Create NSIS script
+        # Create NSIS script without icons to avoid path issues
         cat > installer.nsi << 'EOF'
         !define APP_NAME "DroidStar"
         !define APP_VERSION "${{ steps.build_info.outputs.git_sha }}"
@@ -282,11 +578,7 @@ jobs:
         
         !include "MUI2.nsh"
         
-        !define MUI_ICON "${{ steps.build_info.outputs.app_name }}\DroidStar.exe"
-        !define MUI_UNICON "${{ steps.build_info.outputs.app_name }}\DroidStar.exe"
-        
         !insertmacro MUI_PAGE_WELCOME
-        !insertmacro MUI_PAGE_LICENSE "..\..\README.md"
         !insertmacro MUI_PAGE_DIRECTORY
         !insertmacro MUI_PAGE_INSTFILES
         !insertmacro MUI_PAGE_FINISH
@@ -325,11 +617,29 @@ jobs:
         SectionEnd
         EOF
         
-        # Compile installer
-        "/c/Program Files (x86)/NSIS/makensis.exe" installer.nsi
+        # Verify NSIS script was created
+        if [ ! -f "installer.nsi" ]; then
+          echo "❌ NSIS script creation failed"
+          exit 1
+        fi
+        
+        echo "✅ NSIS script created"
+        echo "Script size: $(wc -l installer.nsi)"
+        
+        # Compile installer with timeout
+        echo "Compiling NSIS installer..."
+        timeout 300s "$NSIS_PATH/makensis.exe" installer.nsi || {
+          echo "❌ NSIS compilation failed or timed out"
+          echo "NSIS compilation output:"
+          cat *.log 2>/dev/null || echo "No log files found"
+          exit 1
+        }
         
         echo "=== NSIS installer created ==="
-        ls -la *installer.exe
+        ls -la "${{ steps.build_info.outputs.app_name }}_installer.exe" || {
+          echo "Searching for installer files..."
+          find . -name "*installer.exe" -o -name "*.exe" | grep -i install || echo "No installer files found"
+        }
     
     - name: Create build summary
       working-directory: build

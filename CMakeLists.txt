@@ -4,19 +4,23 @@ project(DroidStar VERSION 1.0 LANGUAGES C CXX)
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
 if(IOS)
-    find_package(Qt6 6.5 REQUIRED COMPONENTS Core Gui Multimedia Network Quick QuickControls2)
+    find_package(Qt6 6.2 REQUIRED COMPONENTS Core Gui Multimedia Network Quick QuickControls2)
 else()
-    find_package(Qt6 6.5 REQUIRED COMPONENTS Core Gui Multimedia Network Quick QuickControls2 SerialPort)
+    find_package(Qt6 6.2 REQUIRED COMPONENTS Core Gui Multimedia Network Quick QuickControls2 SerialPort)
 endif()
 
-qt_standard_project_setup(REQUIRES 6.5)
+# qt_standard_project_setup(REQUIRES 6.5)  # Not available in all Qt6 versions
+# Manual setup for compatibility
+set(CMAKE_AUTOMOC ON)
+set(CMAKE_AUTORCC ON)
+set(CMAKE_AUTOUIC ON)
 
 set(app_icon_resource_windows "${CMAKE_CURRENT_SOURCE_DIR}/droidstar.rc")
 set(MACOSX_BUNDLE_ICON_FILE droidstar.icns)
 set(app_icon_macos "${CMAKE_CURRENT_SOURCE_DIR}/images/droidstar.icns")
 set_source_files_properties(${app_icon_macos} PROPERTIES MACOSX_PACKAGE_LOCATION "Resources")
 
-qt_add_executable(DroidStar WIN32 MACOSX_BUNDLE
+add_executable(DroidStar WIN32 MACOSX_BUNDLE
     CRCenc.cpp CRCenc.h
     DMRDefines.h
     Golay24128.cpp Golay24128.h
@@ -81,16 +85,31 @@ qt_add_executable(DroidStar WIN32 MACOSX_BUNDLE
     ${app_icon_macos}
 )
 
-qt_add_qml_module(DroidStar
-    URI DroidStarApp
-    VERSION 1.0
-    QML_FILES Main.qml
-    QML_FILES MainTab.qml
-    QML_FILES SettingsTab.qml
-    QML_FILES LogTab.qml
-    QML_FILES HostsTab.qml
-    QML_FILES AboutTab.qml
+# QML files handling for older Qt6 versions
+set(QML_FILES
+    Main.qml
+    MainTab.qml
+    SettingsTab.qml
+    LogTab.qml
+    HostsTab.qml
+    AboutTab.qml
 )
+
+# Add QML files to the target
+target_sources(DroidStar PRIVATE ${QML_FILES})
+
+# Set QML files as resources (if qt6_add_resources is available)
+if(COMMAND qt6_add_resources)
+    qt6_add_resources(DroidStar "qml"
+        PREFIX "/"
+        FILES ${QML_FILES}
+    )
+else()
+    # Fallback: copy QML files to build directory
+    foreach(qml_file ${QML_FILES})
+        configure_file(${qml_file} ${CMAKE_CURRENT_BINARY_DIR}/${qml_file} COPYONLY)
+    endforeach()
+endif()
 
 execute_process(
     COMMAND git rev-parse --short HEAD
@@ -100,31 +119,174 @@ execute_process(
 )
 
 # Check for RtMidi support
-option(ENABLE_MIDI "Enable MIDI hotkey support" ON)
+# Disable MIDI by default on Windows due to RtMidi compilation issues
+if(WIN32)
+    option(ENABLE_MIDI "Enable MIDI hotkey support" OFF)
+    option(ENABLE_DEPLOYMENT_SCRIPT "Enable Qt deployment script generation" OFF)
+    # Additional Windows-specific Qt flags to prevent deployment issues
+    set(QT_NO_MAKE_INSTALL ON)
+    set(QT_NO_INSTALL ON)
+    set(CMAKE_SKIP_INSTALL_ALL_DEPENDENCY ON)
+    # Disable install entirely on Windows to avoid Qt translation processing
+    set(CMAKE_SKIP_INSTALL_RULES ON)
+    message(STATUS "Windows: Install rules disabled to prevent Qt translation processing issues")
+else()
+    option(ENABLE_MIDI "Enable MIDI hotkey support" ON)
+    option(ENABLE_DEPLOYMENT_SCRIPT "Enable Qt deployment script generation" ON)
+endif()
 
 if(ENABLE_MIDI)
     set(MIDI_FOUND FALSE)
     
-    # Try to find RtMidi using pkg-config first (preferred method)
-    find_package(PkgConfig QUIET)
-    if(PkgConfig_FOUND)
-        pkg_check_modules(RTMIDI rtmidi)
-        if(RTMIDI_FOUND)
-            message(STATUS "Found RtMidi via pkg-config: ${RTMIDI_VERSION}")
-            target_compile_definitions(DroidStar PRIVATE ENABLE_MIDI)
-            target_include_directories(DroidStar PRIVATE ${RTMIDI_INCLUDE_DIRS})
-            target_link_libraries(DroidStar PRIVATE ${RTMIDI_LIBRARIES})
-            target_link_directories(DroidStar PRIVATE ${RTMIDI_LIBRARY_DIRS})
-            set(MIDI_FOUND TRUE)
+    # Try vcpkg find_package first (for Windows vcpkg builds)
+    find_package(RtMidi QUIET)
+    if(RtMidi_FOUND)
+        message(STATUS "Found RtMidi via find_package (vcpkg): ${RtMidi_VERSION}")
+        target_compile_definitions(DroidStar PRIVATE ENABLE_MIDI)
+        
+        # Get RtMidi include directories and add them explicitly
+        if(TARGET RtMidi::rtmidi)
+            get_target_property(RTMIDI_INCLUDE_DIRS RtMidi::rtmidi INTERFACE_INCLUDE_DIRECTORIES)
+            if(RTMIDI_INCLUDE_DIRS)
+                target_include_directories(DroidStar PRIVATE ${RTMIDI_INCLUDE_DIRS})
+                # Also add to directory-level includes for MOC
+                include_directories(${RTMIDI_INCLUDE_DIRS})
+                message(STATUS "Added RtMidi include directories: ${RTMIDI_INCLUDE_DIRS}")
+            else()
+                # Fallback: try to find RtMidi.h manually
+                find_path(RTMIDI_FALLBACK_INCLUDE_DIR
+                    NAMES RtMidi.h
+                    PATHS
+                        ${CMAKE_PREFIX_PATH}/include
+                        $ENV{VCPKG_ROOT}/installed/$ENV{VCPKG_TARGET_TRIPLET}/include
+                        /usr/include
+                        /usr/local/include
+                        /opt/homebrew/include
+                )
+                if(RTMIDI_FALLBACK_INCLUDE_DIR)
+                    target_include_directories(DroidStar PRIVATE ${RTMIDI_FALLBACK_INCLUDE_DIR})
+                    # Also add to directory-level includes for MOC
+                    include_directories(${RTMIDI_FALLBACK_INCLUDE_DIR})
+                    message(STATUS "Added RtMidi fallback include directory: ${RTMIDI_FALLBACK_INCLUDE_DIR}")
+                else()
+                    message(WARNING "Could not determine RtMidi include directory")
+                endif()
+            endif()
+        endif()
+        
+        # On Windows, RtMidi typically needs to be statically linked
+        if(WIN32)
+            # Try to link statically first
+            if(TARGET RtMidi::rtmidi_static)
+                target_link_libraries(DroidStar PRIVATE RtMidi::rtmidi_static)
+                message(STATUS "Linking RtMidi statically (rtmidi_static)")
+                # Get include dirs from static target too
+                get_target_property(RTMIDI_STATIC_INCLUDE_DIRS RtMidi::rtmidi_static INTERFACE_INCLUDE_DIRECTORIES)
+                if(RTMIDI_STATIC_INCLUDE_DIRS)
+                    target_include_directories(DroidStar PRIVATE ${RTMIDI_STATIC_INCLUDE_DIRS})
+                    # Also add to directory-level includes for MOC
+                    include_directories(${RTMIDI_STATIC_INCLUDE_DIRS})
+                    message(STATUS "Added RtMidi static include directories: ${RTMIDI_STATIC_INCLUDE_DIRS}")
+                endif()
+            elseif(TARGET RtMidi::rtmidi-static)
+                target_link_libraries(DroidStar PRIVATE RtMidi::rtmidi-static)
+                message(STATUS "Linking RtMidi statically (rtmidi-static)")
+                # Get include dirs from static target too
+                get_target_property(RTMIDI_STATIC_INCLUDE_DIRS RtMidi::rtmidi-static INTERFACE_INCLUDE_DIRECTORIES)
+                if(RTMIDI_STATIC_INCLUDE_DIRS)
+                    target_include_directories(DroidStar PRIVATE ${RTMIDI_STATIC_INCLUDE_DIRS})
+                    # Also add to directory-level includes for MOC
+                    include_directories(${RTMIDI_STATIC_INCLUDE_DIRS})
+                    message(STATUS "Added RtMidi static include directories: ${RTMIDI_STATIC_INCLUDE_DIRS}")
+                endif()
+            else()
+                target_link_libraries(DroidStar PRIVATE RtMidi::rtmidi)
+                message(STATUS "Linking RtMidi dynamically (fallback)")
+            endif()
+            # Add Windows-specific MIDI libraries
+            target_link_libraries(DroidStar PRIVATE winmm)
+            target_compile_definitions(DroidStar PRIVATE __WINDOWS_MM__)
+        else()
+            target_link_libraries(DroidStar PRIVATE RtMidi::rtmidi)
+        endif()
+        set(MIDI_FOUND TRUE)
+    else()
+        # Check if we have vcpkg installed RtMidi manually
+        if(DEFINED ENV{VCPKG_ROOT} AND DEFINED ENV{VCPKG_TARGET_TRIPLET})
+            set(VCPKG_INCLUDE_DIR "$ENV{VCPKG_ROOT}/installed/$ENV{VCPKG_TARGET_TRIPLET}/include")
+            set(VCPKG_LIB_DIR "$ENV{VCPKG_ROOT}/installed/$ENV{VCPKG_TARGET_TRIPLET}/lib")
+            
+            if(EXISTS "${VCPKG_INCLUDE_DIR}/RtMidi.h")
+                message(STATUS "Found RtMidi in vcpkg installation: ${VCPKG_INCLUDE_DIR}")
+                target_compile_definitions(DroidStar PRIVATE ENABLE_MIDI)
+                target_include_directories(DroidStar PRIVATE ${VCPKG_INCLUDE_DIR})
+                # Also add to directory-level includes for MOC
+                include_directories(${VCPKG_INCLUDE_DIR})
+                
+                # Try to find the library - prefer static on Windows
+                if(WIN32)
+                    find_library(VCPKG_RTMIDI_LIB
+                        NAMES rtmidi_static rtmidi librtmidi_static librtmidi
+                        PATHS ${VCPKG_LIB_DIR}
+                        NO_DEFAULT_PATH
+                    )
+                else()
+                    find_library(VCPKG_RTMIDI_LIB
+                        NAMES rtmidi librtmidi
+                        PATHS ${VCPKG_LIB_DIR}
+                        NO_DEFAULT_PATH
+                    )
+                endif()
+                
+                if(VCPKG_RTMIDI_LIB)
+                    target_link_libraries(DroidStar PRIVATE ${VCPKG_RTMIDI_LIB})
+                    message(STATUS "Linked vcpkg RtMidi library: ${VCPKG_RTMIDI_LIB}")
+                    
+                    # Add Windows-specific MIDI support
+                    if(WIN32)
+                        target_link_libraries(DroidStar PRIVATE winmm)
+                        target_compile_definitions(DroidStar PRIVATE __WINDOWS_MM__)
+                        message(STATUS "Added Windows MM support for RtMidi")
+                    endif()
+                    
+                    set(MIDI_FOUND TRUE)
+                else()
+                    if(WIN32)
+                        message(STATUS "RtMidi header found but library not found, MIDI will be disabled")
+                        # Don't add winmm if we can't find RtMidi library
+                    else()
+                        message(STATUS "RtMidi header found but library not found")
+                    endif()
+                endif()
+                
+            endif()
+        endif()
+    endif()
+    
+    # If vcpkg didn't work, try pkg-config (preferred method for non-vcpkg)
+    if(NOT MIDI_FOUND)
+        find_package(PkgConfig QUIET)
+        if(PkgConfig_FOUND)
+            pkg_check_modules(RTMIDI rtmidi)
+            if(RTMIDI_FOUND)
+                message(STATUS "Found RtMidi via pkg-config: ${RTMIDI_VERSION}")
+                target_compile_definitions(DroidStar PRIVATE ENABLE_MIDI)
+                target_include_directories(DroidStar PRIVATE ${RTMIDI_INCLUDE_DIRS})
+                # Also add to directory-level includes for MOC
+                include_directories(${RTMIDI_INCLUDE_DIRS})
+                target_link_libraries(DroidStar PRIVATE ${RTMIDI_LIBRARIES})
+                target_link_directories(DroidStar PRIVATE ${RTMIDI_LIBRARY_DIRS})
+                set(MIDI_FOUND TRUE)
+            endif()
         endif()
     endif()
     
     # If pkg-config didn't work, try platform-specific detection
     if(NOT MIDI_FOUND)
         # Try to find RtMidi header
-        find_path(RTMIDI_INCLUDE_DIR 
+        find_path(RTMIDI_INCLUDE_DIR
             NAMES RtMidi.h rtmidi/RtMidi.h
-            PATHS 
+            PATHS
                 /usr/include
                 /usr/local/include
                 /opt/homebrew/include
@@ -145,6 +307,8 @@ if(ENABLE_MIDI)
             message(STATUS "Found RtMidi: ${RTMIDI_LIBRARY}")
             target_compile_definitions(DroidStar PRIVATE ENABLE_MIDI)
             target_include_directories(DroidStar PRIVATE ${RTMIDI_INCLUDE_DIR})
+            # Also add to directory-level includes for MOC
+            include_directories(${RTMIDI_INCLUDE_DIR})
             target_link_libraries(DroidStar PRIVATE ${RTMIDI_LIBRARY})
             set(MIDI_FOUND TRUE)
             
@@ -189,7 +353,9 @@ if(ENABLE_MIDI)
         message(WARNING "RtMidi not found. MIDI support will be disabled.")
         message(STATUS "To enable MIDI support:")
         if(WIN32)
-            message(STATUS "  Windows: Install RtMidi via vcpkg or build from source")
+            message(STATUS "  Windows: Install RtMidi via vcpkg: 'vcpkg install rtmidi'")
+            message(STATUS "           Note: RtMidi on Windows typically requires static linking")
+            message(STATUS "           Make sure to install both static and dynamic variants if available")
         elseif(UNIX AND NOT APPLE)
             message(STATUS "  Linux: sudo apt-get install librtmidi-dev (Ubuntu/Debian)")
             message(STATUS "         sudo dnf install rtmidi-devel (Fedora)")
@@ -197,7 +363,13 @@ if(ENABLE_MIDI)
         elseif(APPLE)
             message(STATUS "  macOS: brew install rtmidi")
         endif()
+        # Set MIDI_DISABLED when we can't find RtMidi but MIDI was requested
+        target_compile_definitions(DroidStar PRIVATE MIDI_DISABLED)
     endif()
+else()
+    message(STATUS "MIDI support disabled")
+    # Explicitly define that MIDI is disabled so the headers can handle it properly
+    target_compile_definitions(DroidStar PRIVATE MIDI_DISABLED)
 endif()
 
 target_compile_definitions(DroidStar PRIVATE
@@ -366,15 +538,77 @@ if(FALSE) # set TRUE for md380_vocoder
     )
 endif()
 
-install(TARGETS DroidStar
-    BUNDLE DESTINATION .
-    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-)
+# Windows-specific configuration to avoid deployment script issues
+if(WIN32)
+    # Disable Qt translation processing that causes Windows build issues
+    set_target_properties(DroidStar PROPERTIES
+        QT_ANDROID_DEPLOYMENT_DEPENDENCIES ""
+        QT_QML_ROOT_PATH ""
+        QT_DEPLOY_TRANSLATIONS_DIR ""
+        QT_NO_TRANSLATION_DEPLOYMENT TRUE
+        QT_TRANSLATIONS_DIR ""
+        QT_LINGUIST_DIRECTORY ""
+    )
+    # Ensure deployment script is completely disabled
+    set(QT_DEPLOY_SUPPORT OFF)
+    # Disable Qt automatic translation detection
+    set(QT_NO_CREATE_DEPLOYMENT TRUE)
+    set(CMAKE_INSTALL_DO_STRIP OFF)
+    # Set multiple environment variables to prevent Qt from processing translations
+    set(ENV{QT_NO_TRANSLATION_DEPLOYMENT} "1")
+    set(ENV{QT_SKIP_TRANSLATION_DEPLOYMENT} "1")
+    set(ENV{QT_NO_LCONVERT} "1")
+    set(ENV{QT_TRANSLATIONS_DIR} "")
+    # Completely disable the Qt deployment script command on Windows
+    if(COMMAND qt_generate_deploy_app_script)
+        # Undefine the command to prevent any accidental calls
+        unset(qt_generate_deploy_app_script)
+        function(qt_generate_deploy_app_script)
+            message(STATUS "qt_generate_deploy_app_script disabled on Windows to prevent translation errors")
+        endfunction()
+    endif()
+    # Override lconvert command if it exists
+    if(COMMAND lconvert)
+        function(lconvert)
+            message(STATUS "lconvert command disabled on Windows to prevent translation processing errors")
+        endfunction()
+    endif()
+    message(STATUS "Windows build: All Qt deployment features disabled to prevent translation processing errors")
+endif()
 
-qt_generate_deploy_app_script(
-    TARGET DroidStar
-    FILENAME_VARIABLE deploy_script
-    NO_UNSUPPORTED_PLATFORM_ERROR
-)
-install(SCRIPT ${deploy_script})
+# Install configuration - different handling for Windows vs other platforms
+# On Windows, skip install entirely to avoid Qt translation processing issues
+if(WIN32)
+    message(STATUS "Windows build: Install phase skipped entirely to prevent Qt deployment issues")
+    message(STATUS "Executable will be available in build directory without install")
+elseif(NOT WIN32)
+    # Standard install for non-Windows platforms only
+    install(TARGETS DroidStar
+        BUNDLE DESTINATION .
+        LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+    )
+    message(STATUS "Non-Windows install: Using standard Qt deployment")
+endif()
+
+# Deployment script generation (if available in Qt version)
+# Disable on Windows due to translation processing issues
+if(ENABLE_DEPLOYMENT_SCRIPT AND COMMAND qt_generate_deploy_app_script AND NOT WIN32)
+    qt_generate_deploy_app_script(
+        TARGET DroidStar
+        FILENAME_VARIABLE deploy_script
+        NO_UNSUPPORTED_PLATFORM_ERROR
+    )
+    install(SCRIPT ${deploy_script})
+    message(STATUS "Qt deployment script generated")
+else()
+    if(WIN32)
+        message(STATUS "Qt deployment script explicitly disabled on Windows to avoid translation processing issues")
+    elseif(NOT ENABLE_DEPLOYMENT_SCRIPT)
+        message(STATUS "Qt deployment script disabled by user option")
+    elseif(NOT COMMAND qt_generate_deploy_app_script)
+        message(STATUS "qt_generate_deploy_app_script not available, skipping deployment script generation")
+    else()
+        message(STATUS "Qt deployment script disabled for unknown reason")
+    endif()
+endif()

@@ -18,11 +18,76 @@
 #include "midihotkey.h"
 #include <QDebug>
 
-MidiHotkey::MidiHotkey(QObject *parent)
-	: QObject(parent)
-#ifdef ENABLE_MIDI
+#ifdef MIDI_ENABLED
+#include "RtMidi.h"
+#include <vector>
+
+// Private implementation class - contains all MIDI-specific code
+class MidiHotkeyImpl
+{
+public:
+	MidiHotkeyImpl(MidiHotkey *parent);
+	~MidiHotkeyImpl();
+	
+	QStringList getAvailableMidiDevices();
+	bool openMidiDevice(const QString &deviceName);
+	bool openMidiDevice(int deviceIndex);
+	void closeMidiDevice();
+	bool isMidiDeviceOpen() const { return m_midiDeviceOpen; }
+	QString currentMidiDevice() const { return m_currentMidiDevice; }
+	
+	bool setMidiHotkey(int noteNumber, int channel = -1);
+	void clearMidiHotkey();
+	bool hasMidiHotkey() const { return m_midiHotkeyEnabled; }
+	
+	void setToggleMode(bool enabled);
+	bool isToggleMode() const { return m_toggleMode; }
+	
+	void setVelocityThreshold(int threshold);
+	int velocityThreshold() const { return m_velocityThreshold; }
+	
+private:
+	MidiHotkey *q_ptr;
+	RtMidiIn *m_midiIn;
+	
+	bool m_midiDeviceOpen;
+	QString m_currentMidiDevice;
+	int m_currentMidiDeviceIndex;
+	
+	// Hotkey configuration
+	bool m_midiHotkeyEnabled;
+	int m_hotkeyNoteNumber;
+	int m_hotkeyChannel; // -1 = any channel
+	int m_velocityThreshold;
+	
+	// Toggle mode state
+	bool m_toggleMode;
+	bool m_transmitting;
+	
+	// Settings
+	QSettings *m_settings;
+	
+	void saveSettings();
+	void loadSettings();
+	void handleMidiMessage(const std::vector<unsigned char> &message);
+	
+	static void midiCallback(double timeStamp, std::vector<unsigned char> *message, void *userData);
+};
+
+// Static callback function for RtMidi
+void MidiHotkeyImpl::midiCallback(double timeStamp, std::vector<unsigned char> *message, void *userData)
+{
+	Q_UNUSED(timeStamp);
+	
+	MidiHotkeyImpl *impl = static_cast<MidiHotkeyImpl*>(userData);
+	if (impl && message && !message->empty()) {
+		impl->handleMidiMessage(*message);
+	}
+}
+
+MidiHotkeyImpl::MidiHotkeyImpl(MidiHotkey *parent)
+	: q_ptr(parent)
 	, m_midiIn(nullptr)
-#endif
 	, m_midiDeviceOpen(false)
 	, m_currentMidiDeviceIndex(-1)
 	, m_midiHotkeyEnabled(false)
@@ -31,303 +96,294 @@ MidiHotkey::MidiHotkey(QObject *parent)
 	, m_velocityThreshold(64)
 	, m_toggleMode(false)
 	, m_transmitting(false)
-	, m_settings(new QSettings(this))
+	, m_settings(new QSettings(parent))
 {
-	loadSettings();
-
-#ifdef ENABLE_MIDI
 	try {
 		m_midiIn = new RtMidiIn();
-		qDebug() << "MidiHotkey: RtMidi initialized successfully";
 	} catch (RtMidiError &error) {
-		qWarning() << "MidiHotkey: Failed to initialize RtMidi:" << QString::fromStdString(error.getMessage());
+		qWarning() << "Failed to create RtMidiIn:" << error.getMessage().c_str();
+		m_midiIn = nullptr;
 	}
-#else
-	qDebug() << "MidiHotkey: MIDI support not compiled in";
-#endif
+	
+	loadSettings();
 }
 
-MidiHotkey::~MidiHotkey()
+MidiHotkeyImpl::~MidiHotkeyImpl()
 {
 	closeMidiDevice();
-#ifdef ENABLE_MIDI
 	delete m_midiIn;
-#endif
 }
 
-bool MidiHotkey::isMidiSupported()
-{
-#ifdef ENABLE_MIDI
-	return true;
-#else
-	return false;
-#endif
-}
-
-QStringList MidiHotkey::getAvailableMidiDevices()
+QStringList MidiHotkeyImpl::getAvailableMidiDevices()
 {
 	QStringList devices;
-	
-#ifdef ENABLE_MIDI
-	if (!m_midiIn) {
-		return devices;
-	}
+	if (!m_midiIn) return devices;
 	
 	try {
 		unsigned int portCount = m_midiIn->getPortCount();
 		for (unsigned int i = 0; i < portCount; i++) {
-			std::string portName = m_midiIn->getPortName(i);
-			devices.append(QString::fromStdString(portName));
+			try {
+				devices << QString::fromStdString(m_midiIn->getPortName(i));
+			} catch (RtMidiError &error) {
+				qWarning() << "Failed to get MIDI port name for index" << i << ":" << error.getMessage().c_str();
+			}
 		}
 	} catch (RtMidiError &error) {
-		qWarning() << "MidiHotkey: Error getting MIDI devices:" << QString::fromStdString(error.getMessage());
-		emit midiDeviceError(QString::fromStdString(error.getMessage()));
+		qWarning() << "Failed to get MIDI port count:" << error.getMessage().c_str();
 	}
-#endif
 	
 	return devices;
 }
 
-bool MidiHotkey::openMidiDevice(const QString &deviceName)
+bool MidiHotkeyImpl::openMidiDevice(const QString &deviceName)
 {
-#ifdef ENABLE_MIDI
-	if (!m_midiIn) {
-		return false;
-	}
+	if (!m_midiIn) return false;
 	
-	try {
-		unsigned int portCount = m_midiIn->getPortCount();
-		for (unsigned int i = 0; i < portCount; i++) {
-			std::string portName = m_midiIn->getPortName(i);
-			if (QString::fromStdString(portName) == deviceName) {
-				return openMidiDevice(i);
-			}
-		}
-	} catch (RtMidiError &error) {
-		qWarning() << "MidiHotkey: Error opening MIDI device by name:" << QString::fromStdString(error.getMessage());
-		emit midiDeviceError(QString::fromStdString(error.getMessage()));
-	}
-#endif
+	QStringList devices = getAvailableMidiDevices();
+	int index = devices.indexOf(deviceName);
+	if (index < 0) return false;
 	
-	return false;
+	return openMidiDevice(index);
 }
 
-bool MidiHotkey::openMidiDevice(int deviceIndex)
+bool MidiHotkeyImpl::openMidiDevice(int deviceIndex)
 {
-#ifdef ENABLE_MIDI
-	if (!m_midiIn) {
-		return false;
-	}
+	if (!m_midiIn) return false;
 	
-	closeMidiDevice(); // Close any existing connection
+	closeMidiDevice();
 	
 	try {
-		if (deviceIndex < 0 || deviceIndex >= static_cast<int>(m_midiIn->getPortCount())) {
-			qWarning() << "MidiHotkey: Invalid device index:" << deviceIndex;
-			return false;
-		}
-		
 		m_midiIn->openPort(deviceIndex);
-		m_midiIn->setCallback(&MidiHotkey::midiCallback, this);
-		m_midiIn->ignoreTypes(false, false, false); // Don't ignore sysex, timing, or active sensing
+		m_midiIn->setCallback(&MidiHotkeyImpl::midiCallback, this);
+		m_midiIn->ignoreTypes(false, false, false);
 		
+		m_midiDeviceOpen = true;
 		m_currentMidiDeviceIndex = deviceIndex;
 		m_currentMidiDevice = QString::fromStdString(m_midiIn->getPortName(deviceIndex));
-		m_midiDeviceOpen = true;
 		
-		qDebug() << "MidiHotkey: Opened MIDI device:" << m_currentMidiDevice;
-		saveSettings();
+		qDebug() << "MIDI device opened:" << m_currentMidiDevice;
 		return true;
-		
 	} catch (RtMidiError &error) {
-		qWarning() << "MidiHotkey: Error opening MIDI device:" << QString::fromStdString(error.getMessage());
-		emit midiDeviceError(QString::fromStdString(error.getMessage()));
+		qWarning() << "Failed to open MIDI device at index" << deviceIndex << ":" << error.getMessage().c_str();
 		return false;
 	}
-#endif
-	
-	return false;
 }
 
-void MidiHotkey::closeMidiDevice()
+void MidiHotkeyImpl::closeMidiDevice()
 {
-#ifdef ENABLE_MIDI
 	if (m_midiIn && m_midiDeviceOpen) {
 		try {
-			m_midiIn->cancelCallback();
 			m_midiIn->closePort();
 		} catch (RtMidiError &error) {
-			qWarning() << "MidiHotkey: Error closing MIDI device:" << QString::fromStdString(error.getMessage());
+			qWarning() << "Error closing MIDI port:" << error.getMessage().c_str();
 		}
 	}
-#endif
 	
 	m_midiDeviceOpen = false;
-	m_currentMidiDeviceIndex = -1;
 	m_currentMidiDevice.clear();
+	m_currentMidiDeviceIndex = -1;
 }
 
-bool MidiHotkey::setMidiHotkey(int noteNumber, int channel)
+bool MidiHotkeyImpl::setMidiHotkey(int noteNumber, int channel)
 {
-	if (noteNumber < 0 || noteNumber > 127) {
-		qWarning() << "MidiHotkey: Invalid note number:" << noteNumber;
-		return false;
-	}
-	
-	if (channel < -1 || channel > 15) {
-		qWarning() << "MidiHotkey: Invalid channel:" << channel;
-		return false;
-	}
+	if (noteNumber < 0 || noteNumber > 127) return false;
+	if (channel < -1 || channel > 15) return false;
 	
 	m_hotkeyNoteNumber = noteNumber;
 	m_hotkeyChannel = channel;
 	m_midiHotkeyEnabled = true;
 	
-	qDebug() << "MidiHotkey: Set MIDI hotkey - Note:" << noteNumber << "Channel:" << (channel == -1 ? "Any" : QString::number(channel + 1));
-	
 	saveSettings();
 	return true;
 }
 
-void MidiHotkey::clearMidiHotkey()
+void MidiHotkeyImpl::clearMidiHotkey()
 {
 	m_midiHotkeyEnabled = false;
 	m_hotkeyNoteNumber = -1;
 	m_hotkeyChannel = -1;
 	saveSettings();
-	
-	qDebug() << "MidiHotkey: Cleared MIDI hotkey";
 }
 
-#ifdef ENABLE_MIDI
-void MidiHotkey::midiCallback(double deltaTime, std::vector<unsigned char> *message, void *userData)
+void MidiHotkeyImpl::setToggleMode(bool enabled)
 {
-	Q_UNUSED(deltaTime)
-	
-	MidiHotkey *instance = static_cast<MidiHotkey*>(userData);
-	if (instance && message && !message->empty()) {
-		// Use Qt's queued connection to safely handle the MIDI message on the main thread
-		QMetaObject::invokeMethod(instance, [instance, msg = *message]() {
-			instance->handleMidiMessage(msg);
-		}, Qt::QueuedConnection);
-	}
+	m_toggleMode = enabled;
+	saveSettings();
 }
-#endif
 
-void MidiHotkey::handleMidiMessage(const std::vector<unsigned char> &message)
+void MidiHotkeyImpl::setVelocityThreshold(int threshold)
 {
-	if (!m_midiHotkeyEnabled || message.empty()) {
-		return;
-	}
+	m_velocityThreshold = qBound(1, threshold, 127);
+	saveSettings();
+}
+
+void MidiHotkeyImpl::saveSettings()
+{
+	m_settings->setValue("midiHotkeyEnabled", m_midiHotkeyEnabled);
+	m_settings->setValue("hotkeyNoteNumber", m_hotkeyNoteNumber);
+	m_settings->setValue("hotkeyChannel", m_hotkeyChannel);
+	m_settings->setValue("velocityThreshold", m_velocityThreshold);
+	m_settings->setValue("toggleMode", m_toggleMode);
+	m_settings->setValue("currentMidiDevice", m_currentMidiDevice);
+}
+
+void MidiHotkeyImpl::loadSettings()
+{
+	m_midiHotkeyEnabled = m_settings->value("midiHotkeyEnabled", false).toBool();
+	m_hotkeyNoteNumber = m_settings->value("hotkeyNoteNumber", -1).toInt();
+	m_hotkeyChannel = m_settings->value("hotkeyChannel", -1).toInt();
+	m_velocityThreshold = m_settings->value("velocityThreshold", 64).toInt();
+	m_toggleMode = m_settings->value("toggleMode", false).toBool();
+	m_currentMidiDevice = m_settings->value("currentMidiDevice", "").toString();
+}
+
+void MidiHotkeyImpl::handleMidiMessage(const std::vector<unsigned char> &message)
+{
+	if (!m_midiHotkeyEnabled || message.size() < 3) return;
 	
-	// Check if this is the configured hotkey note
-	int noteNumber = getNoteNumber(message);
-	int channel = getChannel(message);
+	unsigned char status = message[0];
+	unsigned char note = message[1];
+	unsigned char velocity = message[2];
 	
-	// Check if this matches our hotkey configuration
-	if (noteNumber != m_hotkeyNoteNumber) {
-		return;
-	}
+	// Extract MIDI channel (0-15) and message type
+	int channel = status & 0x0F;
+	int messageType = status & 0xF0;
 	
-	if (m_hotkeyChannel != -1 && channel != m_hotkeyChannel) {
-		return;
-	}
+	// Check if this matches our hotkey
+	if (note != m_hotkeyNoteNumber) return;
+	if (m_hotkeyChannel != -1 && channel != m_hotkeyChannel) return;
+	if (velocity < m_velocityThreshold) return;
 	
-	if (isNoteOn(message)) {
-		int velocity = getVelocity(message);
-		
-		// Check velocity threshold
-		if (velocity < m_velocityThreshold) {
-			return;
-		}
-		
-		qDebug() << "MidiHotkey: Note ON - Note:" << noteNumber << "Channel:" << (channel + 1) << "Velocity:" << velocity;
-		
+	if (messageType == 0x90) { // Note On
 		if (m_toggleMode) {
-			// Toggle mode: switch transmit state
 			m_transmitting = !m_transmitting;
-			emitToggleStateChanged(m_transmitting);
+			emit q_ptr->toggleStateChanged(m_transmitting);
 		} else {
-			// PTT mode: start transmitting
-			emit midiHotkeyPressed(velocity);
-			emit toggleStateChanged(true);
+			emit q_ptr->midiHotkeyPressed(velocity);
 		}
-		
-	} else if (isNoteOff(message)) {
-		qDebug() << "MidiHotkey: Note OFF - Note:" << noteNumber << "Channel:" << (channel + 1);
-		
+	} else if (messageType == 0x80) { // Note Off
 		if (!m_toggleMode) {
-			// PTT mode: stop transmitting
-			emit midiHotkeyReleased();
-			emit toggleStateChanged(false);
+			emit q_ptr->midiHotkeyReleased();
 		}
-		// In toggle mode, note off doesn't change the transmit state
 	}
 }
 
-bool MidiHotkey::isNoteOn(const std::vector<unsigned char> &message) const
+#else // MIDI_ENABLED
+
+// Stub implementation when MIDI is disabled
+class MidiHotkeyImpl
 {
-	if (message.size() < 3) return false;
+public:
+	MidiHotkeyImpl(MidiHotkey *parent) { Q_UNUSED(parent); }
+	~MidiHotkeyImpl() {}
 	
-	unsigned char status = message[0] & 0xF0;
-	unsigned char velocity = message[2];
+	QStringList getAvailableMidiDevices() { return QStringList(); }
+	bool openMidiDevice(const QString &deviceName) { Q_UNUSED(deviceName); return false; }
+	bool openMidiDevice(int deviceIndex) { Q_UNUSED(deviceIndex); return false; }
+	void closeMidiDevice() {}
+	bool isMidiDeviceOpen() const { return false; }
+	QString currentMidiDevice() const { return QString(); }
 	
-	// Note on with velocity > 0, or some keyboards send note on with velocity 0 as note off
-	return (status == 0x90 && velocity > 0);
+	bool setMidiHotkey(int noteNumber, int channel = -1) { Q_UNUSED(noteNumber); Q_UNUSED(channel); return false; }
+	void clearMidiHotkey() {}
+	bool hasMidiHotkey() const { return false; }
+	
+	void setToggleMode(bool enabled) { Q_UNUSED(enabled); }
+	bool isToggleMode() const { return false; }
+	
+	void setVelocityThreshold(int threshold) { Q_UNUSED(threshold); }
+	int velocityThreshold() const { return 64; }
+};
+
+#endif // MIDI_ENABLED
+
+// MidiHotkey public interface - delegates to implementation
+MidiHotkey::MidiHotkey(QObject *parent)
+	: QObject(parent)
+	, m_impl(new MidiHotkeyImpl(this))
+{
 }
 
-bool MidiHotkey::isNoteOff(const std::vector<unsigned char> &message) const
+MidiHotkey::~MidiHotkey()
 {
-	if (message.size() < 3) return false;
-	
-	unsigned char status = message[0] & 0xF0;
-	unsigned char velocity = message[2];
-	
-	// Note off, or note on with velocity 0
-	return (status == 0x80) || (status == 0x90 && velocity == 0);
+	delete m_impl;
 }
 
-int MidiHotkey::getNoteNumber(const std::vector<unsigned char> &message) const
+QStringList MidiHotkey::getAvailableMidiDevices()
 {
-	if (message.size() < 2) return -1;
-	return message[1];
+	return m_impl->getAvailableMidiDevices();
 }
 
-int MidiHotkey::getChannel(const std::vector<unsigned char> &message) const
+bool MidiHotkey::openMidiDevice(const QString &deviceName)
 {
-	if (message.empty()) return -1;
-	return message[0] & 0x0F; // Channel is in the lower 4 bits
+	return m_impl->openMidiDevice(deviceName);
 }
 
-int MidiHotkey::getVelocity(const std::vector<unsigned char> &message) const
+bool MidiHotkey::openMidiDevice(int deviceIndex)
 {
-	if (message.size() < 3) return 0;
-	return message[2];
+	return m_impl->openMidiDevice(deviceIndex);
+}
+
+void MidiHotkey::closeMidiDevice()
+{
+	m_impl->closeMidiDevice();
+}
+
+bool MidiHotkey::isMidiDeviceOpen() const
+{
+	return m_impl->isMidiDeviceOpen();
+}
+
+QString MidiHotkey::currentMidiDevice() const
+{
+	return m_impl->currentMidiDevice();
+}
+
+bool MidiHotkey::setMidiHotkey(int noteNumber, int channel)
+{
+	return m_impl->setMidiHotkey(noteNumber, channel);
+}
+
+void MidiHotkey::clearMidiHotkey()
+{
+	m_impl->clearMidiHotkey();
+}
+
+bool MidiHotkey::hasMidiHotkey() const
+{
+	return m_impl->hasMidiHotkey();
+}
+
+void MidiHotkey::setToggleMode(bool enabled)
+{
+	m_impl->setToggleMode(enabled);
+}
+
+bool MidiHotkey::isToggleMode() const
+{
+	return m_impl->isToggleMode();
+}
+
+void MidiHotkey::setVelocityThreshold(int threshold)
+{
+	m_impl->setVelocityThreshold(threshold);
+}
+
+int MidiHotkey::velocityThreshold() const
+{
+	return m_impl->velocityThreshold();
+}
+
+bool MidiHotkey::isMidiSupported()
+{
+#ifdef MIDI_ENABLED
+	return true;
+#else
+	return false;
+#endif
 }
 
 void MidiHotkey::emitToggleStateChanged(bool transmitting)
 {
 	emit toggleStateChanged(transmitting);
-}
-
-void MidiHotkey::saveSettings()
-{
-	m_settings->setValue("midi_device", m_currentMidiDevice);
-	m_settings->setValue("midi_device_index", m_currentMidiDeviceIndex);
-	m_settings->setValue("midi_hotkey_enabled", m_midiHotkeyEnabled);
-	m_settings->setValue("midi_hotkey_note", m_hotkeyNoteNumber);
-	m_settings->setValue("midi_hotkey_channel", m_hotkeyChannel);
-	m_settings->setValue("midi_velocity_threshold", m_velocityThreshold);
-	m_settings->setValue("midi_toggle_mode", m_toggleMode);
-}
-
-void MidiHotkey::loadSettings()
-{
-	m_currentMidiDevice = m_settings->value("midi_device", "").toString();
-	m_currentMidiDeviceIndex = m_settings->value("midi_device_index", -1).toInt();
-	m_midiHotkeyEnabled = m_settings->value("midi_hotkey_enabled", false).toBool();
-	m_hotkeyNoteNumber = m_settings->value("midi_hotkey_note", -1).toInt();
-	m_hotkeyChannel = m_settings->value("midi_hotkey_channel", -1).toInt();
-	m_velocityThreshold = m_settings->value("midi_velocity_threshold", 64).toInt();
-	m_toggleMode = m_settings->value("midi_toggle_mode", false).toBool();
 }

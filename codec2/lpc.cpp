@@ -278,7 +278,7 @@ void Clpc::find_aks(
 )
 {
 	float Wn[LPC_MAX_N];	/* windowed frame of Nsam speech samples */
-	float R[order+1];	/* order+1 autocorrelation values of Sn[] */
+	VLA(float, R, order+1);	/* order+1 autocorrelation values of Sn[] */
 	int i;
 
 	assert(Nsam < LPC_MAX_N);
