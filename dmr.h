@@ -40,10 +40,11 @@ private slots:
 	void transmit();
 	void hostname_lookup(QHostInfo i);
 	void dmr_tgid_changed(int id) { m_txdstid = id; }
-    void dmrpc_state_changed(int p){m_flco = p ? FLCO_USER_USER : FLCO_GROUP; }
+    void dmrpc_state_changed(int p){m_flco = p ? FLCO_USER_USER : FLCO_GROUP; m_txflco = m_flco; }
     void cc_changed(int cc) {m_txcc = cc;}
 	void slot_changed(int s) {m_txslot = s + 1; }
 	void send_frame();
+	void mmdvm_direct_connect();
 private:
 	uint32_t m_essid;
 	QString m_password;
@@ -67,6 +68,7 @@ private:
 	uint8_t m_dataType;
 	uint32_t m_dmrcnt;
 	FLCO m_flco;
+	FLCO m_txflco;
 	CBPTC19696 m_bptc;
 	bool m_raw[128U];
 	bool m_data[72U];

@@ -68,7 +68,7 @@ public slots:
 	void set_callsign(const QString &callsign) {  m_callsign = callsign.simplified(); save_settings(); }
 	void set_dmrtgid(const QString &dmrtgid) { m_dmr_destid = dmrtgid.simplified().toUInt(); save_settings(); }
 	void set_slot(const int slot) {emit slot_changed(slot); }
-	void set_cc(const int cc) {emit cc_changed(cc); }
+	void set_cc(const int cc) {emit cc_changed(cc); m_dmrColorCode = cc; }
 	void tgid_text_changed(QString s){emit dmr_tgid_changed(s.toUInt());}
 	void set_dmrid(const QString &dmrid) { m_dmrid = dmrid.simplified().toUInt(); save_settings(); }
 	void set_essid(const QString &essid)
@@ -369,6 +369,7 @@ private:
 	bool m_modemTxInvert;
 	bool m_modemRxInvert;
 	bool m_modemPTTInvert;
+	uint32_t m_dmrColorCode;
 #ifdef Q_OS_ANDROID
     AndroidSerialPort *m_USBmonitor;
 #endif

@@ -164,7 +164,9 @@ void Mode::mmdvm_connect_status(bool s)
 
 void Mode::in_audio_vol_changed(qreal v)
 {
-	m_audio->set_input_volume(v / m_attenuation);
+	if (m_audio) {
+		m_audio->set_input_volume(v / m_attenuation);
+	}
 }
 
 void Mode::out_audio_vol_changed(qreal v)
@@ -181,7 +183,7 @@ void Mode::begin_connect()
 {
 	m_modeinfo.status = CONNECTING;
 
-    if((m_vocoder != "") && (m_mode != "M17")){
+    if((m_vocoder != "None") && (m_vocoder != "Software vocoder") && (m_mode != "M17")){
         m_hwrx = true;
         m_hwtx = true;
         m_modeinfo.hw_vocoder_loaded = true;
@@ -206,9 +208,11 @@ void Mode::begin_connect()
         m_modem = new SerialModem(m_mode);
         m_modem->set_modem_flags(m_rxInvert, m_txInvert, m_pttInvert, m_useCOSAsLockout, m_duplex);
         m_modem->set_modem_params(m_baud, m_rxfreq, m_txfreq, m_txDelay, m_rxLevel, m_rfLevel, m_ysfTXHang, m_cwIdTXLevel, m_dstarTXLevel, m_dmrTXLevel, m_ysfTXLevel, m_p25TXLevel, m_nxdnTXLevel, m_pocsagTXLevel, m_m17TXLevel);
+        m_modem->set_cc(m_dmrColorCode);
         connect(m_modem, SIGNAL(connected(bool)), this, SLOT(mmdvm_connect_status(bool)));
         connect(m_modem, SIGNAL(modem_data_ready(QByteArray)), this, SLOT(process_modem_data(QByteArray)));
         connect(m_modem, SIGNAL(modem_ready()), this, SLOT(host_lookup()));
+        connect(this, SIGNAL(update_mode(uint8_t)), m_modem, SLOT(set_mode(uint8_t)));
         m_modem->connect_to_serial(m_modemport);
 #endif
     }
@@ -216,7 +220,7 @@ void Mode::begin_connect()
 
 void Mode::host_lookup()
 {
-    if(m_mdirect && (m_mode == "M17")){ // MMDVM_DIRECT currently only supported by M17
+    if(m_mdirect && ((m_mode == "M17") || (m_mode == "DMR"))){ // MMDVM_DIRECT currently only supported by M17 and DMR
         mmdvm_direct_connect();
     }
     else if(m_ipv6 && (m_modeinfo.host != "none")){
@@ -264,7 +268,7 @@ void Mode::start_tx()
 	}
 #endif
 	if(!m_txtimer->isActive()){
-		if(m_ttsid == 0){
+		if(m_ttsid == 0 && m_audio){
 			m_audio->set_input_buffer_size(640);
 			m_audio->start_capture();
 			//audioin->start(&audio_buffer);
@@ -280,6 +284,9 @@ void Mode::stop_tx()
 
 bool Mode::load_vocoder_plugin()
 {
+	if(m_vocoder == "None") {
+		return false;
+	}
 #ifdef VOCODER_PLUGIN
 	QString config_path = QStandardPaths::writableLocation(QStandardPaths::ConfigLocation);
 #if !defined(Q_OS_ANDROID) && !defined(Q_OS_WIN)

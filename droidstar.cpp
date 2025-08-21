@@ -116,6 +116,7 @@ void DroidStar::discover_devices()
 	m_modems.clear();
 	m_playbacks.append("OS Default");
 	m_captures.append("OS Default");
+	m_vocoders.append("None");
 	m_vocoders.append("Software vocoder");
 	m_modems.append("None");
 	m_playbacks.append(AudioEngine::discover_audio_devices(AUDIO_OUT));
@@ -365,8 +366,8 @@ void DroidStar::process_connect()
             return;
         }
 
-		QString vocoder = "";
-		if( (m_vocoder != "Software vocoder") && (m_vocoder.contains(':')) ){
+		QString vocoder = m_vocoder;
+		if( (m_vocoder != "None") && (m_vocoder != "Software vocoder") && (m_vocoder.contains(':') ) ){
 			QStringList vl = m_vocoder.split(':');
 			vocoder = vl.at(1);
 		}
@@ -449,6 +450,7 @@ void DroidStar::process_connect()
 				}
 			}
 			m_mode->set_dmr_params(m_essid, dmrpass, m_latitude, m_longitude, m_location, m_description, m_freq, m_url, m_swid, m_pkgid, m_dmropts);
+			m_mode->set_dmr_cc(m_dmrColorCode);
 			connect(this, SIGNAL(dmr_tgid_changed(int)), m_mode, SLOT(dmr_tgid_changed(int)));
 			connect(this, SIGNAL(dmrpc_state_changed(int)), m_mode, SLOT(dmrpc_state_changed(int)));
 			connect(this, SIGNAL(slot_changed(int)), m_mode, SLOT(slot_changed(int)));

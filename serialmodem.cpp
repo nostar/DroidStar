@@ -22,6 +22,7 @@
 #include "MMDVMDefines.h"
 
 //#define DEBUGHW
+#define MMDVM_TIMEOUT_MS 250
 
 SerialModem::SerialModem(QString mode)
 {
@@ -31,6 +32,7 @@ SerialModem::SerialModem(QString mode)
 	m_dmrColorCode = 1;
 	m_m17TXHang = 5;
 	m_ax25Enabled = false;
+	m_configured = 0;
 }
 
 SerialModem::~SerialModem()
@@ -113,7 +115,9 @@ void SerialModem::connect_to_serial(QString p)
 
 	if (m_serial->open(QIODevice::ReadWrite)) {
 		m_modemtimer = new QTimer();
+		m_statustimer = new QTimer();
 		connect(m_modemtimer, SIGNAL(timeout()), this, SLOT(process_modem()));
+		connect(m_statustimer, SIGNAL(timeout()), this, SLOT(get_status_modem()));
 		m_modemtimer->start(19);
 #ifndef Q_OS_ANDROID
 		connect(m_serial, &QSerialPort::readyRead, this, &SerialModem::process_serial);
@@ -122,6 +126,7 @@ void SerialModem::connect_to_serial(QString p)
 		connect(m_serial, SIGNAL(data_received(QByteArray)), this, SLOT(receive_serial(QByteArray)));
 #endif
 		m_serial->setRequestToSend(true);
+		m_statustimer->start(MMDVM_TIMEOUT_MS);
 	}
 }
 
@@ -144,7 +149,6 @@ void SerialModem::config_modem()
     fprintf(stderr, "\n");
     fflush(stderr);
 #endif
-    emit modem_ready();
 }
 
 void SerialModem::receive_serial(QByteArray d)
@@ -156,7 +160,9 @@ void SerialModem::receive_serial(QByteArray d)
 
 void SerialModem::process_serial()
 {
+	m_statustimer->stop();
 	QByteArray d = m_serial->readAll();
+	m_statustimer->start(MMDVM_TIMEOUT_MS);
 
 	for(int i = 0; i < d.size(); i++){
 		m_serialdata.enqueue(d[i]);
@@ -191,16 +197,16 @@ void SerialModem::process_modem()
 			for(int i = 0; i < s; ++i){
 				m_serialdata.dequeue();
 			}
-			if( (m_serialdata.size() > 3) && (m_serialdata[3] == 2) ){
+//			if( (m_serialdata.size() > 3) && (m_serialdata[3] == 2) ){
 
-			}
+//			}
 		}
 
 		else if(r == MMDVM_ACK){
 			qDebug() << "Received MMDVM_ACK";
-			if( (m_serialdata.size() > 3) && (m_serialdata[3] == 2) ){
-				emit connected(true);
-			}
+//			if( (m_serialdata.size() > 3) && ( (m_serialdata[3] == 2) || (m_serialdata[3] == 4) ) ){
+
+//			}
 			for(int i = 0; i < s; ++i){
 				m_serialdata.dequeue();
 			}
@@ -216,11 +222,22 @@ void SerialModem::process_modem()
 					m_version.append(m_serialdata[desc_offset+i]);
 				}
 				qDebug() << "MMDVM Protocol " << m_protocol << ": " << m_version;
+#ifdef DEBUGHW
+				fprintf(stderr, "MMDVM Protocol %d version %s", m_protocol, m_version.toStdString().c_str());
+				fprintf(stderr, "\n");
+				fflush(stderr);
+#endif
+				emit modem_ready();
+				m_configured = 1;
 			}
-			QThread::msleep(100);
-			set_freq();
-			QThread::msleep(100);
-			set_config();
+			for(int i = 0; i < s; ++i){
+				m_serialdata.dequeue();
+			}
+			return; //need for m_configured
+		}
+
+		else if(r == MMDVM_GET_STATUS){
+			qDebug() << "Received MMDVM_GET_STATUS";
 			for(int i = 0; i < s; ++i){
 				m_serialdata.dequeue();
 			}
@@ -233,6 +250,36 @@ void SerialModem::process_modem()
 			emit modem_data_ready(out);
 		}
 	}
+	//need receive and dequeue serial data (MMDVM_ACK) before send new command
+	if (m_configured == 1) {
+		set_freq();
+		m_configured++;
+		return;
+	}
+	//need receive and dequeue serial data (MMDVM_ACK) before send new command
+	if (m_configured == 2) {
+		set_config();
+		m_configured++;
+		emit connected(true);
+	}
+}
+
+void SerialModem::get_status_modem()
+{
+	QByteArray a;
+	a.clear();
+	a.append(MMDVM_FRAME_START);
+	a.append(3);
+	a.append(MMDVM_GET_STATUS);
+	m_serial->write(a);
+#ifdef DEBUGHW
+	fprintf(stderr, "MODEMTX %d:%d:", a.size(), m_serialdata.size());
+	for(int i = 0; i < a.size(); ++i){
+		fprintf(stderr, "%02x ", (uint8_t)a.data()[i]);
+	}
+	fprintf(stderr, "\n");
+	fflush(stderr);
+#endif
 }
 
 void SerialModem::set_freq()
@@ -415,11 +462,21 @@ void SerialModem::set_mode(uint8_t m)
 	out.append(MMDVM_SET_MODE);
 	out.append(m);
 	m_serial->write(out);
+#ifdef DEBUGHW
+	fprintf(stderr, "MODEMTX %d:%d:", out.size(), m_serialdata.size());
+	for(int i = 0; i < out.size(); ++i){
+		fprintf(stderr, "%02x ", (unsigned char)out.data()[i]);
+	}
+	fprintf(stderr, "\n");
+	fflush(stderr);
+#endif
 }
 
 void SerialModem::write(QByteArray b)
 {
+	m_statustimer->stop();
 	m_serial->write(b);
+	m_statustimer->start(MMDVM_TIMEOUT_MS);
 #ifdef DEBUGHW
 	fprintf(stderr, "MODEMTX %d:%d:", b.size(), m_serialdata.size());
 	for(int i = 0; i < b.size(); ++i){
@@ -428,4 +485,9 @@ void SerialModem::write(QByteArray b)
 	fprintf(stderr, "\n");
 	fflush(stderr);
 #endif
+}
+
+void SerialModem::set_cc(uint32_t cc)
+{
+	m_dmrColorCode = cc;
 }

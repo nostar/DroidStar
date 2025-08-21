@@ -71,6 +71,7 @@ public:
 	}
 	virtual void set_dmr_params(uint8_t, QString, QString, QString, QString, QString, QString, QString, QString, QString, QString) {}
 	virtual void set_iax_params(QString, QString, QString, QString, QString, int) {}
+	void set_dmr_cc(uint32_t cc) { m_dmrColorCode = cc; }
 	bool get_hwrx() { return m_hwrx; }
 	bool get_hwtx() { return m_hwtx; }
 	void set_hostname(std::string);
@@ -137,6 +138,7 @@ signals:
 	void update(Mode::MODEINFO);
     void update_log(QString);
 	void update_output_level(unsigned short);
+	void update_mode(uint8_t);
 protected slots:
 	virtual void send_disconnect(){}
 	virtual void hostname_lookup(QHostInfo){}
@@ -193,7 +195,7 @@ protected:
 	QTimer *m_ping_timer;
 	QTimer *m_txtimer;
 	QTimer *m_rxtimer;
-	AudioEngine *m_audio;
+	AudioEngine *m_audio = nullptr;
 	QString m_audioin;
 	QString m_audioout;
     bool m_mdirect;
