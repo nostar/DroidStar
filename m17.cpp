@@ -969,7 +969,7 @@ void M17::tx_packet(QString sms)
     }
 
     encodeCRC16(lsf, M17_LSF_LENGTH_BYTES);
-    txframe.append(0x06); // SMS packet type
+    txframe.append(0x05); // SMS packet type
     txframe.append(sms.toUtf8());
     txframe.append(1, 0x00);
     txframe.append(lsf[28]);
