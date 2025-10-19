@@ -12,18 +12,18 @@
  * PERFORMANCE OF THIS SOFTWARE.
  */
  
-#ifndef VOCODER_PLUGIN_H
-#define VOCODER_PLUGIN_H
+#ifndef MBEVOCODER_H
+#define MBEVOCODER_H
 
 #include <cinttypes>
 #include "imbe_vocoder/imbe_vocoder_api.h"
 #include "mbelib_parms.h"
 
-class VocoderPlugin
+class MBEVocoder
 {
 public:
-	VocoderPlugin();
-	~VocoderPlugin();
+    MBEVocoder();
+    ~MBEVocoder();
 	void decode_2400x1200(int16_t *pcm, uint8_t *codec);
 	void decode_2450x1150(int16_t *pcm, uint8_t *codec);
 	void decode_2450(int16_t *pcm, uint8_t *codec);
@@ -59,4 +59,4 @@ private:
 	void processAudio();
 };
 
-#endif // VOCODER_PLUGIN_H
+#endif // MBEVOCODER_H

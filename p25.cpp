@@ -256,12 +256,12 @@ void P25::transmit()
 				m_ttscnt++;
 			}
 		}
-		vocoder.encode_4400(pcm, imbe);
+        m_imbevocoder.encode_4400(pcm, imbe);
 	}
 #endif
 	if(m_ttsid == 0){
 		if(m_audio->read(pcm, 160)){
-			vocoder.encode_4400(pcm, imbe);
+            m_imbevocoder.encode_4400(pcm, imbe);
 		}
 		else{
 			return;
@@ -441,7 +441,7 @@ void P25::process_rx_data()
 			imbe[i] = m_rxcodecq.dequeue();
 		}
 
-		vocoder.decode_4400(pcm, imbe);
+        m_imbevocoder.decode_4400(pcm, imbe);
 		m_audio->write(pcm, 160);
 		emit update_output_level(m_audio->level());
 	}

@@ -16,7 +16,7 @@
 #include <cstring>
 #include <cmath>
 
-#include "vocoder_plugin.h"
+#include "mbevocoder.h"
 #include "vocoder_tables.h"
 #include "ambe3600x2400_const.h"
 #include "ambe3600x2450_const.h"
@@ -971,7 +971,7 @@ void encode_ambe(const IMBE_PARAM *imbe_param, int b[], mbe_parms*cur_mp, mbe_pa
 	mbe_moveMbeParms (cur_mp, prev_mp);
 }
 
-	VocoderPlugin::VocoderPlugin()
+    MBEVocoder::MBEVocoder()
 	{
 		m_mbelibParms = new mbelibParms();
 		m_audio_out_temp_buf_p = m_audio_out_temp_buf;
@@ -985,11 +985,11 @@ void encode_ambe(const IMBE_PARAM *imbe_param, int b[], mbe_parms*cur_mp, mbe_pa
 		memset(ambe_d, 0, 49);
 	}
 	
-	VocoderPlugin::~VocoderPlugin()
+    MBEVocoder::~MBEVocoder()
 	{
 	}
 	
-	void VocoderPlugin::decode_2400x1200(int16_t *pcm, uint8_t *ambe)
+    void MBEVocoder::decode_2400x1200(int16_t *pcm, uint8_t *ambe)
 	{
 		int samples = 0;
 		process_2400x1200(ambe);
@@ -998,7 +998,7 @@ void encode_ambe(const IMBE_PARAM *imbe_param, int b[], mbe_parms*cur_mp, mbe_pa
 		resetAudio();
 	}
 
-	void VocoderPlugin::decode_2450x1150(int16_t *pcm, uint8_t *ambe)
+    void MBEVocoder::decode_2450x1150(int16_t *pcm, uint8_t *ambe)
 	{
 		int samples = 0;
 		process_2450x1150(ambe);
@@ -1007,7 +1007,7 @@ void encode_ambe(const IMBE_PARAM *imbe_param, int b[], mbe_parms*cur_mp, mbe_pa
 		resetAudio();
 	}
 
-	void VocoderPlugin::decode_2450(int16_t *pcm, uint8_t *ambe)
+    void MBEVocoder::decode_2450(int16_t *pcm, uint8_t *ambe)
 	{
 		int samples = 0;
 		process_2450(ambe);
@@ -1016,7 +1016,7 @@ void encode_ambe(const IMBE_PARAM *imbe_param, int b[], mbe_parms*cur_mp, mbe_pa
 		resetAudio();
 	}
 	
-	void VocoderPlugin::encode_2400x1200(int16_t *pcm, uint8_t *ambe)
+    void MBEVocoder::encode_2400x1200(int16_t *pcm, uint8_t *ambe)
 	{
 		int b[9];
 		int16_t frame_vector[8];	// result ignored
@@ -1059,7 +1059,7 @@ void encode_ambe(const IMBE_PARAM *imbe_param, int b[], mbe_parms*cur_mp, mbe_pa
 		}
 	}
 	
-	void VocoderPlugin::encode_2450x1150(int16_t *pcm, uint8_t *ambe)
+    void MBEVocoder::encode_2450x1150(int16_t *pcm, uint8_t *ambe)
 	{
 		unsigned int aOrig = 0U;
 		unsigned int bOrig = 0U;
@@ -1114,7 +1114,7 @@ void encode_ambe(const IMBE_PARAM *imbe_param, int b[], mbe_parms*cur_mp, mbe_pa
 		}
 	}
 	
-	void VocoderPlugin::encode_2450(int16_t *pcm, uint8_t *ambe)
+    void MBEVocoder::encode_2450(int16_t *pcm, uint8_t *ambe)
 	{
 		int b[9];
 		int16_t frame_vector[8];	// result ignored
@@ -1181,7 +1181,7 @@ void encode_ambe(const IMBE_PARAM *imbe_param, int b[], mbe_parms*cur_mp, mbe_pa
 		}
 	}
 
-	void VocoderPlugin::initMbeParms()
+    void MBEVocoder::initMbeParms()
 	{
 		mbe_initMbeParms(m_mbelibParms->m_cur_mp, m_mbelibParms->m_prev_mp, m_mbelibParms->m_prev_mp_enhanced);
 		//m_errs = 0;
@@ -1189,7 +1189,7 @@ void encode_ambe(const IMBE_PARAM *imbe_param, int b[], mbe_parms*cur_mp, mbe_pa
 		m_err_str[0] = 0;
 	}
 	
-	void VocoderPlugin::process_2400x1200(unsigned char *d)
+    void MBEVocoder::process_2400x1200(unsigned char *d)
 	{
 		char ambe_fr[4][24];
     
@@ -1209,7 +1209,7 @@ void encode_ambe(const IMBE_PARAM *imbe_param, int b[], mbe_parms*cur_mp, mbe_pa
 		processAudio();
 	}
 
-	void VocoderPlugin::process_2450x1150(unsigned char *d)
+    void MBEVocoder::process_2450x1150(unsigned char *d)
 	{
 		char ambe_fr[4][24];
 
@@ -1234,7 +1234,7 @@ void encode_ambe(const IMBE_PARAM *imbe_param, int b[], mbe_parms*cur_mp, mbe_pa
 		processAudio();
 	}
 
-	void VocoderPlugin::process_2450(unsigned char *d)
+    void MBEVocoder::process_2450(unsigned char *d)
 	{
 		char ambe_data[49];
 		char dvsi_data[7];
@@ -1249,25 +1249,25 @@ void encode_ambe(const IMBE_PARAM *imbe_param, int b[], mbe_parms*cur_mp, mbe_pa
 		processData(ambe_data);
 	}
 	
-	void VocoderPlugin::processData(char ambe_data[49])
+    void MBEVocoder::processData(char ambe_data[49])
 	{
 		mbe_processAmbe2450Dataf(m_audio_out_temp_buf, &m_errs2, m_err_str, ambe_data, m_mbelibParms->m_cur_mp,m_mbelibParms->m_prev_mp, m_mbelibParms->m_prev_mp_enhanced, 3);
 		processAudio();
 	}
 	
-	short * VocoderPlugin::getAudio(int& nbSamples)
+    short * MBEVocoder::getAudio(int& nbSamples)
 	{
 		nbSamples = m_audio_out_nb_samples;
 		return m_audio_out_buf;
 	}
 
-	void VocoderPlugin::resetAudio()
+    void MBEVocoder::resetAudio()
 	{
 		m_audio_out_nb_samples = 0;
 		m_audio_out_buf_p = m_audio_out_buf;
 	}
 	
-	void VocoderPlugin::processAudio()
+    void MBEVocoder::processAudio()
 	{
 		m_audio_out_temp_buf_p = m_audio_out_temp_buf;
 

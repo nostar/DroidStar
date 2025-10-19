@@ -84,18 +84,27 @@ void AudioEngine::init()
             //qDebug() << "Playback device name = " << (*it).description();
             //qDebug() << (*it).supportedSampleFormats();
             //qDebug() << (*it).preferredFormat();
+            //qDebug() << (*it).minimumSampleRate();
+            //qDebug() << (*it).maximumSampleRate();
+
 
 			if((*it).description() == m_outputdevice){
 				device = *it;
 			}
 		}
 		if (!device.isFormatSupported(format)) {
-            qWarning() << "Raw audio format not supported by playback device";
+            qWarning() << "Current audio format not supported by playback device";
         }
 
         qDebug() << "Playback device: " << device.description() << "SR: " << format.sampleRate();
 
-        m_out = new QAudioSink(device, format, this);
+        try{
+            m_out = new QAudioSink(device, format, this);
+        }
+        catch (const std::exception& e) {
+            qDebug() << "Exception in constructor:" << e.what();
+        }
+
 		m_out->setBufferSize(1280);
 		connect(m_out, SIGNAL(stateChanged(QAudio::State)), this, SLOT(handleStateChanged(QAudio::State)));
 	}
@@ -108,17 +117,18 @@ void AudioEngine::init()
 	else{
 		QAudioDevice device(QMediaDevices::defaultAudioInput());
 		for (QList<QAudioDevice>::ConstIterator it = devices.constBegin(); it != devices.constEnd(); ++it ) {
-			if(MACHAK){
-                //qDebug() << "Capture device name = " << (*it).description();
-                //qDebug() << (*it).supportedSampleFormats();
-                //qDebug() << (*it).preferredFormat();
-			}
+            //qDebug() << "Capture device name = " << (*it).description();
+            //qDebug() << (*it).supportedSampleFormats();
+            //qDebug() << (*it).preferredFormat();
+            //qDebug() << (*it).minimumSampleRate();
+            //qDebug() << (*it).maximumSampleRate();
+
 			if((*it).description() == m_inputdevice){
 				device = *it;
 			}
 		}
 		if (!device.isFormatSupported(format)) {
-            qWarning() << "Raw audio format not supported by capture device";
+            qWarning() << "Current audio format not supported by capture device";
         }
 
 		int sr = 8000;

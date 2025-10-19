@@ -418,11 +418,10 @@ Item {
 			height: 25
 			selectByMouse: true
 		}
-
 		Text {
 			id: mycallLabel
 			x: 10
-			y: 660
+			y: 540
 			width: 80
 			height: 25
 			text: qsTr("MYCALL")
@@ -444,7 +443,7 @@ Item {
 		Text {
 			id: urcallLabel
 			x: 10
-			y: 690
+			y: 570
 			width: 80
 			height: 25
 			text: qsTr("URCALL")
@@ -466,7 +465,7 @@ Item {
 		Text {
 			id: rptr1Label
 			x: 10
-			y: 720
+			y: 600
 			width: 80
 			height: 25
 			text: qsTr("RPTR1")
@@ -488,7 +487,7 @@ Item {
 		Text {
 			id: rptr2Label
 			x: 10
-			y: 750
+			y: 630
 			width: 80
 			height: 25
 			text: qsTr("RPTR2")
@@ -510,7 +509,7 @@ Item {
 		Text {
 			id: usrtxtLabel
 			x: 10
-			y: 780
+			y: 660
 			width: 80
 			height: 25
 			text: qsTr("USRTXT")
@@ -531,7 +530,7 @@ Item {
 		Text {
 			id: txtimerLabel
 			x: 10
-			y: 810
+			y: 690
 			width: 80
 			height: 25
 			text: qsTr("TX Timeout")
@@ -549,7 +548,7 @@ Item {
 		Text {
 			id: m17rateLabel
 			x: 10
-			y: 840
+			y: 720
 			width: 100
 			height: 25
 			text: qsTr("M17/YSF rate")
@@ -586,7 +585,7 @@ Item {
 		Button {
 			id: updatehostsButton
 			x: 10
-			y: 870
+			y: 750
 			width: 150
 			height: 30
 			text: qsTr("Update hosts")
@@ -610,7 +609,7 @@ Item {
 		CheckBox {
 			id: toggletx
 			x: 10
-			y: 900
+			y: 780
 			//width: 100
 			height: 25
 			spacing: 1
@@ -622,7 +621,7 @@ Item {
 		CheckBox {
 			id: xrf2Ref
 			x: 10
-			y: 930
+			y: 810
 			//width: 100
 			height: 25
 			spacing: 1
@@ -631,47 +630,16 @@ Item {
 		CheckBox {
 			id: ipV6
 			x: 10
-			y: 960
+			y: 840
 			//width: 100
 			height: 25
 			spacing: 1
 			text: qsTr("Use IPv6 when available")
 		}
 		Text {
-			id: _vocoderURLlabel
-			x: 10
-			y: 990
-			width: 80
-			height: 25
-			text: qsTr("Vocoder URL")
-			color: "white"
-			verticalAlignment: Text.AlignVCenter
-		}
-		TextField {
-			id: _vocoderURLEdit
-			x: 100
-			y: _vocoderURLlabel.y
-			width: parent.width - 110
-			height: 25
-			selectByMouse: true
-		}
-		Button {
-			id: vocoderButton
-			x: 10
-			y: 1020
-			width: 150
-			height: 30
-			text: qsTr("Download vocoder")
-			onClicked: {
-				droidstar.download_file(_vocoderURLEdit.text, true);
-				updateDialog.open();
-			}
-		}
-
-		Text {
 			id: _modemRXFreqLabel
 			x: 10
-			y: 1090
+			y: 870
 			width: 60
 			height: 25
 			text: qsTr("RX Freq")
@@ -709,7 +677,7 @@ Item {
 		Text {
 			id: _modemRXOffsetLabel
 			x: 10
-			y: 1120
+			y: 900
 			width: 100
 			height: 25
 			text: qsTr("RX Offset")
@@ -747,7 +715,7 @@ Item {
 		Text {
 			id: _modemRXLevelLabel
 			x: 10
-			y: 1150
+			y: 930
 			width: 100
 			height: 25
 			text: qsTr("RX Level")
@@ -785,7 +753,7 @@ Item {
 		Text {
 			id: _modemRXDCOffsetLabel
 			x: 10
-			y: 1180
+			y: 960
 			width: 100
 			height: 25
 			text: qsTr("RX DC Offset")
@@ -823,7 +791,7 @@ Item {
 		Text {
 			id: _modemRFLevelLabel
 			x: 10
-			y: 1210
+			y: 990
 			width: 100
 			height: 25
 			text: qsTr("RF Level")
@@ -861,7 +829,7 @@ Item {
 		Text {
 			id: _modemCWIdTXLevelLabel
 			x: 10
-			y: 1240
+			y: 1020
 			width: 100
 			height: 25
 			text: qsTr("CWIdTXLevel")
@@ -899,7 +867,7 @@ Item {
 		Text {
 			id: _modemDMRTXLevelLabel
 			x: 10
-			y: 1270
+			y: 1050
 			width: 100
 			height: 25
 			text: qsTr("DMRTXLevel")
@@ -937,7 +905,7 @@ Item {
 		Text {
 			id: _modemP25TXLevelLabel
 			x: 10
-			y: 1300
+			y: 1070
 			width: 100
 			height: 25
 			text: qsTr("P25TXLevel")
@@ -975,7 +943,7 @@ Item {
 		Text {
 			id: _modemBaudLabel
 			x: 10
-			y: 1330
+			y: 1100
 			width: 100
 			height: 25
 			text: qsTr("Baud")
@@ -994,7 +962,7 @@ Item {
         CheckBox {
             id: _mmdvmBox
             x: 10
-            y: 1360
+			y: 1130
             width: parent.width
             height: 25
             text: qsTr("MMDVM_DIRECT")
@@ -1005,7 +973,7 @@ Item {
         CheckBox {
             id: _debugBox
             x: 10
-            y: 1390
+			y: 1160
             width: parent.width
             height: 25
             text: qsTr("Debug output to stderr")

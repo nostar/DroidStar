@@ -653,7 +653,6 @@ void IAX::process_udp()
 		send_ack(scallno, dcallno, 2, 2);
 		if(m_modeinfo.status == CONNECTING){
             m_regreq = false;
-            qDebug() << "send_call() called";
             send_calltoken_request();
 		}
 	}

@@ -24,11 +24,7 @@
 #include <flite/flite.h>
 #endif
 #include "imbe_vocoder/imbe_vocoder_api.h"
-#ifdef VOCODER_PLUGIN
-#include "vocoder_plugin.h"
-#else
-#include "mbe/vocoder_plugin_api.h"
-#endif
+#include "mbe/mbevocoder_api.h"
 #include "audioengine.h"
 #if !defined(Q_OS_IOS)
 #include "serialambe.h"
@@ -206,12 +202,8 @@ protected:
 	QQueue<uint8_t> m_rxcodecq;
 	QQueue<uint8_t> m_txcodecq;
 	QQueue<uint8_t> m_rxmodemq;
-	imbe_vocoder vocoder;
-#ifdef VOCODER_PLUGIN
-	Vocoder *m_mbevocoder;
-#else
-	VocoderPlugin *m_mbevocoder;
-#endif
+    imbe_vocoder m_imbevocoder;
+    MBEVocoder *m_mbevocoder;
 	QString m_vocoder;
 	QString m_modemport;
 #if defined(Q_OS_IOS)

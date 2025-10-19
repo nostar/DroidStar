@@ -287,62 +287,9 @@ bool Mode::load_vocoder_plugin()
 	if(m_vocoder == "None") {
 		return false;
 	}
-#ifdef VOCODER_PLUGIN
-	QString config_path = QStandardPaths::writableLocation(QStandardPaths::ConfigLocation);
-#if !defined(Q_OS_ANDROID) && !defined(Q_OS_WIN)
-	config_path += "/dudetronics";
-#endif
-#if defined(Q_OS_ANDROID) || defined(Q_OS_IOS)
-	QString voc = config_path + "/vocoder_plugin." + QSysInfo::productType() + "." + QSysInfo::currentCpuArchitecture();
-#else
-	QStringList l = QSysInfo::buildAbi().split('-');
-	//QString voc = config_path + "/vocoder_plugin." + QSysInfo::kernelType() + "." + QSysInfo::currentCpuArchitecture();
-	QString voc = config_path + "/vocoder_plugin." + QSysInfo::kernelType() + "." + l.at(0);
-#endif
-#if !defined(Q_OS_WIN)
-	//QString voc = "/mnt/data/src/mbe_vocoder/vocoder_plugin.linux.x86_64.so";
-	void* a = dlopen(voc.toLocal8Bit(), RTLD_LAZY);
-	if (!a) {
-		qDebug() << "Cannot load library: " << QString::fromLocal8Bit(dlerror());
-		return false;
-	}
-	dlerror();
 
-	create_t* create_a = (create_t*) dlsym(a, "create");
-	const char* dlsym_error = dlerror();
-
-	if (dlsym_error) {
-		qDebug() << "Cannot load symbol create: " << QString::fromLocal8Bit(dlsym_error);
-		return false;
-	}
-
-	m_mbevocoder = create_a();
-	qDebug() << voc + " loaded";
-	return true;
-#else
-	HINSTANCE hinstvoclib;
-	hinstvoclib = LoadLibrary(reinterpret_cast<LPCWSTR>(voc.utf16()));
-
-	if (hinstvoclib != NULL) {
-		create_t* create_a = (create_t*)GetProcAddress(hinstvoclib, "create");
-
-		if (create_a != NULL) {
-			m_mbevocoder = create_a();
-			qDebug() << voc + " loaded";
-			return true;
-		}
-		else{
-			return false;
-		}
-	}
-	else{
-		return false;
-	}
-#endif
-#else
-    m_mbevocoder = new VocoderPlugin();
+    m_mbevocoder = new MBEVocoder();
     return true;
-#endif
 }
 
 void Mode::deleteLater()

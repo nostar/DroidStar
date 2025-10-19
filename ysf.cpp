@@ -748,7 +748,7 @@ void YSF::transmit()
 	else{
 		if(m_txfullrate){
 			s = 11;
-			vocoder.encode_4400(pcm, ambe_frame);
+            m_imbevocoder.encode_4400(pcm, ambe_frame);
 		}
 		else{
 			s = 7;
@@ -1392,7 +1392,7 @@ void YSF::process_rx_data()
 		for(int i = 0; i < 11; ++i){
 			imbe[i] = m_rximbecodecq.dequeue();
 		}
-		vocoder.decode_4400(pcm, imbe);
+        m_imbevocoder.decode_4400(pcm, imbe);
 		m_audio->write(pcm, 160);
 		emit update_output_level(m_audio->level());
 	}

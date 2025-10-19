@@ -80,6 +80,11 @@ using namespace Qt::StringLiterals;
 
 void DroidStar::keepScreenOn()
 {
+    QMicrophonePermission microphonePermission;
+    if (qApp->checkPermission(microphonePermission) != Qt::PermissionStatus::Granted) {
+        qApp->requestPermission(microphonePermission, this, &DroidStar::keepScreenOn);
+        return;
+    }
 	char const * const action = "addFlags";
 	QNativeInterface::QAndroidApplication::runOnAndroidMainThread([action](){
 	QJniObject activity = QNativeInterface::QAndroidApplication::context();
@@ -91,12 +96,12 @@ void DroidStar::keepScreenOn()
 			window.callMethod<void>("addFlags", "(I)V", FLAG_KEEP_SCREEN_ON);
 		}
 	}});
-
+/*
     QMicrophonePermission microphonePermission;
     if (qApp->checkPermission(microphonePermission) != Qt::PermissionStatus::Granted) {
         qApp->requestPermission(microphonePermission, this, &DroidStar::keepScreenOn);
     }
-
+*/
     if (QNativeInterface::QAndroidApplication::sdkVersion() >= __ANDROID_API_T__) {
         const auto notificationPermission = "android.permission.POST_NOTIFICATIONS"_L1;
         auto requestResult = QtAndroidPrivate::requestPermission(notificationPermission);
@@ -116,8 +121,8 @@ void DroidStar::discover_devices()
 	m_modems.clear();
 	m_playbacks.append("OS Default");
 	m_captures.append("OS Default");
-	m_vocoders.append("None");
 	m_vocoders.append("Software vocoder");
+    m_vocoders.append("None");
 	m_modems.append("None");
 	m_playbacks.append(AudioEngine::discover_audio_devices(AUDIO_OUT));
 	m_captures.append(AudioEngine::discover_audio_devices(AUDIO_IN));
@@ -263,7 +268,7 @@ void DroidStar::obtain_asl_wt_creds()
 					}
 				} else {
                     qDebug() << "Error: " << reply->errorString();
-                    m_errortxt = "ASL authentication failed";
+                    m_errortxt = "ASL WT authentication failed";
                     emit connect_status_changed(5);
 				}
 				reply->deleteLater();
@@ -272,7 +277,7 @@ void DroidStar::obtain_asl_wt_creds()
 			manager->get(request);
 		} else {
             qDebug() << "Error: " << reply->errorString();
-            m_errortxt = "ASL authentication failed";
+            m_errortxt = "ASL WT login failed";
             emit connect_status_changed(5);
 		}
 		reply->deleteLater();
@@ -336,7 +341,7 @@ void DroidStar::process_connect()
         }
         else if(m_protocol == "IAX"){
             m_refname = m_saved_iaxhost;
-            if (m_wt_callingname.isEmpty() || (m_asl_password != m_wt_callingname_pass)) {
+            if ((m_hostmap[m_refname].contains(".nodes.allstarlink.org")) && (m_wt_callingname.isEmpty() || (m_asl_password != m_wt_callingname_pass))) {
                 obtain_asl_wt_creds();
                 return;
             }

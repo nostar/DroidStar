@@ -66,13 +66,25 @@ qt_add_executable(DroidStar WIN32 MACOSX_BUNDLE
     imbe_vocoder/uv_synt.cc imbe_vocoder/uv_synt.h
     imbe_vocoder/v_synt.cc imbe_vocoder/v_synt.h
     imbe_vocoder/v_uv_det.cc imbe_vocoder/v_uv_det.h
+    mbe/ambe3600x2400.c
+    mbe/ambe3600x2400_const.h
+    mbe/ambe3600x2450.c
+    mbe/ambe3600x2450_const.h
+    mbe/ecc.c
+    mbe/ecc_const.h
+    mbe/mbelib.c mbe/mbelib.h
+    mbe/mbelib_const.h
+    mbe/mbelib_parms.h
+    mbe/mbevocoder.cpp mbe/mbevocoder.h
+    mbe/mbevocoder_api.h
+    mbe/vocoder_tables.h
     m17.cpp m17.h
     main.cpp
     mode.cpp mode.h
     nxdn.cpp nxdn.h
     p25.cpp p25.h
     ref.cpp ref.h
-    vocoder_plugin.h
+
     xrf.cpp xrf.h
     ysf.cpp ysf.h
     ${app_icon_resource_windows}
@@ -147,7 +159,7 @@ if(ANDROID)
 
     set_target_properties(DroidStar PROPERTIES
        QT_ANDROID_PACKAGE_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/android
-       QT_ANDROID_VERSION_CODE 88
+       QT_ANDROID_VERSION_CODE 90
        #QT_ANDROID_MIN_SDK_VERSION 31
     )
 endif()
@@ -182,28 +194,6 @@ else()
     )
 endif()
 
-if(FALSE) #set TRUE to use vocoder plugin
-    target_compile_definitions(DroidStar PRIVATE
-        VOCODER_PLUGIN
-    )
-else()
-    target_sources(DroidStar PUBLIC
-        mbe/ambe3600x2400.c
-        mbe/ambe3600x2400_const.h
-        mbe/ambe3600x2450.c
-        mbe/ambe3600x2450_const.h
-        mbe/ecc.c
-        mbe/ecc_const.h
-        mbe/mbelib.c mbe/mbelib.h
-        mbe/mbelib_const.h
-        mbe/mbelib_parms.h
-        mbe/vocoder_plugin.cpp mbe/vocoder_plugin.h
-        mbe/vocoder_plugin_api.h
-        mbe/vocoder_tables.h
-    )
-endif()
-
-
 if(FALSE) # set TRUE for flite
     target_compile_definitions(DroidStar PRIVATE
         USE_FLITE
@@ -220,7 +210,7 @@ if(FALSE) # set TRUE for flite
     )
 endif()
 
-if(FALSE) # set TRUE for md380_vocoder
+if(TRUE) # set TRUE for md380_vocoder
     target_compile_definitions(DroidStar PRIVATE
         USE_MD380_VOCODER
     )
@@ -239,7 +229,7 @@ install(TARGETS DroidStar
 
 qt_generate_deploy_app_script(
     TARGET DroidStar
-    FILENAME_VARIABLE deploy_script
+    OUTPUT_SCRIPT deploy_script
     NO_UNSUPPORTED_PLATFORM_ERROR
 )
 install(SCRIPT ${deploy_script})
