@@ -140,6 +140,7 @@ public slots:
 
 	void m17_rate_changed(bool r) { emit m17_rate_changed((int)r); }
 	void process_connect();
+	void schedule_reconnect(int ms);
 	void press_tx();
 	void release_tx();
 	void click_tx(bool);
