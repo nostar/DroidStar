@@ -115,7 +115,7 @@ void DMR::process_udp()
 				m_udp = nullptr;
 			}
 			// Restart connection process
-			QHostInfo::lookupHost(m_modeinfo.hostname, this, SLOT(hostname_lookup(QHostInfo)));
+			QHostInfo::lookupHost(m_modeinfo.host, this, SLOT(hostname_lookup(QHostInfo)));
 		});
 		return;
 	}
@@ -134,7 +134,7 @@ void DMR::process_udp()
 				m_udp = nullptr;
 			}
 			// Restart connection process
-			QHostInfo::lookupHost(m_modeinfo.hostname, this, SLOT(hostname_lookup(QHostInfo)));
+			QHostInfo::lookupHost(m_modeinfo.host, this, SLOT(hostname_lookup(QHostInfo)));
 		});
 		return;
 	}
