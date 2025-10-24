@@ -434,6 +434,7 @@ void DroidStar::process_connect()
         connect(this, SIGNAL(debug_changed(bool)), m_mode, SLOT(debug_changed(bool)));
 		// Allow modes to request the main app to toggle the connect button (simulate user)
 		connect(m_mode, SIGNAL(request_connect_toggle()), this, SLOT(process_connect()));
+		connect(m_mode, SIGNAL(request_reconnect(int)), this, SLOT(schedule_reconnect(int)));
         emit connect_status_changed(1);
 		emit module_changed(m_module);
 		emit mycall_changed(m_mycall);
@@ -490,6 +491,12 @@ void DroidStar::process_connect()
 	qDebug() << "process_connect called m_protocol == " << m_protocol;
 	qDebug() << "process_connect called m_port == " << m_port;
 */
+}
+
+void DroidStar::schedule_reconnect(int ms)
+{
+	qDebug() << "schedule_reconnect called, reconnecting in" << ms << "ms";
+	QTimer::singleShot(ms, this, SLOT(process_connect()));
 }
 
 void DroidStar::process_host_change(const QString &h)
