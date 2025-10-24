@@ -109,7 +109,7 @@ void DMR::process_udp()
 			m_ping_timer->stop();
 		}
 		if(m_udp){
-			delete m_udp;
+			m_udp->deleteLater();
 			m_udp = nullptr;
 		}
 		emit update(m_modeinfo);
@@ -126,7 +126,7 @@ void DMR::process_udp()
 			m_ping_timer->stop();
 		}
 		if(m_udp){
-			delete m_udp;
+			m_udp->deleteLater();
 			m_udp = nullptr;
 		}
 		emit update(m_modeinfo);
