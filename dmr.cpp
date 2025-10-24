@@ -100,11 +100,43 @@ void DMR::process_udp()
         debug << s;
     }
 
-	if((m_modeinfo.status != CONNECTED_RW) && (::memcmp(buf.data() + 3, "NAK", 3U) == 0)){
+	// Handle MSTNAK - Master NAK (peer not recognized/rejected)
+	if((::memcmp(buf.data(), "MSTNAK", 6U) == 0)){
+		qDebug() << "Received MSTNAK from master - reconnecting...";
 		m_modeinfo.status = DISCONNECTED;
+		// Stop ping timer to prevent continued pinging
+		if(m_ping_timer && m_ping_timer->isActive()){
+			m_ping_timer->stop();
+		}
+		// Trigger reconnection after brief delay
+		QTimer::singleShot(1000, this, [this](){
+			if(m_udp){
+				delete m_udp;
+				m_udp = nullptr;
+			}
+			// Restart connection process
+			QHostInfo::lookupHost(m_modeinfo.hostname, this, SLOT(hostname_lookup(QHostInfo)));
+		});
+		return;
 	}
-	if((m_modeinfo.status != CONNECTED_RW) && (::memcmp(buf.data(), "MSTCL", 5U) == 0)){
+	// Handle MSTCL - Master close (server shutting down)
+	if((::memcmp(buf.data(), "MSTCL", 5U) == 0)){
+		qDebug() << "Received MSTCL from master - reconnecting...";
 		m_modeinfo.status = CLOSED;
+		// Stop ping timer
+		if(m_ping_timer && m_ping_timer->isActive()){
+			m_ping_timer->stop();
+		}
+		// Trigger reconnection after brief delay
+		QTimer::singleShot(1000, this, [this](){
+			if(m_udp){
+				delete m_udp;
+				m_udp = nullptr;
+			}
+			// Restart connection process
+			QHostInfo::lookupHost(m_modeinfo.hostname, this, SLOT(hostname_lookup(QHostInfo)));
+		});
+		return;
 	}
 	if((m_modeinfo.status != CONNECTED_RW) && (::memcmp(buf.data(), "RPTACK", 6U) == 0)){
 		switch(m_modeinfo.status){
