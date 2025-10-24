@@ -376,6 +376,7 @@ void DMR::mmdvm_direct_connect()
 
 void DMR::hostname_lookup(QHostInfo i)
 {
+	qDebug() << "DMR::hostname_lookup() called; host=" << m_modeinfo.host << "addresses=" << i.addresses().size();
 	if (!i.addresses().isEmpty()) {
 		QByteArray out;
 		out.append('R');
