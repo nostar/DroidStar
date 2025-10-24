@@ -378,6 +378,10 @@ void DMR::hostname_lookup(QHostInfo i)
 {
 	qDebug() << "DMR::hostname_lookup() called; host=" << m_modeinfo.host << "addresses=" << i.addresses().size();
 	if (!i.addresses().isEmpty()) {
+		// We're initiating a new connection attempt — mark as CONNECTING so the RPTACK
+		// handler will progress the handshake state machine.
+		m_modeinfo.status = CONNECTING;
+		qDebug() << "DMR: starting connection, status set to CONNECTING";
 		QByteArray out;
 		out.append('R');
 		out.append('P');
