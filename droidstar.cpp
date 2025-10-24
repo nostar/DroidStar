@@ -432,6 +432,8 @@ void DroidStar::process_connect()
 		connect(this, SIGNAL(rptr2_changed(QString)), m_mode, SLOT(rptr2_changed(QString)));
 		connect(this, SIGNAL(usrtxt_changed(QString)), m_mode, SLOT(usrtxt_changed(QString)));
         connect(this, SIGNAL(debug_changed(bool)), m_mode, SLOT(debug_changed(bool)));
+		// Allow modes to request the main app to toggle the connect button (simulate user)
+		connect(m_mode, SIGNAL(request_connect_toggle()), this, SLOT(process_connect()));
         emit connect_status_changed(1);
 		emit module_changed(m_module);
 		emit mycall_changed(m_mycall);

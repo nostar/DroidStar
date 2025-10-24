@@ -113,8 +113,10 @@ void DMR::process_udp()
 			m_udp = nullptr;
 		}
 		emit update(m_modeinfo);
-		// Trigger reconnection after brief delay using Mode::host_lookup (handles IPv6/mdirect)
-		QTimer::singleShot(1000, this, SLOT(host_lookup()));
+		// Simulate pressing the main connect button so the UI shows disconnected,
+		// then request a reconnect after a 10s timeout using the same hook.
+		emit request_connect_toggle();
+		QTimer::singleShot(10000, this, [this](){ emit request_connect_toggle(); });
 		return;
 	}
 	// Handle MSTCL - Master close (server shutting down)
@@ -130,7 +132,10 @@ void DMR::process_udp()
 			m_udp = nullptr;
 		}
 		emit update(m_modeinfo);
-		QTimer::singleShot(1000, this, SLOT(host_lookup()));
+		// Simulate pressing the main connect button to show disconnected state,
+		// then reconnect after 10 seconds via the same button hook.
+		emit request_connect_toggle();
+		QTimer::singleShot(10000, this, [this](){ emit request_connect_toggle(); });
 		return;
 	}
 	if((m_modeinfo.status != CONNECTED_RW) && (::memcmp(buf.data(), "RPTACK", 6U) == 0)){
