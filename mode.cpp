@@ -220,6 +220,7 @@ void Mode::begin_connect()
 
 void Mode::host_lookup()
 {
+	qDebug() << "Mode::host_lookup() called for mode" << m_mode << "host=" << m_modeinfo.host << "mdirect=" << m_mdirect << "ipv6=" << m_ipv6;
     if(m_mdirect && ((m_mode == "M17") || (m_mode == "DMR"))){ // MMDVM_DIRECT currently only supported by M17 and DMR
         mmdvm_direct_connect();
     }

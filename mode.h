@@ -135,6 +135,10 @@ signals:
     void update_log(QString);
 	void update_output_level(unsigned short);
 	void update_mode(uint8_t);
+    // Request that the application toggle the main connect button (same hook as UI)
+    void request_connect_toggle();
+	// Request the application schedule a reconnect after the given milliseconds
+	void request_reconnect(int ms);
 protected slots:
 	virtual void send_disconnect(){}
 	virtual void hostname_lookup(QHostInfo){}

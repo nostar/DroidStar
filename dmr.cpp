@@ -100,11 +100,43 @@ void DMR::process_udp()
         debug << s;
     }
 
-	if((m_modeinfo.status != CONNECTED_RW) && (::memcmp(buf.data() + 3, "NAK", 3U) == 0)){
+	// Handle MSTNAK - Master NAK (peer not recognized/rejected)
+	if((::memcmp(buf.data(), "MSTNAK", 6U) == 0)){
+		qDebug() << "Received MSTNAK from master - reconnecting...";
+		// Mark disconnected, stop timers and clean up socket
 		m_modeinfo.status = DISCONNECTED;
+		if(m_ping_timer && m_ping_timer->isActive()){
+			m_ping_timer->stop();
+		}
+		if(m_udp){
+			m_udp->deleteLater();
+			m_udp = nullptr;
+		}
+		emit update(m_modeinfo);
+	// Simulate pressing the main connect button so the UI shows disconnected,
+	// then request a reconnect after a 10s timeout using the same hook.
+	emit request_connect_toggle();
+	emit request_reconnect(10000);
+		return;
 	}
-	if((m_modeinfo.status != CONNECTED_RW) && (::memcmp(buf.data(), "MSTCL", 5U) == 0)){
-		m_modeinfo.status = CLOSED;
+	// Handle MSTCL - Master close (server shutting down)
+	if((::memcmp(buf.data(), "MSTCL", 5U) == 0)){
+		qDebug() << "Received MSTCL from master - reconnecting...";
+		// Treat master close as a disconnect and attempt reconnect
+		m_modeinfo.status = DISCONNECTED;
+		if(m_ping_timer && m_ping_timer->isActive()){
+			m_ping_timer->stop();
+		}
+		if(m_udp){
+			m_udp->deleteLater();
+			m_udp = nullptr;
+		}
+		emit update(m_modeinfo);
+	// Simulate pressing the main connect button to show disconnected state,
+	// then request a reconnect after 10 seconds via the main app hook.
+	emit request_connect_toggle();
+	emit request_reconnect(10000);
+		return;
 	}
 	if((m_modeinfo.status != CONNECTED_RW) && (::memcmp(buf.data(), "RPTACK", 6U) == 0)){
 		switch(m_modeinfo.status){
@@ -349,7 +381,12 @@ void DMR::mmdvm_direct_connect()
 
 void DMR::hostname_lookup(QHostInfo i)
 {
+	qDebug() << "DMR::hostname_lookup() called; host=" << m_modeinfo.host << "addresses=" << i.addresses().size();
 	if (!i.addresses().isEmpty()) {
+		// We're initiating a new connection attempt — mark as CONNECTING so the RPTACK
+		// handler will progress the handshake state machine.
+		m_modeinfo.status = CONNECTING;
+		qDebug() << "DMR: starting connection, status set to CONNECTING";
 		QByteArray out;
 		out.append('R');
 		out.append('P');
