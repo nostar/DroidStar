@@ -162,7 +162,9 @@ void AudioEngine::stop_capture()
 
 void AudioEngine::start_playback()
 {
-	m_outdev = m_out->start();
+	if (m_out && m_out->state() != QAudio::ActiveState) {
+		m_outdev = m_out->start();
+	}
 }
 
 void AudioEngine::stop_playback()
