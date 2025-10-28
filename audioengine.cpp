@@ -162,14 +162,21 @@ void AudioEngine::stop_capture()
 
 void AudioEngine::start_playback()
 {
-	m_outdev = m_out->start();
+	if (m_out) {
+		// Only start if stopped or suspended - IdleState and ActiveState mean already started
+		if (m_out->state() == QAudio::StoppedState || m_out->state() == QAudio::SuspendedState) {
+			m_outdev = m_out->start();
+		}
+	}
 }
 
 void AudioEngine::stop_playback()
 {
-	//m_outdev->reset();
-	m_out->reset();
-	m_out->stop();
+	if (m_out) {
+		//m_outdev->reset();
+		m_out->reset();
+		m_out->stop();
+	}
 }
 
 void AudioEngine::input_data_received()
