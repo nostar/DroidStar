@@ -115,8 +115,9 @@ void DMR::process_udp()
 		emit update(m_modeinfo);
 	// Simulate pressing the main connect button so the UI shows disconnected,
 	// then request a reconnect after a 10s timeout using the same hook.
-	emit request_connect_toggle();
+	// Reconnect must be queued before disconnect destroys this object
 	emit request_reconnect(10000);
+	emit request_connect_toggle();
 		return;
 	}
 	// Handle MSTCL - Master close (server shutting down)
@@ -134,8 +135,9 @@ void DMR::process_udp()
 		emit update(m_modeinfo);
 	// Simulate pressing the main connect button to show disconnected state,
 	// then request a reconnect after 10 seconds via the main app hook.
-	emit request_connect_toggle();
+	// Reconnect must be queued before disconnect destroys this object
 	emit request_reconnect(10000);
+	emit request_connect_toggle();
 		return;
 	}
 	if((m_modeinfo.status != CONNECTED_RW) && (::memcmp(buf.data(), "RPTACK", 6U) == 0)){
