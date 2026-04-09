@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.16)
-project(DroidStar VERSION 1.0 LANGUAGES C CXX)
+project(DroidStar VERSION 0.90.0 LANGUAGES C CXX)
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
@@ -103,7 +103,7 @@ qt_add_qml_module(DroidStar
 )
 
 execute_process(
-    COMMAND git rev-parse --short HEAD
+    COMMAND git describe --tags --always
     WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}
     OUTPUT_VARIABLE VERSION_NUMBER
     OUTPUT_STRIP_TRAILING_WHITESPACE
@@ -145,9 +145,23 @@ endif()
 
 if(APPLE)
     set_target_properties(DroidStar PROPERTIES MACOSX_BUNDLE_INFO_PLIST ${CMAKE_CURRENT_SOURCE_DIR}/Info.plist)
+    set_target_properties(DroidStar PROPERTIES
+        MACOSX_BUNDLE_GUI_IDENTIFIER org.dudetronics.droidstar
+        XCODE_ATTRIBUTE_PRODUCT_BUNDLE_IDENTIFIER org.dudetronics.droidstar
+        XCODE_ATTRIBUTE_DEBUG_INFORMATION_FORMAT "dwarf-with-dsym"
+    )
     target_link_libraries(DroidStar PRIVATE
         "-framework AVFoundation"
     )
+    if(IOS)
+        set_target_properties(DroidStar PROPERTIES
+            XCODE_ATTRIBUTE_ASSETCATALOG_COMPILER_APPICON_NAME AppIcon
+        )
+        set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/Images.xcassets PROPERTIES MACOSX_PACKAGE_LOCATION Resources)
+        target_sources(DroidStar PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/Images.xcassets")
+        include(${Qt6Multimedia_DIR}/Qt6MultimediaMacros.cmake)
+        qt_add_ios_ffmpeg_libraries(DroidStar)
+    endif()
 endif()
 
 if(ANDROID)
@@ -210,7 +224,7 @@ if(FALSE) # set TRUE for flite
     )
 endif()
 
-if(TRUE) # set TRUE for md380_vocoder
+if(NOT IOS) # md380_vocoder is not available on iOS
     target_compile_definitions(DroidStar PRIVATE
         USE_MD380_VOCODER
     )

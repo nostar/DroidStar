@@ -8,15 +8,32 @@
 	<string>DroidStar</string>
 	<key>CFBundleIconFile</key>
 	<string>droidstar.icns</string>
+	<key>CFBundleIconName</key>
+	<string>AppIcon</string>
 	<key>CFBundleIdentifier</key>
-	<string>com.yourcompany.90d5dd37.DroidStar</string>
+	<string>org.dudetronics.droidstar</string>
 	<key>CFBundleName</key>
 	<string>DroidStar</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
+	<key>CFBundleShortVersionString</key>
+	<string>0.90.0</string>
+	<key>CFBundleVersion</key>
+	<string>94</string>
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
+	<key>NSCameraUsageDescription</key>
+	<string>DroidStar does not use the camera, but a linked library references the Camera API.</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>You know you want to...</string>
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>
+	<key>UISupportedInterfaceOrientations</key>
+	<array>
+		<string>UIInterfaceOrientationPortrait</string>
+		<string>UIInterfaceOrientationPortraitUpsideDown</string>
+		<string>UIInterfaceOrientationLandscapeLeft</string>
+		<string>UIInterfaceOrientationLandscapeRight</string>
+	</array>
 </dict>
 </plist>

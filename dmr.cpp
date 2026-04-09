@@ -175,8 +175,8 @@ void DMR::process_udp()
 			char latitude[20U];
 			char longitude[20U];
 
-			sprintf(latitude, "%08f", m_lat.toFloat());
-			sprintf(longitude, "%09f", m_lon.toFloat());
+			snprintf(latitude, sizeof(latitude), "%08f", m_lat.toFloat());
+			snprintf(longitude, sizeof(longitude), "%09f", m_lon.toFloat());
 
 			char *p;
 			if((p = strchr(latitude, ',')) != NULL){
@@ -185,7 +185,7 @@ void DMR::process_udp()
 			if((p = strchr(longitude, ',')) != NULL){
 				*p = '.';
 			}
-			::sprintf(buffer + 8U, "%-8.8s%09u%09u%02u%02u%8.8s%9.9s%03d%-20.20s%-19.19s%c%-124.124s%-40.40s%-40.40s", m_modeinfo.callsign.toStdString().c_str(),
+			::snprintf(buffer + 8U, sizeof(buffer) - 8U, "%-8.8s%09u%09u%02u%02u%8.8s%9.9s%03d%-20.20s%-19.19s%c%-124.124s%-40.40s%-40.40s", m_modeinfo.callsign.toStdString().c_str(),
 					  m_freq.toUInt(), m_freq.toUInt(), 1, 1, latitude, longitude, 0, m_location.toStdString().c_str(), m_desc.toStdString().c_str(), '4',
 					  m_url.toStdString().c_str(), m_swid.toStdString().c_str(), m_pkid.toStdString().c_str());
 			out.append(buffer, 302);
