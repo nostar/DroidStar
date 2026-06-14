@@ -210,7 +210,8 @@ if(FALSE) # set TRUE for flite
     )
 endif()
 
-if(TRUE) # set TRUE for md380_vocoder
+option(USE_MD380_VOCODER "Build with MD380 vocoder (ARM only)" OFF)
+if(USE_MD380_VOCODER)
     target_compile_definitions(DroidStar PRIVATE
         USE_MD380_VOCODER
     )

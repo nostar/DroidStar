@@ -246,12 +246,12 @@ void DroidStar::obtain_asl_wt_creds()
 	postData.append("user=" + QUrl::toPercentEncoding(m_callsign.toUtf8()));
 	postData.append("&pass=" + QUrl::toPercentEncoding(m_asl_password.toUtf8()));
 
-	connect(manager, &QNetworkAccessManager::finished, this, [=](QNetworkReply *reply) {
+	connect(manager, &QNetworkAccessManager::finished, this, [=, this](QNetworkReply *reply) {
 		if (reply->error() == QNetworkReply::NoError) {
 			QUrl url("https://www.allstarlink.org/portal/webtransceiver.php?node=12345");
 			QNetworkRequest request(url);
-			
-			connect(manager, &QNetworkAccessManager::finished, this, [=](QNetworkReply *reply) {
+
+			connect(manager, &QNetworkAccessManager::finished, this, [=, this](QNetworkReply *reply) {
 				if (reply->error() == QNetworkReply::NoError) {
 					QString html = reply->readAll();
 					QStringList l = html.split('\n');
