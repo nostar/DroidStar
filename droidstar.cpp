@@ -20,7 +20,7 @@
 #ifdef Q_OS_ANDROID
 #include <QCoreApplication>
 #include <QJniObject>
-#include <QtCore/private/qandroidextras_p.h>
+//#include <QtCore/private/qandroidextras_p.h>
 #endif
 #include <QStandardPaths>
 #include <QFile>
@@ -101,7 +101,7 @@ void DroidStar::keepScreenOn()
     if (qApp->checkPermission(microphonePermission) != Qt::PermissionStatus::Granted) {
         qApp->requestPermission(microphonePermission, this, &DroidStar::keepScreenOn);
     }
-*/
+
     if (QNativeInterface::QAndroidApplication::sdkVersion() >= __ANDROID_API_T__) {
         const auto notificationPermission = "android.permission.POST_NOTIFICATIONS"_L1;
         auto requestResult = QtAndroidPrivate::requestPermission(notificationPermission);
@@ -110,6 +110,7 @@ void DroidStar::keepScreenOn()
                           "(required for Android 13+)";
         }
     }
+*/
 }
 #endif
 
@@ -237,35 +238,47 @@ void DroidStar::tts_text_changed(QString ttstxt)
 
 void DroidStar::obtain_asl_wt_creds()
 {
-	QNetworkAccessManager *manager = new QNetworkAccessManager(this);
+    qDebug() << "obtain_asl_wt_creds() called";
+    QNetworkAccessManager *manager = new QNetworkAccessManager(this);
 	QUrl url("https://www.allstarlink.org/portal/login.php");
 	QNetworkRequest request(url);
 	request.setHeader(QNetworkRequest::ContentTypeHeader, "application/x-www-form-urlencoded");
 
 	QByteArray postData;
 	postData.append("user=" + QUrl::toPercentEncoding(m_callsign.toUtf8()));
-	postData.append("&pass=" + QUrl::toPercentEncoding(m_asl_password.toUtf8()));
+    postData.append("&pass=" + QUrl::toPercentEncoding(m_asl_password.toUtf8()));
 
-	connect(manager, &QNetworkAccessManager::finished, this, [=](QNetworkReply *reply) {
+    connect(manager, &QNetworkAccessManager::finished, this, [=, this](QNetworkReply *reply) {
+        //qDebug() << "ASL login responded postData == " << postData;
+        manager->disconnect();
 		if (reply->error() == QNetworkReply::NoError) {
-			QUrl url("https://www.allstarlink.org/portal/webtransceiver.php?node=12345");
+            QUrl url(QString("https://www.allstarlink.org/portal/webtransceiver.php?node=%1").arg(m_refname));
 			QNetworkRequest request(url);
 			
-			connect(manager, &QNetworkAccessManager::finished, this, [=](QNetworkReply *reply) {
+            connect(manager, &QNetworkAccessManager::finished, this, [=, this](QNetworkReply *reply) {
+                bool token_found = false;
+                //qDebug() << "ASL webtransceiver responded...";
+                manager->disconnect();
 				if (reply->error() == QNetworkReply::NoError) {
 					QString html = reply->readAll();
+                    //qDebug() << "ASL webtransceiver html: " << html;
 					QStringList l = html.split('\n');
 					for (int i = 0; i < l.size(); i++) {
 						if (l.at(i).contains("callingName")) {
 							QStringList ll = l.at(i).split('"');
 							m_wt_callingname = ll.at(3);
 							m_wt_callingname_pass = m_asl_password;
-                            manager->disconnect();
-                            qDebug() << "ASL authentication complete";
+                            //manager->disconnect();
+                            qDebug() << "ASL authentication complete call token == " << m_wt_callingname;
+                            token_found = true;
                             process_connect();
 							break;
 						}
 					}
+                    if(!token_found){
+                        m_errortxt = "ASL WT call token not found";
+                        emit connect_status_changed(5);
+                    }
 				} else {
                     qDebug() << "Error: " << reply->errorString();
                     m_errortxt = "ASL WT authentication failed";
@@ -282,8 +295,7 @@ void DroidStar::obtain_asl_wt_creds()
 		}
 		reply->deleteLater();
 	});
-
-	manager->post(request, postData);
+    manager->post(request, postData);
 }
 
 void DroidStar::process_connect()
@@ -341,6 +353,7 @@ void DroidStar::process_connect()
         }
         else if(m_protocol == "IAX"){
             m_refname = m_saved_iaxhost;
+            qDebug() << "m_refname:m_wt_callingname:m_asl_password == " << m_refname << ":" << m_wt_callingname << ":" << m_asl_password;
             if ((m_hostmap[m_refname].contains(".nodes.allstarlink.org")) && (m_wt_callingname.isEmpty() || (m_asl_password != m_wt_callingname_pass))) {
                 obtain_asl_wt_creds();
                 return;
@@ -1079,7 +1092,7 @@ void DroidStar::process_iax_hosts()
         QStringList line = i.simplified().split(' ');
         if(line.at(0) == "IAX"){
             if(line.at(2).simplified() == "wt"){
-               m_hostmap[line.at(1).simplified()] = line.at(1).simplified() + ".nodes.allstarlink.org," + line.at(3).simplified() + "," + line.at(4).simplified() + "," + line.at(5).simplified();
+                m_hostmap[line.at(1).simplified()] = line.at(1).simplified() + ".nodes.allstarlink.org,4569,allstar-public,allstar";// + line.at(3).simplified() + "," + line.at(4).simplified() + "," + line.at(5).simplified();
             }
             else{
                 m_hostmap[line.at(1).simplified()] = line.at(2).simplified() + "," + line.at(3).simplified() + "," + line.at(4).simplified() + "," + line.at(5).simplified();
@@ -1316,10 +1329,10 @@ void DroidStar::update_data(Mode::MODEINFO info)
         emit update_log(s);
 
 		if(info.sw_vocoder_loaded){
-			emit update_log("Vocoder plugin loaded");
+            emit update_log("Software vocoder loaded");
 		}
 		else{
-			emit update_log("Vocoder plugin not loaded");
+            emit update_log("Software vocoder not loaded");
 			emit open_vocoder_dialog();
 		}
 #ifdef Q_OS_ANDROID

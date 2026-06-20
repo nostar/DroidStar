@@ -14,22 +14,6 @@ M17 SMS type (0x05) packet support has been added to DroidStar.  A text input an
 # MMDVM support -- work in progress
 DroidStar supports MMDVM and MMDVM_HS (hotspot) modems, with basic (possibly buggy) support for M17, D-STAR, Fusion, and DMR.  Support for P25 and NXDN coming soon.  When connecting to a digital mode reflector/DMR server and selecting an MMDVM device under Modems, then DroidStar acts as a hotspot/repeater.  When 'MMDVM Direct' (currently M17 only) is selected as the host, then DroidStar becomes a stand-alone transceiver.
 
-# Software vocoder plugin API
-There is a vocoder plugin API available for loading of vocoder software.  Any vocoder plugin used with DroidStar should be properly licensed by the user if any copyright patents apply.  Do not use any patented vocoder plugin that you are not licensed to use.  I have no information regarding aquiring a software vocoder.
-
-# Loading a vocoder plugin
-A vocoder plugin can be downloaded from a URL, which will place the vocoder into the correct location for the platform.  Add a full http url, including the filename, to the Vocoder URL option on the settings tab, and click the Download vocoder button.
-
-For Android and iOS devices, the vocoder URL download method is the only way to load a vocoder plugin.  For Linux/MacOS/Windows, a vocoder can also be manually placed.  Copy the plugin to the system settings file location.  On Linux, this is ~/.config/dudetronics.  It is the same place where the host and id files are located (DMRHosts.txt, DMRIDs.data, etc).
-
-The vocoder plugin filename must be named vocoder_plugin.platform.arch where platform and arch can be any of the following:
-platform: linux, darwin, winnt, android, ios
-arch: x86_64, arm, arm64
-
-The platform and arch for your device are identified on the About tab.
-
-There are no software vocoder plugins available in this repository, and I have no information on obtaining one.  DONT ASK!
-
 # Optional FLite Text-to-speech build
 I added Flite TTS TX capability so I didn't have to talk to myself all of the time during development and testing.  To build DroidStar with Flite TTS support, uncomment the line 'DEFINES += USE_FLITE' from the top of DroidStar.pro (and run/re-run qmake). You will need the Flite library and development header files installed on your system.  When built with Flite support, 3 TTS options and a Mic in option will be available at the bottom of the window.  TTS1-TTS3 are 3 voice choices, and Mic in turns off TTS and uses the microphone for input.  The text to be converted to speech and transmitted goes in the text box under the TTS options.
 
@@ -59,18 +43,14 @@ Add DTMF commands like \*3node, \*1node, \*70, etc in the IAX DTMF box and hit s
 # AllStar web transceiver support
 In order to connect to an AllStar node via the ASL WT portal, add a line in the Host tab as follows:
 ```
-IAX 12345 wt 4569 allstar-public allstar
+IAX 12345 wt
 ```
-When 'wt' is used instead of an IP address, then wt will be replaced by XXXXX.nodes.allstarlink.org, where XXXXX is the specified none number.  Then you must add you ASL web portal password to ASL password under settings.  This is *NOT* the password for your node, this is the password you made to login to the ASL website.
+When 'wt' is used after the node number, then wt will be replaced by XXXXX.nodes.allstarlink.org:4569, where XXXXX is the specified none number.  Then you must add you ASL web portal password to ASL password under settings.  This is *NOT* the password for your node, this is the password you made to login to the ASL website.
 
 # General building instructions
 This software is written primarily in C++ on Linux and requires Qt6 >= Qt6.5, and naturally the devel packages to build.  Java, QML (Javascript based), and C# code is also used where necessary.  The preferred way to obtain Qt is to use the Qt open source online installer from the Qt website.  Run this installer as a user (not root) to keep the Qt installation separate from your system libs.  Select the option as shown in this pic https://imgur.com/i0WuFCY which will install everything under ~/Qt.
 
-In an effort to encourage others to build from source on multiple platforms, there are no longer any external build dependencies.  In order to build DroidStar with no internal AMBE vocoder, uncomment the the following line in the CMakeLists.txt file:
-```
-DEFINES+=VOCODER_PLUGIN
-```
-Building DroidStar with this line commented out will build with internal AMBE support.  If you choose to do this, it is your responsibility to determine if you will violate any patents in your area.
+In an effort to encourage others to build from source on multiple platforms, there are no longer any external build dependencies.
 
 ## Note for building on RaspiOS (Also applies to debian based Linux desktops)
 The following commands should install everything necessary to build and run DroidStar:
