@@ -6,7 +6,7 @@ set(CMAKE_INCLUDE_CURRENT_DIR ON)
 if(IOS)
     find_package(Qt6 6.5 REQUIRED COMPONENTS Core Gui Multimedia Network Quick QuickControls2)
 else()
-    find_package(Qt6 6.5 REQUIRED COMPONENTS Core Gui Multimedia Network Quick QuickControls2 SerialPort)
+    find_package(Qt6 6.5 REQUIRED COMPONENTS Core Gui Multimedia Network Quick QuickControls2 SerialPort CorePrivate)
 endif()
 
 qt_standard_project_setup(REQUIRES 6.5)
@@ -151,6 +151,7 @@ if(APPLE)
 endif()
 
 if(ANDROID)
+    target_link_libraries(DroidStar PRIVATE Qt6::CorePrivate)
     include(~/Android/Sdk/android_openssl/android_openssl.cmake)
     add_android_openssl_libraries(DroidStar)
     target_sources(DroidStar PUBLIC
