@@ -155,7 +155,7 @@ void YSF::process_udp()
 
 			if(m_refname.left(3) == "FCS"){
 				char info[100U];
-				::sprintf(info, "%9u%9u%-6.6s%-12.12s%7u", 438000000, 438000000, "AA00AA", "MMDVM", 1234567);
+				::snprintf(info, sizeof(info), "%9u%9u%-6.6s%-12.12s%7u", 438000000, 438000000, "AA00AA", "MMDVM", 1234567);
 				::memset(info + 43U, ' ', 57U);
 				out.append(info, 100);
 				m_udp->writeDatagram(out, m_address, m_modeinfo.port);
