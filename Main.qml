@@ -51,77 +51,90 @@ ApplicationWindow {
 		text: "No hardware or software vocoder found for this mode. You can still connect, but you will not RX or TX any audio. See the project website (url on the About tab) for info on loading a sw vocoder, or use a USB AMBE dongle (and an OTG adapter on Android devices)"
 	}
 
-	TabBar {
-		id: bar
-		width: parent.width
-		currentIndex: swiper.currentIndex
-		background: Rectangle {
-			color: "steelblue"
-		}
-		TabButton {
-			id: mainButton
-			padding: 10
-			background: Rectangle {
-				color: bar.currentIndex === 0 ? "steelblue" : "#353535"
-			}
-			text: qsTr("Main")
-		}
-		TabButton {
-			id: settingsButton
-			padding: 10
-			background: Rectangle {
-				color: bar.currentIndex === 1 ? "steelblue" : "#353535"
-			}
-			text: qsTr("Settings")
-		}
-		TabButton {
-			id: logButton
-			padding: 10
-			background: Rectangle {
-				color: bar.currentIndex === 2 ? "steelblue" : "#353535"
-			}
-			text: qsTr("Log")
-		}
-		TabButton {
-			id: hostsButton
-			padding: 10
-			background: Rectangle {
-				color: bar.currentIndex === 3 ? "steelblue" : "#353535"
-			}
-			text: qsTr("Hosts")
-		}
-		TabButton {
-			id: aboutButton
-			padding: 10
-			background: Rectangle {
-				color: bar.currentIndex === 4 ? "steelblue" : "#353535"
-			}
-			text: qsTr("About")
-		}
-	}
-	SwipeView {
-		id: swiper
-		width: parent.width
-		height: parent.height - 50
-		x: 0
-		y: 50
-		currentIndex: bar.currentIndex
-		interactive: false
+	// Inset all visible content by the device safe area so the TabBar and
+	// content don't draw under the status bar / camera cutout / nav bar.
+	// Margins are read from contentItem (which spans the full window) and
+	// applied to this child to avoid a safe-area feedback loop.
+	Item {
+		id: safeArea
+		anchors.fill: parent
+		anchors.topMargin: main.contentItem.SafeArea.margins.top
+		anchors.bottomMargin: main.contentItem.SafeArea.margins.bottom
+		anchors.leftMargin: main.contentItem.SafeArea.margins.left
+		anchors.rightMargin: main.contentItem.SafeArea.margins.right
 
-		MainTab{
-			id: mainTab
+		TabBar {
+			id: bar
+			width: parent.width
+			currentIndex: swiper.currentIndex
+			background: Rectangle {
+				color: "steelblue"
+			}
+			TabButton {
+				id: mainButton
+				padding: 10
+				background: Rectangle {
+					color: bar.currentIndex === 0 ? "steelblue" : "#353535"
+				}
+				text: qsTr("Main")
+			}
+			TabButton {
+				id: settingsButton
+				padding: 10
+				background: Rectangle {
+					color: bar.currentIndex === 1 ? "steelblue" : "#353535"
+				}
+				text: qsTr("Settings")
+			}
+			TabButton {
+				id: logButton
+				padding: 10
+				background: Rectangle {
+					color: bar.currentIndex === 2 ? "steelblue" : "#353535"
+				}
+				text: qsTr("Log")
+			}
+			TabButton {
+				id: hostsButton
+				padding: 10
+				background: Rectangle {
+					color: bar.currentIndex === 3 ? "steelblue" : "#353535"
+				}
+				text: qsTr("Hosts")
+			}
+			TabButton {
+				id: aboutButton
+				padding: 10
+				background: Rectangle {
+					color: bar.currentIndex === 4 ? "steelblue" : "#353535"
+				}
+				text: qsTr("About")
+			}
 		}
-		SettingsTab{
-			id: settingsTab
+		SwipeView {
+			id: swiper
+			width: parent.width
+			height: parent.height - 50
+			x: 0
+			y: 50
+			currentIndex: bar.currentIndex
+			interactive: false
+
+			MainTab{
+				id: mainTab
+			}
+			SettingsTab{
+				id: settingsTab
+			}
+			LogTab{
+				id: logTab
+			}
+			HostsTab{
+				id: hostsTab
+			}
+			AboutTab{}
 		}
-		LogTab{
-			id: logTab
-		}
-		HostsTab{
-			id: hostsTab
-		}
-		AboutTab{}
-	}
+	} // safeArea
     DroidStar {
         id: droidstar
     }
