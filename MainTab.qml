@@ -269,92 +269,131 @@ Item {
 		font.pixelSize: parent.height / 35
 		currentIndex: -1
 		displayText: currentIndex === -1 ? "Host..." : currentText
-			
-		property var selectedHost: "Host..."
-		property var imodel
-		model: imodel.filter(condition => {
-			if(filterConditionText.text.length > 0) {
-				return condition.toLowerCase().includes(filterConditionText.text.toLowerCase())
-			}
-			return true
-		});
+
+		// The model stays the full, unfiltered host list so that currentIndex always
+		// means "index into the host list", whatever is typed in the search box.  Only
+		// the popup's list is filtered, and it holds indices into this model.
+		// See _hostList.filteredIndices below.
+		readonly property int popupRowHeight: _comboHost.height
+		readonly property int popupVisibleRows: 12
+
+		function selectHost(sourceIndex) {
+			_comboHost.currentIndex = sourceIndex;
+			_comboHost.activated(sourceIndex);
+			_comboHost.popup.close();
+		}
+
 		popup: Popup {
 			id: _comboHostPopup
-			y: parent.height - 1
-			width: parent.width
-			implicitHeight: contentItem.implicitHeight
+			y: _comboHost.height - 1
+			width: _comboHost.width
 			padding: 1
 
-			contentItem: Item {
-				id: _comboHostPopupItem
-				anchors.fill: parent
-	
-				TextArea {
-					id: filterConditionText
-					anchors.left: parent.left
-					anchors.right: parent.right
-					anchors.top: parent.bottom
+			background: Rectangle {
+				color: "#252424"
+				border.color: "#555555"
+			}
 
+			onOpened: {
+				_hostFilter.text = "";
+				var i = _hostList.filteredIndices.indexOf(_comboHost.currentIndex);
+				_hostList.currentIndex = (i < 0) ? 0 : i;
+				if(_hostList.count > 0){
+					_hostList.positionViewAtIndex(_hostList.currentIndex, ListView.Contain);
+				}
+				_hostFilter.forceActiveFocus();
+			}
+
+			contentItem: Item {
+				implicitHeight: _hostFilter.height + _hostList.height
+
+				TextField {
+					id: _hostFilter
+					width: parent.width
+					height: _comboHost.popupRowHeight
+					font: _comboHost.font
+					color: "white"
 					placeholderText: qsTr("Search...")
+
 					background: Rectangle {
 						color: "#353535"
 					}
+
+					onTextChanged: _hostList.currentIndex = 0
+					onAccepted: {
+						if(_hostList.currentItem !== null){
+							_comboHost.selectHost(_hostList.currentItem.modelData);
+						}
+					}
+					Keys.onDownPressed: _hostList.incrementCurrentIndex()
+					Keys.onUpPressed: _hostList.decrementCurrentIndex()
 				}
 				ListView {
+					id: _hostList
+					anchors.top: _hostFilter.bottom
+					width: parent.width
+					height: _comboHost.popupRowHeight * Math.min(count, _comboHost.popupVisibleRows)
 					clip: true
-					anchors.left: parent.left
-					anchors.right: parent.right
-					anchors.top: filterConditionText.bottom
-					implicitHeight: _comboHost.parent.height / rows * 14
-					model: _comboHost.popup.visible ? _comboHost.delegateModel : null
-					currentIndex: _comboHost.highlightedIndex
+					currentIndex: 0
+
+					// Indices into the ComboBox's unfiltered model whose host matches
+					// the search text.
+					readonly property var filteredIndices: {
+						var out = [];
+						var needle = _hostFilter.text.toLowerCase();
+						for(var i = 0; i < _comboHost.count; ++i){
+							if((needle === "") || (_comboHost.textAt(i).toLowerCase().indexOf(needle) >= 0)){
+								out.push(i);
+							}
+						}
+						return out;
+					}
+					model: filteredIndices
 
 					ScrollBar.vertical: ScrollBar {
 						active: true
 					}
+
+					delegate: ItemDelegate {
+						id: _hostDelegate
+						width: ListView.view.width
+						height: _comboHost.popupRowHeight
+
+						// the list model holds indices into the ComboBox's model
+						required property int modelData
+						required property int index
+
+						background: Rectangle {
+							color: _hostDelegate.highlighted ? "steelblue" : "#252424"
+						}
+
+						contentItem: Text {
+							text: _comboHost.textAt(_hostDelegate.modelData)
+							font: _comboHost.font
+							leftPadding: 10
+							elide: Text.ElideRight
+							verticalAlignment: Text.AlignVCenter
+							color: "white"
+						}
+
+						highlighted: _hostList.currentIndex === _hostDelegate.index
+
+						onClicked: _comboHost.selectHost(_hostDelegate.modelData)
+						onHoveredChanged: {
+							if(hovered){
+								_hostList.currentIndex = _hostDelegate.index;
+							}
+						}
+					}
 				}
 			}
-			onClosed: {
-				filterConditionText.text = ""
-				_comboHostContentItem.text = _comboHost.currentText
-			}
-		}
-
-		delegate: ItemDelegate {
-			id: _comboHostDelegate
-			width: _comboHost.width
-	
-			required property var model
-			required property int index
-
-			palette.text: _comboHost.palette.text
-			palette.highlightedText: _comboHost.palette.highlightedText
-	
-			background: Rectangle {
-				color: _comboHostDelegate.highlighted ? "steelblue" : "#252424"
-			}
-
-			contentItem: Text {
-				text: _comboHostDelegate.model[_comboHost.textRole]
-
-				font: _comboHost.font
-				verticalAlignment: Text.AlignVCenter
-				color: "white"
-			}
-	
-			highlighted: _comboHost.highlightedIndex === index
 		}
 		contentItem: Text {
-			id: _comboHostContentItem
-			text: _comboHost.selectedHost
+			text: _comboHost.displayText
 			font: _comboHost.font
 			leftPadding: 10
 			verticalAlignment: Text.AlignVCenter
 			color: _comboHost.enabled ? "white" : "darkgrey"
-		}
-		onActivated: {
-			// Change only when an item is selected
-			selectedHost = _comboHost.currentText;
 		}
 		onCurrentTextChanged: {
 			if(settingsTab.mmdvmBox.checked){

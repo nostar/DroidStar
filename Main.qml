@@ -178,7 +178,7 @@ ApplicationWindow {
 			mainTab.label5.text = droidstar.get_label5();
 			mainTab.label6.text = droidstar.get_label6();
 			droidstar.set_modelchange(true);
-			mainTab.comboHost.imodel = droidstar.get_hosts();
+			mainTab.comboHost.model = droidstar.get_hosts();
 			droidstar.set_modelchange(false);
 			mainTab.comboMode.currentIndex = mainTab.comboMode.find(droidstar.get_mode());
 			if(droidstar.get_mode() === "REF"){
@@ -365,7 +365,7 @@ ApplicationWindow {
 				logTab.smsedit.visible = false;
 				logTab.smsSendButton.visible = false;
 			}
-			mainTab.comboHost.contentItem.text = mainTab.comboHost.currentIndex === -1 ? "Host..." : mainTab.comboHost.currentText
+			//mainTab.comboHost.contentItem.text = mainTab.comboHost.currentIndex === -1 ? "Host..." : mainTab.comboHost.currentText
 		}
 		function onUpdate_data() {
 			mainTab.data1.text = droidstar.get_data1();
