@@ -178,7 +178,7 @@ Item {
 		onCurrentTextChanged: {
 			droidstar.set_slot(_comboSlot.currentIndex);
 		}
-        visible: false
+		visible: false
 	}
 	ComboBox {
 		id: _comboCC
@@ -187,7 +187,7 @@ Item {
 		width: (parent.width / 5)
         height: parent.height / mainTab.rows;
 		font.pixelSize: parent.height / 35
-        model: ["CC0", "CC1", "CC2", "CC3", "CC4", "CC5", "CC6", "CC7", "CC8", "CC9", "CC10", "CC11", "CC12", "CC13", "CC14", "CC15"]
+		model: ["CC0", "CC1", "CC2", "CC3", "CC4", "CC5", "CC6", "CC7", "CC8", "CC9", "CC10", "CC11", "CC12", "CC13", "CC14", "CC15"]
 		currentIndex: 1
 		contentItem: Text {
 			text: _comboCC.displayText
@@ -199,7 +199,7 @@ Item {
 		onCurrentTextChanged: {
 			droidstar.set_cc(_comboCC.currentIndex);
 		}
-        visible: false
+		visible: false
 	}
 	Button {
 		id: _connectbutton
@@ -229,7 +229,7 @@ Item {
 			droidstar.set_swid(settingsTab.swidEdit.text);
 			droidstar.set_pkgid(settingsTab.pkgidEdit.text);
 			droidstar.set_dmr_options(settingsTab.dmroptsEdit.text);
-            droidstar.set_dmr_pc(mainTab.privateBox.checked);
+			droidstar.set_dmr_pc(mainTab.privateBox.checked);
 			droidstar.set_txtimeout(settingsTab.txtimerEdit.text);
 			//droidstar.set_toggletx(toggleTX.checked);
 			droidstar.set_xrf2ref(settingsTab.xrf2ref.checked);
@@ -256,7 +256,7 @@ Item {
 			droidstar.set_modemP25TxLevel(settingsTab.modemYSFTXLevelEdit.text);
 			droidstar.set_modemNXDNTxLevel(settingsTab.modemNXDNTXLevelEdit.text);
 			droidstar.set_modemBaud(settingsTab.modemBaudEdit.text);
-            //droidstar.set_mmdvm_direct(settingsTab.mmdvmBox.checked)
+			//droidstar.set_mmdvm_direct(settingsTab.mmdvmBox.checked)
 			droidstar.process_connect();
 		}
 	}
@@ -268,7 +268,126 @@ Item {
         height: parent.height / mainTab.rows;
 		font.pixelSize: parent.height / 35
 		currentIndex: -1
-			displayText: currentIndex === -1 ? "Host..." : currentText
+		displayText: currentIndex === -1 ? "Host..." : currentText
+
+		// The model stays the full, unfiltered host list so that currentIndex always
+		// means "index into the host list", whatever is typed in the search box.  Only
+		// the popup's list is filtered, and it holds indices into this model.
+		// See _hostList.filteredIndices below.
+		readonly property int popupRowHeight: _comboHost.height
+		readonly property int popupVisibleRows: 12
+
+		function selectHost(sourceIndex) {
+			_comboHost.currentIndex = sourceIndex;
+			_comboHost.activated(sourceIndex);
+			_comboHost.popup.close();
+		}
+
+		popup: Popup {
+			id: _comboHostPopup
+			y: _comboHost.height - 1
+			width: _comboHost.width
+			padding: 1
+
+			background: Rectangle {
+				color: "#252424"
+				border.color: "#555555"
+			}
+
+			onOpened: {
+				_hostFilter.text = "";
+				var i = _hostList.filteredIndices.indexOf(_comboHost.currentIndex);
+				_hostList.currentIndex = (i < 0) ? 0 : i;
+				if(_hostList.count > 0){
+					_hostList.positionViewAtIndex(_hostList.currentIndex, ListView.Contain);
+				}
+				_hostFilter.forceActiveFocus();
+			}
+
+			contentItem: Item {
+				implicitHeight: _hostFilter.height + _hostList.height
+
+				TextField {
+					id: _hostFilter
+					width: parent.width
+					height: _comboHost.popupRowHeight
+					font: _comboHost.font
+					color: "white"
+					placeholderText: qsTr("Search...")
+
+					background: Rectangle {
+						color: "#353535"
+					}
+
+					onTextChanged: _hostList.currentIndex = 0
+					onAccepted: {
+						if(_hostList.currentItem !== null){
+							_comboHost.selectHost(_hostList.currentItem.modelData);
+						}
+					}
+					Keys.onDownPressed: _hostList.incrementCurrentIndex()
+					Keys.onUpPressed: _hostList.decrementCurrentIndex()
+				}
+				ListView {
+					id: _hostList
+					anchors.top: _hostFilter.bottom
+					width: parent.width
+					height: _comboHost.popupRowHeight * Math.min(count, _comboHost.popupVisibleRows)
+					clip: true
+					currentIndex: 0
+
+					// Indices into the ComboBox's unfiltered model whose host matches
+					// the search text.
+					readonly property var filteredIndices: {
+						var out = [];
+						var needle = _hostFilter.text.toLowerCase();
+						for(var i = 0; i < _comboHost.count; ++i){
+							if((needle === "") || (_comboHost.textAt(i).toLowerCase().indexOf(needle) >= 0)){
+								out.push(i);
+							}
+						}
+						return out;
+					}
+					model: filteredIndices
+
+					ScrollBar.vertical: ScrollBar {
+						active: true
+					}
+
+					delegate: ItemDelegate {
+						id: _hostDelegate
+						width: ListView.view.width
+						height: _comboHost.popupRowHeight
+
+						// the list model holds indices into the ComboBox's model
+						required property int modelData
+						required property int index
+
+						background: Rectangle {
+							color: _hostDelegate.highlighted ? "steelblue" : "#252424"
+						}
+
+						contentItem: Text {
+							text: _comboHost.textAt(_hostDelegate.modelData)
+							font: _comboHost.font
+							leftPadding: 10
+							elide: Text.ElideRight
+							verticalAlignment: Text.AlignVCenter
+							color: "white"
+						}
+
+						highlighted: _hostList.currentIndex === _hostDelegate.index
+
+						onClicked: _comboHost.selectHost(_hostDelegate.modelData)
+						onHoveredChanged: {
+							if(hovered){
+								_hostList.currentIndex = _hostDelegate.index;
+							}
+						}
+					}
+				}
+			}
+		}
 		contentItem: Text {
 			text: _comboHost.displayText
 			font: _comboHost.font
@@ -277,10 +396,10 @@ Item {
 			color: _comboHost.enabled ? "white" : "darkgrey"
 		}
 		onCurrentTextChanged: {
-            if(settingsTab.mmdvmBox.checked){
-                droidstar.set_dst(_comboHost.currentText);
-            }
-            if(!droidstar.get_modelchange()){
+			if(settingsTab.mmdvmBox.checked){
+				droidstar.set_dst(_comboHost.currentText);
+			}
+			if(!droidstar.get_modelchange()){
 				droidstar.process_host_change(_comboHost.currentText);
 			}
 		}
@@ -294,7 +413,7 @@ Item {
 		font.pixelSize: parent.height / 35
 		currentIndex: -1
 			displayText: currentIndex === -1 ? "Mod..." : currentText
-        model: [" ", "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z"]
+		model: [" ", "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z"]
 		contentItem: Text {
 			text: _comboModule.displayText
 			font: _comboModule.font
@@ -319,34 +438,34 @@ Item {
 			droidstar.set_dmr_pc(privateBox.checked)
 			//console.log("screen size ", parent.width, " x ", parent.height);
 		}
-        visible: false
+		visible: false
 	}
 	Text {
 		id: _dtmflabel
 		x: 5
-        y: (parent.height / mainTab.rows + 1) * 4;
+		y: (parent.height / mainTab.rows + 1) * 4;
 		width: parent.width / 5
         height:  parent.height / mainTab.rows;
 		text: qsTr("DTMF")
 		color: "white"
 		font.pixelSize: parent.height / 30;
 		verticalAlignment: Text.AlignVCenter
-        visible: false
+		visible: false
 	}
 	TextField {
 		id: _editIAXDTMF
 		x: (parent.width / 4)
-        y: (parent.height / mainTab.rows + 1) * 4;
+		y: (parent.height / mainTab.rows + 1) * 4;
 		width: (parent.width * 3 / 8) - 4;
         height: parent.height / mainTab.rows;
 		font.pixelSize: parent.height / 35
 		//inputMethodHints: "ImhPreferNumbers"
-        visible: false
+		visible: false
 	}
 	Button {
 		id: _dtmfsendbutton
 		x: (parent.width * 5 / 8)
-        y: (parent.height / mainTab.rows + 1) * 4;
+		y: (parent.height / mainTab.rows + 1) * 4;
 		width: (parent.width * 3 / 8) - 5;
         height: parent.height / mainTab.rows;
 		text: qsTr("Send")
@@ -354,7 +473,7 @@ Item {
 		onClicked: {
 			droidstar.dtmf_send_clicked(editIAXDTMF.text);
 		}
-        visible: false
+		visible: false
 	}
 	Text {
 		id: _element3
@@ -366,7 +485,7 @@ Item {
 		color: "white"
 		font.pixelSize: parent.height / 30;
 		verticalAlignment: Text.AlignVCenter
-        visible: false
+		visible: false
 	}
 	TextField {
 		visible: false
@@ -407,9 +526,9 @@ Item {
 	CheckBox {
 		id: _swtxBox
 		x: (parent.width * 2 / 5) + 5
-        y: (parent.height / mainTab.rows + 1) * 2;
-        width: parent.width / 4
-        height: parent.height / mainTab.rows
+		y: (parent.height / mainTab.rows + 1) * 2;
+		width: parent.width / 4
+		height: parent.height / mainTab.rows
 		font.pixelSize: parent.height / 40;
 		text: qsTr("SWTX")
 		onClicked:{
