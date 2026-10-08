@@ -23,7 +23,7 @@
 XRF::XRF()
 {
     m_mode = "XRF";
-	m_attenuation = 5;
+    m_attenuation = 1;
 }
 
 XRF::~XRF()

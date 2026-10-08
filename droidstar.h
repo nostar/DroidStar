@@ -245,6 +245,7 @@ public slots:
 	QString get_monofont() { return "monospace"; }
 #endif
 	QString get_arch() { return QSysInfo::currentCpuArchitecture(); }
+    QString get_qt_version() { return qVersion(); }
 	QString get_build_abi() { return QSysInfo::buildAbi(); }
     QString get_software_build() { return VERSION_NUMBER; }
 

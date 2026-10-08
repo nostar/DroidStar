@@ -195,7 +195,7 @@ ApplicationWindow {
 				mainTab.dmrtgidEdit.visible = false;
 				mainTab.comboM17CAN.visible = false;
 				mainTab.privateBox.visible = false;
-				mainTab.sliderMicGain.value = 0.0;
+				mainTab.sliderMicGain.value = 0.7;
 				logTab.smsedit.visible = false;
 				logTab.smsSendButton.visible = false;
 			}
@@ -213,7 +213,7 @@ ApplicationWindow {
 				mainTab.dmrtgidEdit.visible = false;
 				mainTab.comboM17CAN.visible = false;
 				mainTab.privateBox.visible = false;
-				mainTab.sliderMicGain.value = 0.0;
+				mainTab.sliderMicGain.value = 0.7;
 				logTab.smsedit.visible = false;
 				logTab.smsSendButton.visible = false;
 			}
@@ -231,7 +231,7 @@ ApplicationWindow {
 				mainTab.dmrtgidEdit.visible = false;
 				mainTab.comboM17CAN.visible = false;
 				mainTab.privateBox.visible = false;
-				mainTab.sliderMicGain.value = 0.0;
+				mainTab.sliderMicGain.value = 0.7;
 				logTab.smsedit.visible = false;
 				logTab.smsSendButton.visible = false;
 			}
