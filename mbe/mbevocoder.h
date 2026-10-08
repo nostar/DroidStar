@@ -48,6 +48,7 @@ private:
     int   m_audio_out_buf_size;
 	const int *w, *x, *y, *z;
 	char ambe_d[49];
+    float m_dstar_gain_s;
 	
 	void initMbeParms();
 	void process_2400x1200(unsigned char *d);

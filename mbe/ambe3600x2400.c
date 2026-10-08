@@ -21,6 +21,7 @@
 
 #include "mbelib.h"
 #include "ambe3600x2400_const.h"
+#include "dstar_pitch.h"
 
 void
 mbe_dumpAmbe2400Data (char *ambe_d)
@@ -266,13 +267,7 @@ mbe_decodeAmbe2400Parms (char *ambe_d, mbe_parms * cur_mp, mbe_parms * prev_mp)
  
   if (silence == 0)
     {
-      // w0 from specification document
-      //f0 = AmbeW0table[b0];
-      //cur_mp->w0 = f0 * (float) 2 *M_PI;
-      // w0 from patent filings
-      //f0 = powf (2, ((float) b0 + (float) 195.626) / -(float) 46.368); // was 45.368
-      // w0 guess  
-      f0 = powf(2, (-4.311767578125 - (2.1336e-2 * ((float)b0+0.5))));
+      f0 = powf(2, -DSTAR_F0_C0 - DSTAR_F0_C1 * ((float)b0 + 0.5f));
       cur_mp->w0 = f0 * (float) 2 *M_PI;
     }
 
@@ -286,7 +281,7 @@ mbe_decodeAmbe2400Parms (char *ambe_d, mbe_parms * cur_mp, mbe_parms * prev_mp)
     {
       // L from specification document 
       // lookup L in tabl3
-      L = AmbePlusLtable[b0];
+      L = DSTAR_L(b0);
       // L formula from patent filings
       //L=(int)((float)0.4627 / f0);
       cur_mp->L = L;
@@ -576,7 +571,7 @@ mbe_decodeAmbe2400Parms (char *ambe_d, mbe_parms * cur_mp, mbe_parms * prev_mp)
       // eq 43
       Sum43 = Sum43 + ((((float) 1 - deltal[l]) * prev_mp->log2Ml[intkl[l]]) + (deltal[l] * prev_mp->log2Ml[intkl[l] + 1]));
     }
-  Sum43 = (((float) 0.65 / (float) cur_mp->L) * Sum43);
+  Sum43 = ((DSTAR_SPEC_PRED / (float) cur_mp->L) * Sum43);
 #ifdef AMBE_DEBUG
   printf ("\n");
   printf ("Sum43: %f\n", Sum43);
@@ -595,8 +590,8 @@ mbe_decodeAmbe2400Parms (char *ambe_d, mbe_parms * cur_mp, mbe_parms * prev_mp)
   // Part 3
   for (l = 1; l <= cur_mp->L; l++)
     {
-      c1 = ((float) 0.65 * ((float) 1 - deltal[l]) * prev_mp->log2Ml[intkl[l]]);
-      c2 = ((float) 0.65 * deltal[l] * prev_mp->log2Ml[intkl[l] + 1]);
+      c1 = (DSTAR_SPEC_PRED * ((float) 1 - deltal[l]) * prev_mp->log2Ml[intkl[l]]);
+      c2 = (DSTAR_SPEC_PRED * deltal[l] * prev_mp->log2Ml[intkl[l] + 1]);
       cur_mp->log2Ml[l] = Tl[l] + c1 + c2 - Sum43 + BigGamma;
       // inverse log to generate spectral amplitudes
       if (cur_mp->Vl[l] == 1)
@@ -695,6 +690,15 @@ mbe_processAmbe2400Dataf (float *aout_buf, int *errs2, char *err_str, char ambe_
         {
           mbe_moveMbeParms (cur_mp, prev_mp);
           mbe_spectralAmpEnhance (cur_mp);
+          {
+            int l;
+            const float gv = powf (10.0f, DSTAR_DEC_VOICED_DB / 20.0f);
+            const float gu = powf (10.0f, DSTAR_DEC_UNVOICED_DB / 20.0f);
+            const float fhz = cur_mp->w0 / (2.0f * (float) M_PI) * 8000.0f;
+            const float gp = powf (10.0f, DSTAR_DEC_PITCH_DB_PER_OCT * log2f (fhz / DSTAR_DEC_PITCH_REF_HZ) / 20.0f);
+            for (l = 1; l <= cur_mp->L; l++)
+              cur_mp->Ml[l] *= (cur_mp->Vl[l] ? gv : gu) * gp;
+          }
           mbe_synthesizeSpeechf (aout_buf, cur_mp, prev_mp_enhanced, uvquality);
           mbe_moveMbeParms (cur_mp, prev_mp_enhanced);
         }
