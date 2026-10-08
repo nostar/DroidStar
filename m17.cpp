@@ -126,13 +126,24 @@ void M17::decode_callsign(uint8_t *callsign)
 	uint64_t coded = callsign[0];
 	for (int i=1; i<6; i++)
 		coded = (coded << 8) | callsign[i];
-	if (coded > 0xee6b27ffffffu) {
-		std::cerr << "Callsign code is too large, 0x" << std::hex << coded << std::endl;
-		return;
-	}
 	memcpy(code, callsign, 6);
 	memset(callsign, 0, 10);
 	int i = 0;
+	const uint64_t u40_9   = 0xee6b28000000u;           // 40^9: start of Extended range
+	const uint64_t u40_9_8 = u40_9 + 0x5f5e1000000u;    // 40^9 + 40^8: end of '#' range
+	if (coded >= u40_9) {
+		if (coded == 0xffffffffffffu) {                 // BROADCAST
+			memcpy(callsign, "@ALL", 4);
+			return;
+		}
+		else if (coded < u40_9_8) {                     // '#'-prefixed address
+			callsign[i++] = '#';
+			coded -= u40_9;
+		}
+		else {                                          // reserved, not decodable
+			return;
+		}
+	}
 	while (coded) {
 		if(i < 10){
 			callsign[i++] = m17_alphabet[coded % 40];
