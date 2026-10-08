@@ -224,8 +224,9 @@ static inline int load_reg(const uint8_t val[], int len)
 	return acc;
 }
 
+#include "dstar_pitch.h"
 inline float make_f0(int b0) {
-	return (powf(2, (-4.311767578125 - (2.1336e-2 * ((float)b0+0.5)))));
+	return powf(2, -DSTAR_F0_C0 - DSTAR_F0_C1 * ((float)b0 + 0.5f));
 }
 
 int
@@ -295,7 +296,7 @@ mbe_dequantizeAmbeParms (mbe_parms * cur_mp, mbe_parms * prev_mp, const int *b, 
   if (silence == 0)
     {
       if (dstar)
-        f0 = powf(2, (-4.311767578125 - (2.1336e-2 * ((float)b0+0.5))));
+        f0 = make_f0(b0);
       else
       // w0 from specification document
         f0 = AmbeW0table[b0];
@@ -315,7 +316,7 @@ mbe_dequantizeAmbeParms (mbe_parms * cur_mp, mbe_parms * prev_mp, const int *b, 
       // L from specification document 
       // lookup L in tabl3
       if (dstar)
-        L = AmbePlusLtable[b0];
+        L = DSTAR_L(b0);
       else
         L = AmbeLtable[b0];
       // L formula form patent filings
@@ -578,7 +579,7 @@ mbe_dequantizeAmbeParms (mbe_parms * cur_mp, mbe_parms * prev_mp, const int *b, 
       // eq 43
       Sum43 = Sum43 + ((((float) 1 - deltal[l]) * prev_mp->log2Ml[intkl[l]]) + (deltal[l] * prev_mp->log2Ml[intkl[l] + 1]));
     }
-  Sum43 = (((float) 0.65 / (float) cur_mp->L) * Sum43);
+  Sum43 = (((dstar ? DSTAR_SPEC_PRED : 0.65f) / (float) cur_mp->L) * Sum43);
 #ifdef AMBE_DEBUG
   fprintf (stderr, "\n");
   fprintf (stderr, "Sum43: %f\n", Sum43);
@@ -597,8 +598,8 @@ mbe_dequantizeAmbeParms (mbe_parms * cur_mp, mbe_parms * prev_mp, const int *b, 
   // Part 3
   for (l = 1; l <= cur_mp->L; l++)
     {
-      c1 = ((float) 0.65 * ((float) 1 - deltal[l]) * prev_mp->log2Ml[intkl[l]]);
-      c2 = ((float) 0.65 * deltal[l] * prev_mp->log2Ml[intkl[l] + 1]);
+      c1 = ((dstar ? DSTAR_SPEC_PRED : 0.65f) * ((float) 1 - deltal[l]) * prev_mp->log2Ml[intkl[l]]);
+      c2 = ((dstar ? DSTAR_SPEC_PRED : 0.65f) * deltal[l] * prev_mp->log2Ml[intkl[l] + 1]);
       cur_mp->log2Ml[l] = Tl[l] + c1 + c2 - Sum43 + BigGamma;
       // inverse log to generate spectral amplitudes
       if (cur_mp->Vl[l] == 1)
@@ -633,11 +634,48 @@ mbe_dequantizeAmbe2250Parms (mbe_parms * cur_mp, mbe_parms * prev_mp, const int 
 }
 
 
-void encode_ambe(const IMBE_PARAM *imbe_param, int b[], mbe_parms*cur_mp, mbe_parms*prev_mp, bool dstar, float gain_adjust) {
+void encode_ambe(const IMBE_PARAM *imbe_param, int b[], mbe_parms*cur_mp, mbe_parms*prev_mp, bool dstar, float gain_adjust, float *gain_state = nullptr) {
 	static const float SQRT_2 = sqrtf(2.0);
 	static const int b0_lmax = sizeof(b0_lookup) / sizeof(b0_lookup[0]);
 	// int b[9];
 
+	int L;
+	int nh = imbe_param->num_harms;
+	float sa_w[NUM_HARMS_MAX];
+	short vuv_w[NUM_HARMS_MAX];
+	if (dstar) {
+        float f0_in = 256.0f / (float) imbe_param->ref_pitch;
+        int b0 = (int) lrintf((-log2f(f0_in) - DSTAR_F0_C0) / DSTAR_F0_C1 - 0.5f);
+		if (b0 < 0) b0 = 0;
+        if (b0 > 119) b0 = 119;
+		b[0] = b0;
+        L = DSTAR_L(b0);
+		float f0_c = make_f0(b0);
+		const int n_in = imbe_param->num_harms;
+		for (int l = 1; l <= L; l++) {
+			float k = (float) l * f0_c / f0_in;
+			float a;
+			if (k <= 1.0f) {
+				a = (float) imbe_param->sa[0];
+			} else if (k >= (float) n_in) {
+				a = (float) imbe_param->sa[n_in - 1] * exp2f(-1.0f * (k - (float) n_in));
+			} else {
+                int k0 = (int) k;
+				float fr = k - (float) k0;
+				float a0 = (float) imbe_param->sa[k0 - 1];
+				float a1 = (float) imbe_param->sa[k0];
+				if (a0 < 1.0f) a0 = 1.0f;
+				if (a1 < 1.0f) a1 = 1.0f;
+				a = exp2f((1.0f - fr) * log2f(a0) + fr * log2f(a1));
+			}
+			sa_w[l - 1] = a;
+			int kn = (int) lrintf(k);
+			if (kn < 1) kn = 1;
+			if (kn > n_in) kn = n_in;
+			vuv_w[l - 1] = imbe_param->v_uv_dsn[kn - 1];
+		}
+		nh = L;
+	} else {
 	// ref_pitch is Q8_8 in range 19.875 - 123.125
 	int b0_i = (imbe_param->ref_pitch >> 5) - 159;
 	if (b0_i < 0 || b0_i > b0_lmax) {
@@ -645,11 +683,7 @@ void encode_ambe(const IMBE_PARAM *imbe_param, int b[], mbe_parms*cur_mp, mbe_pa
 		return;
 	}
 	b[0] = b0_lookup[b0_i];
-	int L;
-	if (dstar)
-		L = (int) AmbePlusLtable[b[0]];
-	else
-		L = (int) AmbeLtable[b[0]];
+	L = (int) AmbeLtable[b[0]];
 #if 1
 	// adjust b0 until L agrees
 	while (L != imbe_param->num_harms) {
@@ -662,15 +696,17 @@ void encode_ambe(const IMBE_PARAM *imbe_param, int b[], mbe_parms*cur_mp, mbe_pa
 			return;
 		}
 		b[0] = b0_lookup[b0_i];
-		if (dstar)
-			L = (int) AmbePlusLtable[b[0]];
-		else
-			L = (int) AmbeLtable[b[0]];
+		L = (int) AmbeLtable[b[0]];
 	}
 #endif
+		for (int l = 0; l < nh; l++) {
+			sa_w[l] = (float) imbe_param->sa[l];
+			vuv_w[l] = imbe_param->v_uv_dsn[l];
+		}
+	}
 	float m_float2[NUM_HARMS_MAX];
 	for (int l=1; l <= L; l++) {
-		m_float2[l-1] = (float)imbe_param->sa[l-1] ;
+		m_float2[l-1] = sa_w[l-1] ;
 		m_float2[l-1] = m_float2[l-1] * m_float2[l-1];
 	}
 
@@ -689,7 +725,7 @@ void encode_ambe(const IMBE_PARAM *imbe_param, int b[], mbe_parms*cur_mp, mbe_pa
 			if (l <= 36)
 				kl = (l + 2) / 3;
 			if (dstar) {
-				if (imbe_param->v_uv_dsn[(kl-1)*3] != AmbePlusVuv[n][jl])
+				if (vuv_w[l-1] != AmbePlusVuv[n][jl])
 					En += m_float2[l-1];
 			} else {
 				if (imbe_param->v_uv_dsn[(kl-1)*3] != AmbeVuv[n][jl])
@@ -705,7 +741,7 @@ void encode_ambe(const IMBE_PARAM *imbe_param, int b[], mbe_parms*cur_mp, mbe_pa
 	}
 
 	// log spectral amplitudes
-	float num_harms_f = (float) imbe_param->num_harms;
+	float num_harms_f = (float) nh;
 	float log_l_2 =  0.5 * log2f(num_harms_f);	// fixme: table lookup
 	float log_l_w0;
 	if (dstar)
@@ -715,10 +751,10 @@ void encode_ambe(const IMBE_PARAM *imbe_param, int b[], mbe_parms*cur_mp, mbe_pa
 	float lsa[NUM_HARMS_MAX];
 	float lsa_sum=0.0;
 
-	for (int i1 = 0; i1 < imbe_param->num_harms; i1++) {
-		float sa = (float)imbe_param->sa[i1];
+	for (int i1 = 0; i1 < nh; i1++) {
+		float sa = sa_w[i1];
 		if (sa < 1) sa = 1.0;
-		if (imbe_param->v_uv_dsn[i1])
+		if (vuv_w[i1])
 			lsa[i1] = log_l_2 + log2f(sa);
 		else
 			lsa[i1] = log_l_w0 + log2f(sa);
@@ -726,11 +762,14 @@ void encode_ambe(const IMBE_PARAM *imbe_param, int b[], mbe_parms*cur_mp, mbe_pa
 	}
 
 	float gain = lsa_sum / num_harms_f;
+
+	if (dstar && gain_state) {
+		if (*gain_state > -98.0f) gain = DSTAR_GAIN_SMOOTH * (*gain_state) + (1.0f - DSTAR_GAIN_SMOOTH) * gain;
+		*gain_state = gain;
+	}
 	float diff_gain;
-	if (dstar)
-		diff_gain = gain;
-	else
-		diff_gain = gain - 0.5 * prev_mp->gamma;
+	(void)dstar;
+	diff_gain = gain - 0.5 * prev_mp->gamma;
 
 	diff_gain -= gain_adjust;
 
@@ -756,27 +795,28 @@ void encode_ambe(const IMBE_PARAM *imbe_param, int b[], mbe_parms*cur_mp, mbe_pa
 	float l_prev_l = (float) (prev_mp->L) / num_harms_f;
     //float tmp_s = 0.0;
 	prev_mp->log2Ml[0] = prev_mp->log2Ml[1];
-	for (int i1 = 0; i1 < imbe_param->num_harms; i1++) {
+	for (int i1 = 0; i1 < nh; i1++) {
         //float kl = l_prev_l * (float)(i1+1);
         //int kl_floor = (int) kl;
         //float kl_frac = kl - kl_floor;
         //tmp_s += (1.0 - kl_frac) * prev_mp->log2Ml[kl_floor  +0] + kl_frac * prev_mp->log2Ml[kl_floor+1  +0];
 	}
 	float T[NUM_HARMS_MAX];
-	for (int i1 = 0; i1 < imbe_param->num_harms; i1++) {
+	for (int i1 = 0; i1 < nh; i1++) {
 		float kl = l_prev_l * (float)(i1+1);
 		int kl_floor = (int) kl;
 		float kl_frac = kl - kl_floor;
-		T[i1] = lsa[i1] - 0.65 * (1.0 - kl_frac) * prev_mp->log2Ml[kl_floor  +0]	\
-				- 0.65 * kl_frac * prev_mp->log2Ml[kl_floor+1  +0];
+        const float pc = dstar ? DSTAR_SPEC_PRED : 0.65f;
+		T[i1] = lsa[i1] - pc * (1.0 - kl_frac) * prev_mp->log2Ml[kl_floor  +0]	\
+				- pc * kl_frac * prev_mp->log2Ml[kl_floor+1  +0];
 	}
 
 	// DCT
 	const int * J;
 	if (dstar)
-		J = AmbePlusLmprbl[imbe_param->num_harms];
+		J = AmbePlusLmprbl[nh];
 	else
-		J = AmbeLmprbl[imbe_param->num_harms];
+		J = AmbeLmprbl[nh];
 	float * c[4];
 	int acc = 0;
 	for (int i=0; i<4; i++) {
@@ -945,7 +985,8 @@ void encode_ambe(const IMBE_PARAM *imbe_param, int b[], mbe_parms*cur_mp, mbe_pa
 		b[4+ii] = 0.0;
 	} else {
 		int max_8 = (dstar) ? 16 : 8;
-		for (int n=0; n < max_8; n++) {
+		const int step_8 = (dstar) ? 2 : 1;
+		for (int n=0; n < max_8; n += step_8) {
 			float err=0.0;
 			float diff;
 			for (int j=1; j <= J[ii-1]-2 && j <= 4; j++) {
@@ -983,10 +1024,12 @@ void encode_ambe(const IMBE_PARAM *imbe_param, int b[], mbe_parms*cur_mp, mbe_pa
 
 		initMbeParms();
 		memset(ambe_d, 0, 49);
+        m_dstar_gain_s = -99.0f;
 	}
 	
     MBEVocoder::~MBEVocoder()
 	{
+		delete m_mbelibParms;
 	}
 	
     void MBEVocoder::decode_2400x1200(int16_t *pcm, uint8_t *ambe)
@@ -1027,8 +1070,9 @@ void encode_ambe(const IMBE_PARAM *imbe_param, int b[], mbe_parms*cur_mp, mbe_pa
 		int tbufp = 0;
 		
 		vocoder.imbe_encode(frame_vector, pcm);
-		encode_ambe(vocoder.param(), b, m_mbelibParms->m_cur_mp, m_mbelibParms->m_prev_mp, true, 1.0);
-		
+		encode_ambe(vocoder.param(), b, m_mbelibParms->m_cur_mp, m_mbelibParms->m_prev_mp, true, DSTAR_GAIN_ADJUST, &m_dstar_gain_s);
+        b[8] >>= 1;
+
 		for (int i=0; i < 9; i++) {
 			store_reg(b[i], &tbuf[tbufp], b_lengths[i]);
 			tbufp += b_lengths[i];
@@ -1206,6 +1250,8 @@ void encode_ambe(const IMBE_PARAM *imbe_param, int b[], mbe_parms*cur_mp, mbe_pa
 		}
 
 		mbe_processAmbe3600x2400Framef(m_audio_out_temp_buf, &m_errs2, m_err_str, ambe_fr, ambe_d,m_mbelibParms-> m_cur_mp, m_mbelibParms->m_prev_mp, m_mbelibParms->m_prev_mp_enhanced, 3);
+		static const float kOut = powf(10.0f, DSTAR_OUT_GAIN_DB / 20.0f);
+		for (int i = 0; i < 160; i++) m_audio_out_temp_buf[i] *= kOut;
 		processAudio();
 	}
 
