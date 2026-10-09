@@ -209,7 +209,15 @@ void AudioEngine::input_data_received()
 	}
 }
 
-void AudioEngine::write(int16_t *pcm, size_t s)
+bool AudioEngine::playback_drained()
+{
+	if((m_out == nullptr) || (m_out->state() == QAudio::StoppedState)){
+		return true;
+	}
+	return m_out->bytesFree() >= m_out->bufferSize();
+}
+
+void AudioEngine::write(int16_t *pcm, size_t s, float fade_from, float fade_to)
 {
 	m_maxlevel = 0;
 /*
@@ -222,6 +230,14 @@ void AudioEngine::write(int16_t *pcm, size_t s)
 */
 	if(m_agc){
 		process_audio(pcm, s);
+	}
+
+	// Optional linear fade, applied after AGC so the AGC cannot undo it.
+	if((fade_from != 1.0f) || (fade_to != 1.0f)){
+		for(size_t i = 0; i < s; ++i){
+			const float g = fade_from + (fade_to - fade_from) * (float)(i + 1) / (float)s;
+			pcm[i] = static_cast<int16_t>(pcm[i] * g);
+		}
 	}
 
 	size_t l = m_outdev->write((const char *) pcm, sizeof(int16_t) * s);
