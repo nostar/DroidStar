@@ -869,7 +869,7 @@ void M17::transmit()
 			m_udp->writeDatagram(txframe, m_address, m_modeinfo.port);
 		}
 
-		++tx_cnt;
+		tx_cnt = (tx_cnt + 1) & 0x7FFFu; // 15-bit FN, wrap around at 0x8000 (as per Spec)
 		m_modeinfo.src = m_modeinfo.callsign;
 		m_modeinfo.dst = m_refname;
         m_modeinfo.module = m_module;
