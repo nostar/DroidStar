@@ -167,7 +167,10 @@ void M17::set_mode(bool m)
 		m_c2 = codec2_create(CODEC2_MODE_1600);
 	}
 #else
-	m_c2->codec2_set_mode(m);
+	// Start each stream (RX or TX) with fresh codec state, so the end of the
+	// previous stream does not bleed into the first frames of the next one.
+	delete m_c2;
+	m_c2 = new CCodec2(m);
 #endif
 }
 
@@ -286,6 +289,7 @@ void M17::process_udp()
 			decode_callsign(cs);
 			m_modeinfo.dst = QString((char *)cs);
 			m_modeinfo.streamid = streamid;
+			m_rxcodecq.clear(); // drop leftovers of an earlier, interrupted stream
 			m_audio->start_playback();
 
 			if((buf.data()[19] & 0x06U) == 0x04U){
@@ -320,8 +324,12 @@ void M17::process_udp()
 			s = 16;
 		}
 
-		for(int i = 0; i < s; ++i){
-			m_rxcodecq.append((uint8_t )buf.data()[36+i]);
+		// Nothing drains the queue while we transmit, so don't let it build up
+		// a backlog that would be played after TX ends.
+		if(!m_tx){
+			for(int i = 0; i < s; ++i){
+				m_rxcodecq.append((uint8_t )buf.data()[36+i]);
+			}
 		}
 
 		if(m_modeinfo.frame_number & 0x8000){ // EOT
@@ -747,6 +755,7 @@ void M17::start_tx()
 {
 	m_txtimerint = 38;
 	set_mode(m_txrate);
+	m_rxcodecq.clear(); // RX playback is halted during TX; don't resume stale frames later
 	Mode::start_tx();
 }
 
@@ -880,7 +889,8 @@ void M17::transmit()
         }
 	}
 	else{
-		const uint8_t quiet3200[] = { 0x00, 0x01, 0x43, 0x09, 0xe4, 0x9c, 0x08, 0x21 };
+		// Codec2 3200 silence frame (what the encoder produces for digital silence).
+		const uint8_t quiet3200[] = { 0x01, 0x00, 0x09, 0x43, 0x9c, 0xe4, 0x21, 0x08 };
 		const uint8_t quiet1600[] = { 0x01, 0x00, 0x04, 0x00, 0x25, 0x75, 0xdd, 0xf2 };
 		const uint8_t *quiet = (get_mode()) ? quiet3200 : quiet1600;
 		uint8_t src[10];
@@ -1035,16 +1045,36 @@ void M17::process_rx_data()
 		cnt = 0;
 	}
 
+	static uint8_t drain_cnt = 0;
+	const bool ended = (m_modeinfo.stream_state == STREAM_END) || (m_modeinfo.stream_state == STREAM_LOST);
+
 	if((!m_tx) && (m_rxcodecq.size() > 7) ){
+		// Once the stream has ended, the last packet (EOT) is still in the queue.
+		// Fade it out after AGC, so a non-silent EOT payload (e.g. older DroidStar
+		// TX) or the AGC gain built up during a pause cannot produce a loud blerp.
+		const int last_pkt = get_mode() ? 16 : 8;
+		const int remaining = m_rxcodecq.size();
+		float fade_from = 1.0f, fade_to = 1.0f;
+		if(ended && (remaining <= last_pkt)){
+			fade_from = (float)remaining / last_pkt;
+			fade_to = (float)(remaining - 8) / last_pkt;
+		}
 		for(int i = 0; i < 8; ++i){
 			codec2[i] = m_rxcodecq.dequeue();
 		}
 		decode_c2(pcm, codec2);
 		int s = get_mode() ? 160 : 320;
-		m_audio->write(pcm, s);
+		m_audio->write(pcm, s, fade_from, fade_to);
 		emit update_output_level(m_audio->level());
+		drain_cnt = 0;
 	}
-	else if ( ((m_modeinfo.stream_state == STREAM_END) || (m_modeinfo.stream_state == STREAM_LOST)) && (m_rxmodemq.size() < 50) ){
+	else if ( ended && (m_rxmodemq.size() < 50) ){
+		// Let the audio sink play out what is already buffered (max ~80 ms)
+		// instead of discarding it mid-waveform, which clicks.
+		if(!m_audio->playback_drained() && (++drain_cnt < 10)){
+			return;
+		}
+		drain_cnt = 0;
 		m_rxtimer->stop();
 		m_audio->stop_playback();
 		m_rxwatchdog = 0;
