@@ -29,6 +29,8 @@
 #include <QFont>
 #include <QFontDatabase>
 #include <QSslSocket>
+#include <QJsonDocument>
+#include <QJsonObject>
 #include <cstring>
 #include <fcntl.h>
 
@@ -237,64 +239,36 @@ void DroidStar::tts_text_changed(QString ttstxt)
 
 void DroidStar::obtain_asl_wt_creds()
 {
-    qDebug() << "obtain_asl_wt_creds() called";
-    QNetworkAccessManager *manager = new QNetworkAccessManager(this);
-	QUrl url("https://www.allstarlink.org/portal/login.php");
-	QNetworkRequest request(url);
-	request.setHeader(QNetworkRequest::ContentTypeHeader, "application/x-www-form-urlencoded");
+	qDebug() << "obtain_asl_wt_creds() called";
+	QNetworkAccessManager *manager = new QNetworkAccessManager(this);
+	QNetworkRequest request(QUrl("https://www.allstarlink.org/api/v2/auth-wt-legacy"));
+	request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
 
-	QByteArray postData;
-	postData.append("user=" + QUrl::toPercentEncoding(m_callsign.toUtf8()));
-    postData.append("&pass=" + QUrl::toPercentEncoding(m_asl_password.toUtf8()));
+	QJsonObject creds;
+	creds["username"] = m_callsign;
+	creds["password"] = m_asl_password;
 
-    connect(manager, &QNetworkAccessManager::finished, this, [=, this](QNetworkReply *reply) {
-        //qDebug() << "ASL login responded postData == " << postData;
-        manager->disconnect();
-		if (reply->error() == QNetworkReply::NoError) {
-            QUrl url(QString("https://www.allstarlink.org/portal/webtransceiver.php?node=%1").arg(m_refname));
-			QNetworkRequest request(url);
-			
-            connect(manager, &QNetworkAccessManager::finished, this, [=, this](QNetworkReply *reply) {
-                bool token_found = false;
-                //qDebug() << "ASL webtransceiver responded...";
-                manager->disconnect();
-				if (reply->error() == QNetworkReply::NoError) {
-					QString html = reply->readAll();
-                    //qDebug() << "ASL webtransceiver html: " << html;
-					QStringList l = html.split('\n');
-					for (int i = 0; i < l.size(); i++) {
-						if (l.at(i).contains("callingName")) {
-							QStringList ll = l.at(i).split('"');
-							m_wt_callingname = ll.at(3);
-							m_wt_callingname_pass = m_asl_password;
-                            //manager->disconnect();
-                            qDebug() << "ASL authentication complete call token == " << m_wt_callingname;
-                            token_found = true;
-                            process_connect();
-							break;
-						}
-					}
-                    if(!token_found){
-                        m_errortxt = "ASL WT call token not found";
-                        emit connect_status_changed(5);
-                    }
-				} else {
-                    qDebug() << "Error: " << reply->errorString();
-                    m_errortxt = "ASL WT authentication failed";
-                    emit connect_status_changed(5);
-				}
-				reply->deleteLater();
-			});
+	connect(manager, &QNetworkAccessManager::finished, this, [=, this](QNetworkReply *reply) {
+		manager->disconnect();
+		QJsonObject o = QJsonDocument::fromJson(reply->readAll()).object();
+		QString token = o["token"].toString();
 
-			manager->get(request);
-		} else {
-            qDebug() << "Error: " << reply->errorString();
-            m_errortxt = "ASL WT login failed";
-            emit connect_status_changed(5);
+		if(!token.isEmpty()){
+			m_wt_callingname = token;
+			m_wt_callingname_pass = m_asl_password;
+			qDebug() << "ASL authentication complete call token == " << m_wt_callingname;
+			process_connect();
+		}
+		else{
+			qDebug() << "Error: " << reply->errorString();
+			QString msg = o["msg"].toString();
+			m_errortxt = msg.isEmpty() ? "ASL WT authentication failed" : "ASL WT: " + msg;
+			emit connect_status_changed(5);
 		}
 		reply->deleteLater();
+		manager->deleteLater();
 	});
-    manager->post(request, postData);
+	manager->post(request, QJsonDocument(creds).toJson(QJsonDocument::Compact));
 }
 
 void DroidStar::process_connect()
