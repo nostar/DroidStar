@@ -1068,7 +1068,8 @@ void encode_ambe(const IMBE_PARAM *imbe_param, int b[], mbe_parms*cur_mp, mbe_pa
 		uint8_t pbuf[48];
 		uint8_t tbuf[48];
 		int tbufp = 0;
-		
+        memset(ambe, 0, 9);
+
 		vocoder.imbe_encode(frame_vector, pcm);
 		encode_ambe(vocoder.param(), b, m_mbelibParms->m_cur_mp, m_mbelibParms->m_prev_mp, true, DSTAR_GAIN_ADJUST, &m_dstar_gain_s);
         b[8] >>= 1;
@@ -1163,7 +1164,8 @@ void encode_ambe(const IMBE_PARAM *imbe_param, int b[], mbe_parms*cur_mp, mbe_pa
 		int b[9];
 		int16_t frame_vector[8];	// result ignored
         uint8_t ambe_frame[56];
-		
+        memset(ambe, 0, 9);
+
 		vocoder.imbe_encode(frame_vector, pcm);
 		encode_ambe(vocoder.param(), b, m_mbelibParms->m_cur_mp, m_mbelibParms->m_prev_mp, false, 1.0);
         memset(ambe_frame, 0, 56);
