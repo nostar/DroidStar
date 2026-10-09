@@ -268,7 +268,7 @@ uint16_t AudioEngine::read(int16_t *pcm)
 		s = 160;
 	}
 	else{
-		s = m_audioinq.size();
+		s = (int)m_audioinq.size();
 	}
 
 	for(int i = 0; i < s; ++i){

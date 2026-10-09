@@ -39,7 +39,7 @@ void DCS::process_udp()
 	static int sd_seq = 0;
 	static char user_data[21];
     buf.resize(200);
-    int size = m_udp->readDatagram(buf.data(), buf.size(), &sender, &senderPort);
+    int size = (int)m_udp->readDatagram(buf.data(), buf.size(), &sender, &senderPort);
 
     if(m_debug){
         QDebug debug = qDebug();
