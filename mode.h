@@ -24,7 +24,7 @@
 #include <flite/flite.h>
 #endif
 #include "imbe_vocoder/imbe_vocoder_api.h"
-#include "mbe/mbevocoder_api.h"
+#include "mbe/mbevocoder.h"
 #include "audioengine.h"
 #if !defined(Q_OS_IOS)
 #include "serialambe.h"

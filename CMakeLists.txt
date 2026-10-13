@@ -66,17 +66,11 @@ qt_add_executable(DroidStar WIN32 MACOSX_BUNDLE
     imbe_vocoder/uv_synt.cc imbe_vocoder/uv_synt.h
     imbe_vocoder/v_synt.cc imbe_vocoder/v_synt.h
     imbe_vocoder/v_uv_det.cc imbe_vocoder/v_uv_det.h
-    mbe/ambe3600x2400.c
-    mbe/ambe3600x2400_const.h
-    mbe/ambe3600x2450.c
-    mbe/ambe3600x2450_const.h
-    mbe/ecc.c
-    mbe/ecc_const.h
-    mbe/mbelib.c mbe/mbelib.h
-    mbe/mbelib_const.h
-    mbe/mbelib_parms.h
-    mbe/mbevocoder.cpp mbe/mbevocoder.h
-    mbe/mbevocoder_api.h
+    mbe/ambe.cpp
+    mbe/ambe3600x2400.cpp
+    mbe/ambe3600x2450.cpp
+    mbe/mbevocoder.cpp
+    mbe/mbevocoder.h
     mbe/vocoder_tables.h
     m17.cpp m17.h
     main.cpp
@@ -84,7 +78,6 @@ qt_add_executable(DroidStar WIN32 MACOSX_BUNDLE
     nxdn.cpp nxdn.h
     p25.cpp p25.h
     ref.cpp ref.h
-
     xrf.cpp xrf.h
     ysf.cpp ysf.h
     ${app_icon_resource_windows}
