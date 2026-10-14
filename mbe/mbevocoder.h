@@ -16,7 +16,7 @@
 #define MBEVOCODER_H
 
 #include <cinttypes>
-#include <imbe_vocoder_api.h>
+#include "imbe_vocoder/imbe_vocoder_api.h"
 
 extern "C" {
 struct mbe_parameters

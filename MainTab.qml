@@ -319,7 +319,7 @@ Item {
 						color: "#353535"
 					}
 
-					onTextChanged: _hostList.currentIndex = 0
+					onDisplayTextChanged: _hostList.currentIndex = 0
 					onAccepted: {
 						if(_hostList.currentItem !== null){
 							_comboHost.selectHost(_hostList.currentItem.modelData);
@@ -340,7 +340,7 @@ Item {
 					// the search text.
 					readonly property var filteredIndices: {
 						var out = [];
-						var needle = _hostFilter.text.toLowerCase();
+						var needle = _hostFilter.displayText.toLowerCase();
 						for(var i = 0; i < _comboHost.count; ++i){
 							if((needle === "") || (_comboHost.textAt(i).toLowerCase().indexOf(needle) >= 0)){
 								out.push(i);
