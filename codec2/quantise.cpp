@@ -102,7 +102,7 @@ void CQuantize::encode_lspds_scalar(int indexes[], float lsp[], int order)
 		k = lsp_cbd[i].k;
 		m = lsp_cbd[i].m;
 		cb = lsp_cbd[i].cb;
-		indexes[i] = quantise(cb, &dlsp[i], wt, k, m, &se);
+		indexes[i] = (int)quantise(cb, &dlsp[i], wt, k, m, &se);
 		dlsp_[i] = cb[indexes[i]*k];
 
 
@@ -572,7 +572,7 @@ void CQuantize::encode_lsps_scalar(int indexes[], float lsp[], int order)
 		k = lsp_cb[i].k;
 		m = lsp_cb[i].m;
 		cb = lsp_cb[i].cb;
-		indexes[i] = quantise(cb, &lsp_hz[i], wt, k, m, &se);
+		indexes[i] = (int)quantise(cb, &lsp_hz[i], wt, k, m, &se);
 	}
 }
 

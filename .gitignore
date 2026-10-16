@@ -1,2 +1,5 @@
+.DS_Store
+build/*
+build_*/*
 build/
 .vscode/

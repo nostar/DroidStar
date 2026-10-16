@@ -106,7 +106,7 @@ void M17::encode_callsign(uint8_t *callsign)
 	memset(cs, 0, sizeof(cs));
 	memcpy(cs, callsign, strlen((char *)callsign));
 	uint64_t encoded = 0;
-	for(int i = std::strlen((char *)callsign)-1; i >= 0; i--) {
+	for(int i = (int)std::strlen((char *)callsign)-1; i >= 0; i--) {
 		auto pos = m17_alphabet.find(cs[i]);
 		if (pos == std::string::npos) {
 			pos = 0;
