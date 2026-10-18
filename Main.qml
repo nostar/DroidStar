@@ -421,6 +421,7 @@ ApplicationWindow {
 			settingsTab.comboEssid.currentIndex = settingsTab.comboEssid.find(droidstar.get_essid());
 			settingsTab.bmpwEdit.text = droidstar.get_bm_password();
 			settingsTab.tgifpwEdit.text = droidstar.get_tgif_password();
+			settingsTab.adnpwEdit.text = droidstar.get_adn_password();
 			settingsTab.aslpwEdit.text = droidstar.get_asl_password();
 			settingsTab.latEdit.text = droidstar.get_latitude();
 			settingsTab.lonEdit.text = droidstar.get_longitude();

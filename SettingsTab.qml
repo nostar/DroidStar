@@ -25,6 +25,7 @@ Item {
 	property alias comboEssid: comboessid
 	property alias bmpwEdit: bmpwedit
 	property alias tgifpwEdit: tgifpwedit
+	property alias adnpwEdit: adnpwedit
 	property alias aslpwEdit: aslpwedit
 	property alias latEdit: latedit
 	property alias lonEdit: lonedit
@@ -256,9 +257,28 @@ Item {
 			echoMode: TextInput.Password
 		}
 		Text {
-			id: aslpwLabel
+			id: adnpwLabel
 			x: 10
 			y: 270
+			width: 80
+			height: 25
+			text: qsTr("ADN Pass")
+			color: "white"
+			verticalAlignment: Text.AlignVCenter
+		}
+		TextField {
+			id: adnpwedit
+			x: 100
+			y: adnpwLabel.y
+			width: parent.width - 110
+			height: 25
+			selectByMouse: true
+			echoMode: TextInput.Password
+		}
+		Text {
+			id: aslpwLabel
+			x: 10
+			y: 300
 			width: 80
 			height: 25
 			text: qsTr("ASL Pass")
@@ -277,7 +297,7 @@ Item {
 		Text {
 			id: latLabel
 			x: 10
-			y: 300
+			y: 330
 			width: 80
 			height: 25
 			text: qsTr("Latitude")
@@ -295,7 +315,7 @@ Item {
 		Text {
 			id: lonLabel
 			x: 10
-			y: 330
+			y: 360
 			width: 80
 			height: 25
 			text: qsTr("Longitude")
@@ -313,7 +333,7 @@ Item {
 		Text {
 			id: locLabel
 			x: 10
-			y: 360
+			y: 390
 			width: 80
 			height: 25
 			text: qsTr("Location")
@@ -331,7 +351,7 @@ Item {
 		Text {
 			id: descLabel
 			x: 10
-			y: 390
+			y: 420
 			width: 80
 			height: 25
 			text: qsTr("Description")
@@ -349,7 +369,7 @@ Item {
 		Text {
 			id: urlLabel
 			x: 10
-			y: 420
+			y: 450
 			width: 80
 			height: 25
 			text: qsTr("URL")
@@ -367,7 +387,7 @@ Item {
 		Text {
 			id: swidLabel
 			x: 10
-			y: 450
+			y: 480
 			width: 80
 			height: 25
 			text: qsTr("SoftwareID")
@@ -385,7 +405,7 @@ Item {
 		Text {
 			id: pkgidLabel
 			x: 10
-			y: 480
+			y: 510
 			width: 80
 			height: 25
 			text: qsTr("PackageID")
@@ -403,7 +423,7 @@ Item {
 		Text {
 			id: dmroptslabel
 			x: 10
-			y: 510
+			y: 540
 			width: 80
 			height: 25
 			text: qsTr("DMR+ Opts")
@@ -421,7 +441,7 @@ Item {
 		Text {
 			id: mycallLabel
 			x: 10
-			y: 540
+			y: 570
 			width: 80
 			height: 25
 			text: qsTr("MYCALL")
@@ -443,7 +463,7 @@ Item {
 		Text {
 			id: urcallLabel
 			x: 10
-			y: 570
+			y: 600
 			width: 80
 			height: 25
 			text: qsTr("URCALL")
@@ -465,7 +485,7 @@ Item {
 		Text {
 			id: rptr1Label
 			x: 10
-			y: 600
+			y: 630
 			width: 80
 			height: 25
 			text: qsTr("RPTR1")
@@ -487,7 +507,7 @@ Item {
 		Text {
 			id: rptr2Label
 			x: 10
-			y: 630
+			y: 660
 			width: 80
 			height: 25
 			text: qsTr("RPTR2")
@@ -509,7 +529,7 @@ Item {
 		Text {
 			id: usrtxtLabel
 			x: 10
-			y: 660
+			y: 690
 			width: 80
 			height: 25
 			text: qsTr("USRTXT")
@@ -530,7 +550,7 @@ Item {
 		Text {
 			id: txtimerLabel
 			x: 10
-			y: 690
+			y: 720
 			width: 80
 			height: 25
 			text: qsTr("TX Timeout")
@@ -548,7 +568,7 @@ Item {
 		Text {
 			id: m17rateLabel
 			x: 10
-			y: 720
+			y: 750
 			width: 100
 			height: 25
 			text: qsTr("M17/YSF rate")
@@ -585,7 +605,7 @@ Item {
 		Button {
 			id: updatehostsButton
 			x: 10
-			y: 750
+			y: 780
 			width: 150
 			height: 30
 			text: qsTr("Update hosts")
@@ -609,7 +629,7 @@ Item {
 		CheckBox {
 			id: toggletx
 			x: 10
-			y: 780
+			y: 810
 			//width: 100
 			height: 25
 			spacing: 1
@@ -621,7 +641,7 @@ Item {
 		CheckBox {
 			id: xrf2Ref
 			x: 10
-			y: 810
+			y: 840
 			//width: 100
 			height: 25
 			spacing: 1
@@ -630,7 +650,7 @@ Item {
 		CheckBox {
 			id: ipV6
 			x: 10
-			y: 840
+			y: 870
 			//width: 100
 			height: 25
 			spacing: 1
@@ -639,7 +659,7 @@ Item {
 		Text {
 			id: _modemRXFreqLabel
 			x: 10
-			y: 870
+			y: 900
 			width: 60
 			height: 25
 			text: qsTr("RX Freq")
@@ -677,7 +697,7 @@ Item {
 		Text {
 			id: _modemRXOffsetLabel
 			x: 10
-			y: 900
+			y: 930
 			width: 100
 			height: 25
 			text: qsTr("RX Offset")
@@ -715,7 +735,7 @@ Item {
 		Text {
 			id: _modemRXLevelLabel
 			x: 10
-			y: 930
+			y: 960
 			width: 100
 			height: 25
 			text: qsTr("RX Level")
@@ -753,7 +773,7 @@ Item {
 		Text {
 			id: _modemRXDCOffsetLabel
 			x: 10
-			y: 960
+			y: 990
 			width: 100
 			height: 25
 			text: qsTr("RX DC Offset")
@@ -791,7 +811,7 @@ Item {
 		Text {
 			id: _modemRFLevelLabel
 			x: 10
-			y: 990
+			y: 1020
 			width: 100
 			height: 25
 			text: qsTr("RF Level")
@@ -829,7 +849,7 @@ Item {
 		Text {
 			id: _modemCWIdTXLevelLabel
 			x: 10
-			y: 1020
+			y: 1050
 			width: 100
 			height: 25
 			text: qsTr("CWIdTXLevel")
@@ -867,7 +887,7 @@ Item {
 		Text {
 			id: _modemDMRTXLevelLabel
 			x: 10
-			y: 1050
+			y: 1080
 			width: 100
 			height: 25
 			text: qsTr("DMRTXLevel")
@@ -905,7 +925,7 @@ Item {
 		Text {
 			id: _modemP25TXLevelLabel
 			x: 10
-			y: 1070
+			y: 1100
 			width: 100
 			height: 25
 			text: qsTr("P25TXLevel")
@@ -943,7 +963,7 @@ Item {
 		Text {
 			id: _modemBaudLabel
 			x: 10
-			y: 1100
+			y: 1130
 			width: 100
 			height: 25
 			text: qsTr("Baud")
@@ -962,7 +982,7 @@ Item {
         CheckBox {
             id: _mmdvmBox
             x: 10
-			y: 1130
+			y: 1160
             width: parent.width
             height: 25
             text: qsTr("MMDVM_DIRECT")
@@ -973,7 +993,7 @@ Item {
         CheckBox {
             id: _debugBox
             x: 10
-			y: 1160
+			y: 1190
             width: parent.width
             height: 25
             text: qsTr("Debug output to stderr")
