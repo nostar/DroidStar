@@ -79,6 +79,8 @@ static inline int load_reg(const uint8_t val[], int len)
 		initMbeParms();
 		memset(ambe_d, 0, 49);
 		m_dstar_gain_s = -99.0f;
+        d = ambe2_decoder_new();
+        e = ambe2_encoder_new();
 	}
 	
     MBEVocoder::~MBEVocoder()
@@ -97,6 +99,8 @@ static inline int load_reg(const uint8_t val[], int len)
 
     void MBEVocoder::decode_2450x1150(int16_t *pcm, uint8_t *ambe)
 	{
+        ambe2_decode_packed(d, ambe, pcm);
+        return;
 		int samples = 0;
 		process_2450x1150(ambe);
 		int16_t *p = getAudio(samples);
@@ -106,11 +110,23 @@ static inline int load_reg(const uint8_t val[], int len)
 
     void MBEVocoder::decode_2450(int16_t *pcm, uint8_t *ambe)
 	{
-		int samples = 0;
-		process_2450(ambe);
-		int16_t *p = getAudio(samples);
-		memcpy(pcm, p, samples * sizeof(int16_t));
-		resetAudio();
+        uint8_t ambe_data[56];
+        //char dvsi_data[7];
+        //memset(dvsi_data, 0, 7);
+
+        for(int i = 0; i < 6; ++i){
+            for(int j = 0; j < 8; j++){
+                ambe_data[j+(8*i)] = (1 & (ambe[i] >> (7 - j)));
+            }
+        }
+
+        ambe_data[48] = (1 & (ambe[6] >> 7));
+        //int samples = 0;
+        ambe2_decode(d, ambe_data, pcm);
+        //process_2450(ambe);
+        //int16_t *p = getAudio(samples);
+        //memcpy(pcm, p, samples * sizeof(int16_t));
+        //resetAudio();
 	}
 	
     void MBEVocoder::encode_2400x1200(int16_t *pcm, uint8_t *ambe)
@@ -215,70 +231,74 @@ static inline int load_reg(const uint8_t val[], int len)
 	
     void MBEVocoder::encode_2450(int16_t *pcm, uint8_t *ambe)
 	{
-		int b[9];
-		int16_t frame_vector[8];	// result ignored
-        uint8_t ambe_frame[56];
-		memset(ambe, 0, 9);
-		
-		vocoder.imbe_encode(frame_vector, pcm);
-		encode_ambe(vocoder.param(), b, m_mbelibParms->m_cur_mp, m_mbelibParms->m_prev_mp, false, 1.0);
+        //int b[9];
+        //int16_t frame_vector[8];	// result ignored
+        uint8_t ambe_bits[56];
+        memset(ambe, 0, 9);
+
+        ambe2_encode(e, pcm, ambe_bits);
+        //ambe2_pack(ambe_bits, ambe);
+        //return;
+        /*
+        vocoder.imbe_encode(frame_vector, pcm);
+        encode_ambe(vocoder.param(), b, m_mbelibParms->m_cur_mp, m_mbelibParms->m_prev_mp, false, 1.0);
         memset(ambe_frame, 0, 56);
-		
-		ambe_frame[0] = (b[0] >> 6) & 1;
-		ambe_frame[1] = (b[0] >> 5) & 1;
-		ambe_frame[2] = (b[0] >> 4) & 1;
-		ambe_frame[3] = (b[0] >> 3) & 1;
-		ambe_frame[4] = (b[1] >> 4) & 1;
-		ambe_frame[5] = (b[1] >> 3) & 1;
-		ambe_frame[6] = (b[1] >> 2) & 1;
-		ambe_frame[7] = (b[1] >> 1) & 1;
-		ambe_frame[8] = (b[2] >> 4) & 1;
-		ambe_frame[9] = (b[2] >> 3) & 1;
-		ambe_frame[10] = (b[2] >> 2) & 1;
-		ambe_frame[11] = (b[2] >> 1) & 1;
-		ambe_frame[12] = (b[3] >> 8) & 1;
-		ambe_frame[13] = (b[3] >> 7) & 1;
-		ambe_frame[14] = (b[3] >> 6) & 1;
-		ambe_frame[15] = (b[3] >> 5) & 1;
-		ambe_frame[16] = (b[3] >> 4) & 1;
-		ambe_frame[17] = (b[3] >> 3) & 1;
-		ambe_frame[18] = (b[3] >> 2) & 1;
-		ambe_frame[19] = (b[3] >> 1) & 1;
-		ambe_frame[20] = (b[4] >> 6) & 1;
-		ambe_frame[21] = (b[4] >> 5) & 1;
-		ambe_frame[22] = (b[4] >> 4) & 1;
-		ambe_frame[23] = (b[4] >> 3) & 1;
-		ambe_frame[24] = (b[5] >> 4) & 1;
-		ambe_frame[25] = (b[5] >> 3) & 1;
-		ambe_frame[26] = (b[5] >> 2) & 1;
-		ambe_frame[27] = (b[5] >> 1) & 1;
-		ambe_frame[28] = (b[6] >> 3) & 1;
-		ambe_frame[29] = (b[6] >> 2) & 1;
-		ambe_frame[30] = (b[6] >> 1) & 1;
-		ambe_frame[31] = (b[7] >> 3) & 1;
-		ambe_frame[32] = (b[7] >> 2) & 1;
-		ambe_frame[33] = (b[7] >> 1) & 1;
-		ambe_frame[34] = (b[8] >> 2) & 1;
-		ambe_frame[35] = b[1] & 1;
-		ambe_frame[36] = b[2] & 1;
-		ambe_frame[37] = (b[0] >> 2) & 1;
-		ambe_frame[38] = (b[0] >> 1) & 1;
-		ambe_frame[39] = b[0] & 1;
-		ambe_frame[40] = b[3] & 1;
-		ambe_frame[41] = (b[4] >> 2) & 1;
-		ambe_frame[42] = (b[4] >> 1) & 1;
-		ambe_frame[43] = b[4] & 1;
-		ambe_frame[44] = b[5] & 1;
-		ambe_frame[45] = b[6] & 1;
-		ambe_frame[46] = b[7] & 1;
-		ambe_frame[47] = (b[8] >> 1) & 1;
-		ambe_frame[48] = b[8] & 1;
-		
-		for(int i = 0; i < 7; ++i){
-			for(int j = 0; j < 8; ++j){
-				ambe[i] |= (ambe_frame[(i*8)+j] << (7-j));
-			}
-		}
+
+        ambe_frame[0] = (b[0] >> 6) & 1;
+        ambe_frame[1] = (b[0] >> 5) & 1;
+        ambe_frame[2] = (b[0] >> 4) & 1;
+        ambe_frame[3] = (b[0] >> 3) & 1;
+        ambe_frame[4] = (b[1] >> 4) & 1;
+        ambe_frame[5] = (b[1] >> 3) & 1;
+        ambe_frame[6] = (b[1] >> 2) & 1;
+        ambe_frame[7] = (b[1] >> 1) & 1;
+        ambe_frame[8] = (b[2] >> 4) & 1;
+        ambe_frame[9] = (b[2] >> 3) & 1;
+        ambe_frame[10] = (b[2] >> 2) & 1;
+        ambe_frame[11] = (b[2] >> 1) & 1;
+        ambe_frame[12] = (b[3] >> 8) & 1;
+        ambe_frame[13] = (b[3] >> 7) & 1;
+        ambe_frame[14] = (b[3] >> 6) & 1;
+        ambe_frame[15] = (b[3] >> 5) & 1;
+        ambe_frame[16] = (b[3] >> 4) & 1;
+        ambe_frame[17] = (b[3] >> 3) & 1;
+        ambe_frame[18] = (b[3] >> 2) & 1;
+        ambe_frame[19] = (b[3] >> 1) & 1;
+        ambe_frame[20] = (b[4] >> 6) & 1;
+        ambe_frame[21] = (b[4] >> 5) & 1;
+        ambe_frame[22] = (b[4] >> 4) & 1;
+        ambe_frame[23] = (b[4] >> 3) & 1;
+        ambe_frame[24] = (b[5] >> 4) & 1;
+        ambe_frame[25] = (b[5] >> 3) & 1;
+        ambe_frame[26] = (b[5] >> 2) & 1;
+        ambe_frame[27] = (b[5] >> 1) & 1;
+        ambe_frame[28] = (b[6] >> 3) & 1;
+        ambe_frame[29] = (b[6] >> 2) & 1;
+        ambe_frame[30] = (b[6] >> 1) & 1;
+        ambe_frame[31] = (b[7] >> 3) & 1;
+        ambe_frame[32] = (b[7] >> 2) & 1;
+        ambe_frame[33] = (b[7] >> 1) & 1;
+        ambe_frame[34] = (b[8] >> 2) & 1;
+        ambe_frame[35] = b[1] & 1;
+        ambe_frame[36] = b[2] & 1;
+        ambe_frame[37] = (b[0] >> 2) & 1;
+        ambe_frame[38] = (b[0] >> 1) & 1;
+        ambe_frame[39] = b[0] & 1;
+        ambe_frame[40] = b[3] & 1;
+        ambe_frame[41] = (b[4] >> 2) & 1;
+        ambe_frame[42] = (b[4] >> 1) & 1;
+        ambe_frame[43] = b[4] & 1;
+        ambe_frame[44] = b[5] & 1;
+        ambe_frame[45] = b[6] & 1;
+        ambe_frame[46] = b[7] & 1;
+        ambe_frame[47] = (b[8] >> 1) & 1;
+        ambe_frame[48] = b[8] & 1;
+*/
+        for(int i = 0; i < 7; ++i){
+            for(int j = 0; j < 8; ++j){
+                ambe[i] |= (ambe_bits[(i*8)+j] << (7-j));
+            }
+        }
 	}
 
     void MBEVocoder::initMbeParms()

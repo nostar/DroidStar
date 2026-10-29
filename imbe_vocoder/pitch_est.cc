@@ -30,7 +30,7 @@
 #include "pitch_est.h"
 #include "encode.h"
 #include "dsp_sub.h"
-#include "imbe_vocoder_impl.h"
+#include "imbe_vocoder.h"
 
 
 
@@ -63,7 +63,7 @@ static const UWord16 min_max_tbl[203] =
 
 
 
-void imbe_vocoder_impl::pitch_est_init(void)
+void imbe_vocoder::pitch_est_init(void)
 {
 	prev_pitch = prev_prev_pitch = 158; // 100
 	prev_e_p = prev_prev_e_p = 0;
@@ -71,7 +71,7 @@ void imbe_vocoder_impl::pitch_est_init(void)
 
 
 
-Word32 imbe_vocoder_impl::autocorr(Word16 *sigin, Word16 shift, Word16 scale_shift)
+Word32 imbe_vocoder::autocorr(Word16 *sigin, Word16 shift, Word16 scale_shift)
 {
 	Word32 L_sum;
 	Word16 i;
@@ -85,7 +85,7 @@ Word32 imbe_vocoder_impl::autocorr(Word16 *sigin, Word16 shift, Word16 scale_shi
 
 
 
-void imbe_vocoder_impl::e_p(Word16 *sigin, Word16 *res_buf)
+void imbe_vocoder::e_p(Word16 *sigin, Word16 *res_buf)
 {
 	Word16 i, j, den_part_acc, tmp;
 	Word32 L_sum, L_num, L_den, L_e0, L_tmp;
@@ -185,14 +185,14 @@ void imbe_vocoder_impl::e_p(Word16 *sigin, Word16 *res_buf)
 
 
 
-void imbe_vocoder_impl::pitch_est(IMBE_PARAM *imbe_param, Word16 *frames_buf)
+void imbe_vocoder::pitch_est(IMBE_PARAM *imbe_param, Word16 *frames_buf)
 {
 	Word16 e_p_arr0[203], e_p_arr1[203], e_p_arr2[203], e1p1_e2p2_est_save[203];
 	Word16 min_index, max_index, p, i, p_index;
 	UWord16 tmp=0, p_fp;
 	UWord32 UL_tmp;
 	Word16 e_p_cur, pb, pf, ceb, s_tmp;
-    Word16 cef_est, cef, p0_est, p0, p1, p2, p1_max_index, p2_max_index, e1p1_e2p2_est;
+	Word16 cef_est, cef, p0_est, p0, p1, p2, p1_max_index, p2_max_index, e1p1_e2p2_est, e1p1_e2p2; 
         Word16 e_p_arr2_min[203];
 
 	// Calculate E(p) function for current and two future frames
@@ -232,6 +232,7 @@ void imbe_vocoder_impl::pitch_est(IMBE_PARAM *imbe_param, Word16 *frames_buf)
 
 	p0_est = p0 = 0;
 	cef_est = e_p_arr0[p0] + e_p_arr1[p0] + e_p_arr2[p0];
+	e1p1_e2p2 = 1;
 
             p1 = 0;
             while(p1 < 203)

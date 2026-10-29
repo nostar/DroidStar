@@ -9,7 +9,7 @@
 	<key>CFBundleIconFile</key>
 	<string>droidstar.icns</string>
 	<key>CFBundleIdentifier</key>
-	<string>com.yourcompany.90d5dd37.DroidStar</string>
+	<string>com.dudetronics.90d5dd37.DroidStar</string>
 	<key>CFBundleName</key>
 	<string>DroidStar</string>
 	<key>CFBundlePackageType</key>

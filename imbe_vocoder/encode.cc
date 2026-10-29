@@ -35,13 +35,13 @@
 #include "v_uv_det.h"
 #include "sa_encode.h"
 #include "ch_encode.h"
-#include "imbe_vocoder_impl.h"
+#include "imbe_vocoder.h"
 
 const uint8_t  BIT_MASK_TABLE8[]  = { 0x80U, 0x40U, 0x20U, 0x10U, 0x08U, 0x04U, 0x02U, 0x01U };
 #define WRITE_BIT(p,i,b)   p[(i)>>3] = (b) ? (p[(i)>>3] | BIT_MASK_TABLE8[(i)&7]) : (p[(i)>>3] & ~BIT_MASK_TABLE8[(i)&7])
 
 
-void imbe_vocoder_impl::encode_init(void)
+void imbe_vocoder::encode_init(void)
 {
 	v_zap(pitch_est_buf, PITCH_EST_BUF_SIZE);
 	v_zap(pitch_ref_buf, PITCH_EST_BUF_SIZE);
@@ -54,7 +54,7 @@ void imbe_vocoder_impl::encode_init(void)
 }
 
 
-void imbe_vocoder_impl::encode(IMBE_PARAM *imbe_param, Word16 *frame_vector, Word16 *snd)
+void imbe_vocoder::encode(IMBE_PARAM *imbe_param, Word16 *frame_vector, Word16 *snd)
 {
 	Word16 i;
 	Word16 *wr_ptr, *sig_ptr;
@@ -99,7 +99,7 @@ void imbe_vocoder_impl::encode(IMBE_PARAM *imbe_param, Word16 *frame_vector, Wor
 	encode_frame_vector(imbe_param, frame_vector);
 }
 
-void imbe_vocoder_impl::encode_4400(int16_t *pcm, uint8_t *imbe)
+void imbe_vocoder::encode_4400(int16_t *pcm, uint8_t *imbe)
 {
 	int16_t frame_vector[8];
 	memset(imbe, 0, 11);

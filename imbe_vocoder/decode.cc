@@ -31,7 +31,7 @@
 #include "aux_sub.h"
 #include "encode.h"
 #include "dsp_sub.h"
-#include "imbe_vocoder_impl.h"
+#include "imbe_vocoder.h"
 
 #include <cstring>
 
@@ -39,7 +39,7 @@ const uint8_t  BIT_MASK_TABLE8[]  = { 0x80U, 0x40U, 0x20U, 0x10U, 0x08U, 0x04U, 
 #define READ_BIT(p,i)     (p[(i)>>3] & BIT_MASK_TABLE8[(i)&7])
 
 
-void imbe_vocoder_impl::decode_init(IMBE_PARAM *imbe_param)
+void imbe_vocoder::decode_init(IMBE_PARAM *imbe_param)
 {
 	v_synt_init();
 	uv_synt_init();
@@ -54,7 +54,7 @@ void imbe_vocoder_impl::decode_init(IMBE_PARAM *imbe_param)
 }
 
 
-void imbe_vocoder_impl::decode(IMBE_PARAM *imbe_param, Word16 *frame_vector, Word16 *snd)
+void imbe_vocoder::decode(IMBE_PARAM *imbe_param, Word16 *frame_vector, Word16 *snd)
 {
 	Word16 snd_tmp[FRAME];
 	Word16 j;
@@ -70,7 +70,7 @@ void imbe_vocoder_impl::decode(IMBE_PARAM *imbe_param, Word16 *frame_vector, Wor
 		snd[j] = add(snd[j], snd_tmp[j]);
 }
 
-void imbe_vocoder_impl::decode_4400(int16_t *snd, uint8_t *imbe)
+void imbe_vocoder::decode_4400(int16_t *snd, uint8_t *imbe)
 {
 	int16_t frame[8U] = {0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000};
 	unsigned int offset = 0U;

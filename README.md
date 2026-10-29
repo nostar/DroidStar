@@ -3,9 +3,6 @@ This software connects to M17, Fusion (YSF/FCS, DN and VW modes are supported), 
 
 This software makes use of software from a number of other open source software projects, including MMDVMHost, MMDVM_CM, mvoice, and others. Not only is software from these projects being used directly, but learning about the various network protocols and encoding/decoding of the various protocols was only possible thanks to the authors of all of these software projects.
 
-# DudeStar, DroidStar, and Qt
-The DudeStar application used the Qt Widgets UI, while DroidStar uses the Qt Quick UI.  All of the back end C/C++ source code for both projects has always been identical, but because of the different UI APIs, two repositories had to be maintained for the same project. Even though I prefer the Qt widgets UI over the Qt Quick UI for desktop applications, I have combined both projects into a single entity which is now simply called 'DroidStar'. My dudestar repo has been removed from github, but there are plenty of forks of it on github, in case anyone wishes to continue development of that version.
-
 # M17 support 
 The Codec2 vocoder library is open source and is included as a C++ implementation of the original C library taken from the mvoice project.  More info on M17 can be found here: https://m17project.org/
 
@@ -69,13 +66,6 @@ cd build
 cmake ..
 make
 ```
-If building an an arm based platform like rpi or using dynarmic on x64/arm64, the md380 vocoder can be used.  In order to build with this, uncomment the following line in DroidStar.pro:
-```
-#DEFINES += USE_MD380_VOCODER
-```
-This requires the md380_vocoder library to be installed: https://github.com/nostar/md380_vocoder
-You must make sure that you are not in violation of any patent laws in your area if you decide to use this.
-
 My primary development platform is Fedora Linux.  With a proper build environment, the build instructions apply to all other platforms/distributions, including Windows and macOS.
 
 All of the gradle build files are provided to create an APK file ready to be installed on an Android device.  A proper Android build system including the Android NDK is required and beyond the scope of this document.

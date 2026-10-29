@@ -30,7 +30,7 @@
 #include "rand_gen.h"
 #include "tbls.h"
 #include "encode.h"
-#include "imbe_vocoder_impl.h"
+#include "imbe_vocoder.h"
 
 
 
@@ -41,7 +41,7 @@
 
 
 
-void imbe_vocoder_impl::v_synt_init(void)
+void imbe_vocoder::v_synt_init(void)
 {
 	Word16 i;
 
@@ -56,7 +56,7 @@ void imbe_vocoder_impl::v_synt_init(void)
 }
 
 
-void imbe_vocoder_impl::v_synt(IMBE_PARAM *imbe_param, Word16 *snd)
+void imbe_vocoder::v_synt(IMBE_PARAM *imbe_param, Word16 *snd)
 {
 	Word32 L_tmp, L_tmp1, fund_freq, L_snd[FRAME], L_ph_acc, L_ph_step;
 	Word32 L_ph_acc_aux, L_ph_step_prev, L_amp_acc, L_amp_step, L_ph_step_aux;

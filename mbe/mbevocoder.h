@@ -16,7 +16,8 @@
 #define MBEVOCODER_H
 
 #include <cinttypes>
-#include "imbe_vocoder/imbe_vocoder_api.h"
+#include "ambe2.h"
+#include "imbe_vocoder/imbe_vocoder.h"
 
 extern "C" {
 struct mbe_parameters
@@ -114,6 +115,8 @@ public:
 	
 private:
 	imbe_vocoder vocoder;
+    ambe2_decoder *d;
+    ambe2_encoder *e;
 	mbelibParms *m_mbelibParms;
     int m_errs2;
     char m_err_str[64];
