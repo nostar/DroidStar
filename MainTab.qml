@@ -220,6 +220,7 @@ Item {
 			droidstar.set_essid(settingsTab.comboEssid.currentText);
 			droidstar.set_bm_password(settingsTab.bmpwEdit.text);
 			droidstar.set_tgif_password(settingsTab.tgifpwEdit.text);
+			droidstar.set_adn_password(settingsTab.adnpwEdit.text);
 			droidstar.set_asl_password(settingsTab.aslpwEdit.text);
 			droidstar.set_latitude(settingsTab.latEdit.text);
 			droidstar.set_longitude(settingsTab.lonEdit.text);
