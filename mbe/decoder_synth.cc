@@ -1,11 +1,11 @@
 #include "decoder_synth.h"
-
 #include <cmath>
-
 #include "fastmath.h"
 #include "fft.h"
 #include "numeric.h"
 #include "tables.h"
+
+#include <QtGlobal>
 
 namespace halfrate::dec {
 
@@ -38,8 +38,43 @@ inline int64_t to_fixed64(float x, int bits) { return to_int64_sat(static_cast<d
 inline uint64_t phase_increment(float fundamental) { return static_cast<uint64_t>(to_fixed64(fundamental, 32)) << 32; }
 
 // high 64 bits of the signed 128-bit product
-inline int64_t multiply_high(int64_t a, int64_t b) { return static_cast<int64_t>((static_cast<__int128>(a) * b) >> 64); }
+//#ifdef Q_PROCESSOR_ARM_V7
+#if defined(Q_OS_ANDROID) && defined(Q_PROCESSOR_ARM) && !defined(Q_PROCESSOR_ARM_64)
+inline int64_t multiply_high(int64_t a, int64_t b) {
+    // Extract 32-bit halves
+    uint64_t u_a = static_cast<uint64_t>(a < 0 ? -a : a);
+    uint64_t u_b = static_cast<uint64_t>(b < 0 ? -b : b);
 
+    uint32_t a_lo = static_cast<uint32_t>(u_a);
+    uint32_t a_hi = static_cast<uint32_t>(u_a >> 32);
+    uint32_t b_lo = static_cast<uint32_t>(u_b);
+    uint32_t b_hi = static_cast<uint32_t>(u_b >> 32);
+
+    // Compute partial products
+    uint64_t term_lo = static_cast<uint64_t>(a_lo) * b_lo;
+    uint64_t term_mid1 = static_cast<uint64_t>(a_hi) * b_lo;
+    uint64_t term_mid2 = static_cast<uint64_t>(a_lo) * b_hi;
+    uint64_t term_hi = static_cast<uint64_t>(a_hi) * b_hi;
+
+    // Combine partial products with carries
+    uint64_t carry = (term_lo >> 32) + static_cast<uint32_t>(term_mid1) + static_cast<uint32_t>(term_mid2);
+    uint64_t result_hi = term_hi + (term_mid1 >> 32) + (term_mid2 >> 32) + (carry >> 32);
+
+    // Handle signed multiplication properties (Unsigned result to Signed)
+    int64_t final_res = static_cast<int64_t>(result_hi);
+    if ((a < 0) ^ (b < 0)) {
+        // Two's complement negation of the 128-bit result shifted by 64 bits
+        // If the lower 64-bits of the full 128-bit product are 0, no borrow happens.
+        uint64_t result_lo = (carry << 32) | static_cast<uint32_t>(term_lo);
+        final_res = -final_res - (result_lo != 0 ? 1 : 0);
+    }
+
+    return final_res;
+}
+
+#else
+inline int64_t multiply_high(int64_t a, int64_t b) { return static_cast<int64_t>((static_cast<__int128>(a) * b) >> 64); }
+#endif
 // NaN (a zero-length crossfade at its start point) gives 0
 inline float clamp01(float v) {
 	v = !(v >= 0.0f) ? 0.0f : v;
