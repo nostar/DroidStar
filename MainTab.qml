@@ -414,7 +414,7 @@ Item {
 		font.pixelSize: parent.height / 35
 		currentIndex: -1
 			displayText: currentIndex === -1 ? "Mod..." : currentText
-		model: [" ", "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z"]
+		model: [" ", "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z", " ", " "]
 		contentItem: Text {
 			text: _comboModule.displayText
 			font: _comboModule.font
