@@ -494,8 +494,7 @@ void DroidStar::process_connect()
             }
 		}
 
-		m_modethread->start();
-
+        m_modethread->start();
 	}
 /*
 	qDebug() << "process_connect called m_callsign == " << m_callsign;

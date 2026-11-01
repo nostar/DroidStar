@@ -16,6 +16,8 @@
 	<string>APPL</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>You know you want to...</string>
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>You know you want to...</string>
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>
 </dict>

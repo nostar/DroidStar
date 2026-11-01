@@ -72,7 +72,6 @@ private:
 	QAudioSource *m_in;
 #endif
 	QIODevice *m_outdev;
-	QIODevice *m_indev;
 	QQueue<int16_t> m_audioinq;
 	uint16_t m_maxlevel;
 	bool m_agc;
@@ -99,7 +98,6 @@ private:
 	float m_volume;
 
 private slots:
-	void input_data_received();
 	void process_audio(int16_t *pcm, size_t s);
 	void handleStateChanged(QAudio::State newState);
 };

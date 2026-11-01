@@ -178,8 +178,13 @@ if(UNIX)
     )
 endif()
 
+if(IOS)
+   set(CMAKE_OSX_DEPLOYMENT_TARGET "18.0")
+   target_sources(DroidStar PUBLIC
+      iosaudiosession.mm
+  )
+endif()
 if(APPLE)
-    set(CMAKE_OSX_DEPLOYMENT_TARGET "15.0")
     set(MY_BUNDLE_ID "com.dudetronics.90d5dd37.DroidStar")
     set_target_properties(DroidStar PROPERTIES
         MACOSX_BUNDLE_GUI_IDENTIFIER "${MY_BUNDLE_ID}"
@@ -187,9 +192,9 @@ if(APPLE)
         MACOSX_BUNDLE_INFO_PLIST ${CMAKE_CURRENT_SOURCE_DIR}/Info.plist
         XCODE_ATTRIBUTE_INFOLIST_FILE ${CMAKE_CURRENT_SOURCE_DIR}/Info.plist
     )
-    #target_link_libraries(DroidStar PRIVATE
-    #    "-framework AVFoundation"
-    #)
+    target_link_libraries(DroidStar PRIVATE
+        "-framework AVFoundation"
+    )
     qt_add_ios_ffmpeg_libraries(DroidStar)
 endif()
 
