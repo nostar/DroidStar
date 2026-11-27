@@ -321,7 +321,7 @@ void DroidStar::process_connect()
 #ifdef Q_OS_ANDROID
         QJniObject::callStaticMethod<void>(
             "org/dudetronics/droidstar/NotificationClient",
-            "denotify",
+            "stopDroidStarService",
             "(Landroid/content/Context;)V",
             QNativeInterface::QAndroidApplication::context());
 #endif
@@ -501,7 +501,21 @@ void DroidStar::process_connect()
             }
 		}
 
-        m_modethread->start();
+#ifdef Q_OS_ANDROID
+        const QString serviceMessage =
+            "Connecting to " + m_protocol + " " + m_refname;
+        const QJniObject javaServiceMessage =
+            QJniObject::fromString(serviceMessage);
+        QJniObject::callStaticMethod<void>(
+            "org/dudetronics/droidstar/NotificationClient",
+            "startDroidStarService",
+            "(Landroid/content/Context;Ljava/lang/String;)V",
+            QNativeInterface::QAndroidApplication::context(),
+            javaServiceMessage.object<jstring>());
+#endif
+
+		m_modethread->start();
+
 	}
 /*
 	qDebug() << "process_connect called m_callsign == " << m_callsign;
@@ -1353,7 +1367,7 @@ void DroidStar::update_data(Mode::MODEINFO info)
         QJniObject javaNotification = QJniObject::fromString(s);
         QJniObject::callStaticMethod<void>(
             "org/dudetronics/droidstar/NotificationClient",
-            "notify",
+            "updateNotification",
             "(Landroid/content/Context;Ljava/lang/String;)V",
             QNativeInterface::QAndroidApplication::context(),
             javaNotification.object<jstring>());
