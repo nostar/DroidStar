@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- USB devices that launch DroidStar when attached.
+     Mirrors getSupportedDevices() of every driver registered in UsbSerialProber.getDefaultProbeTable().
+     Keep in sync when adding VID:PID pairs to those drivers. -->
+<resources>
+    <!-- CdcAcmSerialDriver -->
+    <usb-device vendor-id="0x2341" product-id="0x0001" /> <!-- ARDUINO_UNO -->
+    <usb-device vendor-id="0x2341" product-id="0x0043" /> <!-- ARDUINO_UNO_R3 -->
+    <usb-device vendor-id="0x2341" product-id="0x0010" /> <!-- ARDUINO_MEGA_2560 -->
+    <usb-device vendor-id="0x2341" product-id="0x0042" /> <!-- ARDUINO_MEGA_2560_R3 -->
+    <usb-device vendor-id="0x2341" product-id="0x003b" /> <!-- ARDUINO_SERIAL_ADAPTER -->
+    <usb-device vendor-id="0x2341" product-id="0x0044" /> <!-- ARDUINO_SERIAL_ADAPTER_R3 -->
+    <usb-device vendor-id="0x2341" product-id="0x003f" /> <!-- ARDUINO_MEGA_ADK -->
+    <usb-device vendor-id="0x2341" product-id="0x0044" /> <!-- ARDUINO_MEGA_ADK_R3 -->
+    <usb-device vendor-id="0x2341" product-id="0x8036" /> <!-- ARDUINO_LEONARDO -->
+    <usb-device vendor-id="0x2341" product-id="0x8037" /> <!-- ARDUINO_MICRO -->
+    <usb-device vendor-id="0x16c0" product-id="0x0483" /> <!-- VAN_OOIJEN_TECH_TEENSYDUINO_SERIAL -->
+    <usb-device vendor-id="0x03eb" product-id="0x2044" /> <!-- ATMEL_LUFA_CDC_DEMO_APP -->
+    <usb-device vendor-id="0x1eaf" product-id="0x0004" /> <!-- LEAFLABS_MAPLE -->
+    <usb-device vendor-id="0x0d28" product-id="0x0204" /> <!-- ARM_MBED -->
+    <usb-device vendor-id="0x0483" product-id="0x5740" /> <!-- ST_CDC -->
+    <usb-device vendor-id="0x1fc9" product-id="0x0094" /> <!-- RADIO_FOUNDRY_GENERIC -->
+    <!-- Cp21xxSerialDriver -->
+    <usb-device vendor-id="0x10c4" product-id="0xea60" /> <!-- SILABS_CP2102 -->
+    <usb-device vendor-id="0x10c4" product-id="0xea70" /> <!-- SILABS_CP2105 -->
+    <usb-device vendor-id="0x10c4" product-id="0xea71" /> <!-- SILABS_CP2108 -->
+    <!-- FtdiSerialDriver -->
+    <usb-device vendor-id="0x0403" product-id="0x6001" /> <!-- FTDI_FT232R -->
+    <usb-device vendor-id="0x0403" product-id="0x6014" /> <!-- FTDI_FT232H -->
+    <usb-device vendor-id="0x0403" product-id="0x6010" /> <!-- FTDI_FT2232H -->
+    <usb-device vendor-id="0x0403" product-id="0x6011" /> <!-- FTDI_FT4232H -->
+    <usb-device vendor-id="0x0403" product-id="0x6015" /> <!-- FTDI_FT231X -->
+</resources>
