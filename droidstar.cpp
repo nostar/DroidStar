@@ -32,6 +32,10 @@
 #include <cstring>
 #include <fcntl.h>
 
+#if defined(Q_OS_IOS)
+extern "C" void setupAVAudioSession();
+#endif
+
 DroidStar::DroidStar(QObject *parent) :
 	QObject(parent),
 	m_dmrid(0),
@@ -323,6 +327,9 @@ void DroidStar::process_connect()
 #endif
 	}
 	else{
+#ifdef Q_OS_IOS
+        setupAVAudioSession();
+#endif
 		if(m_protocol == "REF"){
 			m_refname = m_saved_refhost;
 		}

@@ -26,7 +26,9 @@
 #endif
 
 #if defined(Q_OS_IOS)
-void configureiOSAudioSession();
+void setIOSAudioSessionCategory();
+extern "C" void renewBackgroundTask();
+extern "C" bool isAppInBackground();
 #endif
 
 AudioEngine::AudioEngine(QString in, QString out) :
@@ -149,7 +151,7 @@ void AudioEngine::init()
 void AudioEngine::start_capture()
 {
 #if defined(Q_OS_IOS)
-    configureiOSAudioSession();
+    setIOSAudioSessionCategory();
 #endif
     //m_in = new QAudioSource(m_indevice, m_informat, this);
     m_in->start([this](QSpan<const int16_t> buffer) {
@@ -376,16 +378,21 @@ void AudioEngine::handleStateChanged(QAudio::State newState)
 {
 	switch (newState) {
 	case QAudio::ActiveState:
-        //qDebug() << "AudioOut state active";
+        qDebug() << "AudioOut state active";
 		break;
 	case QAudio::SuspendedState:
-        //qDebug() << "AudioOut state suspended";
+        qDebug() << "AudioOut state suspended";
 		break;
 	case QAudio::IdleState:
-        //qDebug() << "AudioOut state idle";
+        qDebug() << "AudioOut state idle";
+#ifdef Q_OS_IOS
+        if (isAppInBackground()) {
+            renewBackgroundTask();
+        }
+#endif
 		break;
 	case QAudio::StoppedState:
-        //qDebug() << "AudioOut state stopped";
+        qDebug() << "AudioOut state stopped";
 		break;
 	default:
 		break;

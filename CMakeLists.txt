@@ -12,9 +12,6 @@ endif()
 qt_standard_project_setup(REQUIRES 6.5)
 
 set(app_icon_resource_windows "${CMAKE_CURRENT_SOURCE_DIR}/droidstar.rc")
-set(MACOSX_BUNDLE_ICON_FILE droidstar.icns)
-set(app_icon_macos "${CMAKE_CURRENT_SOURCE_DIR}/images/droidstar.icns")
-set_source_files_properties(${app_icon_macos} PROPERTIES MACOSX_PACKAGE_LOCATION "Resources")
 
 qt_add_executable(DroidStar WIN32 MACOSX_BUNDLE
     CRCenc.cpp CRCenc.h
@@ -123,7 +120,6 @@ qt_add_executable(DroidStar WIN32 MACOSX_BUNDLE
     xrf.cpp xrf.h
     ysf.cpp ysf.h
     ${app_icon_resource_windows}
-    ${app_icon_macos}
 )
 
 qt_add_qml_module(DroidStar
@@ -186,11 +182,18 @@ if(IOS)
 endif()
 if(APPLE)
     set(MY_BUNDLE_ID "com.dudetronics.90d5dd37.DroidStar")
+	set(APP_VERSION_STRING "1.0.1")
+	set(APP_ASSET_CATALOG "${CMAKE_CURRENT_SOURCE_DIR}/Images.xcassets")
+	target_sources(DroidStar PUBLIC ${APP_ASSET_CATALOG})
+	set_source_files_properties(${APP_ASSET_CATALOG} PROPERTIES MACOSX_PACKAGE_LOCATION Resources)
     set_target_properties(DroidStar PROPERTIES
         MACOSX_BUNDLE_GUI_IDENTIFIER "${MY_BUNDLE_ID}"
         XCODE_ATTRIBUTE_PRODUCT_BUNDLE_IDENTIFIER "${MY_BUNDLE_ID}"
         MACOSX_BUNDLE_INFO_PLIST ${CMAKE_CURRENT_SOURCE_DIR}/Info.plist
         XCODE_ATTRIBUTE_INFOLIST_FILE ${CMAKE_CURRENT_SOURCE_DIR}/Info.plist
+        XCODE_ATTRIBUTE_ASSETCATALOG_COMPILER_APPICON_NAME "AppIcon"
+		MACOSX_BUNDLE_SHORT_VERSION_STRING "${APP_VERSION_STRING}"
+		MACOSX_BUNDLE_BUNDLE_VERSION "${APP_VERSION_STRING}"
     )
     target_link_libraries(DroidStar PRIVATE
         "-framework AVFoundation"
@@ -208,7 +211,7 @@ if(ANDROID)
 
     set_target_properties(DroidStar PROPERTIES
        QT_ANDROID_PACKAGE_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/android
-       QT_ANDROID_VERSION_CODE 98
+       QT_ANDROID_VERSION_CODE 100
        #QT_ANDROID_MIN_SDK_VERSION 31
     )
 endif()
