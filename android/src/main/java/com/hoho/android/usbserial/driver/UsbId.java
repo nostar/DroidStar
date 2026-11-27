@@ -69,6 +69,10 @@ public final class UsbId {
     public static final int VENDOR_ST = 0x0483;
     public static final int ST_CDC = 0x5740;
 
+    // plain CDC-ACM device, with vid/pid reported by the Radio Foundry firmware.
+    public static final int VENDOR_RADIO_FOUNDRY = 0x1FC9;
+    public static final int RADIO_FOUNDRY_GENERIC = 0x0094;
+
     private UsbId() {
         throw new IllegalAccessError("Non-instantiable class");
     }

@@ -321,6 +321,10 @@ public class CdcAcmSerialDriver implements UsbSerialDriver {
                 new int[] {
                         UsbId.ST_CDC,
                 });
+        supportedDevices.put(UsbId.VENDOR_RADIO_FOUNDRY,
+                new int[] {
+                    UsbId.RADIO_FOUNDRY_GENERIC,
+                });
         return supportedDevices;
     }
 
