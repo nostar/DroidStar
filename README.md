@@ -3,9 +3,6 @@ This software connects to M17, Fusion (YSF/FCS, DN and VW modes are supported), 
 
 This software makes use of software from a number of other open source software projects, including MMDVMHost, MMDVM_CM, mvoice, and others. Not only is software from these projects being used directly, but learning about the various network protocols and encoding/decoding of the various protocols was only possible thanks to the authors of all of these software projects.
 
-# DudeStar, DroidStar, and Qt
-The DudeStar application used the Qt Widgets UI, while DroidStar uses the Qt Quick UI.  All of the back end C/C++ source code for both projects has always been identical, but because of the different UI APIs, two repositories had to be maintained for the same project. Even though I prefer the Qt widgets UI over the Qt Quick UI for desktop applications, I have combined both projects into a single entity which is now simply called 'DroidStar'. My dudestar repo has been removed from github, but there are plenty of forks of it on github, in case anyone wishes to continue development of that version.
-
 # M17 support 
 The Codec2 vocoder library is open source and is included as a C++ implementation of the original C library taken from the mvoice project.  More info on M17 can be found here: https://m17project.org/
 
@@ -69,31 +66,11 @@ cd build
 cmake ..
 make
 ```
-If building an an arm based platform like rpi or using dynarmic on x64/arm64, the md380 vocoder can be used.  In order to build with this, uncomment the following line in DroidStar.pro:
-```
-#DEFINES += USE_MD380_VOCODER
-```
-This requires the md380_vocoder library to be installed: https://github.com/nostar/md380_vocoder
-You must make sure that you are not in violation of any patent laws in your area if you decide to use this.
-
 My primary development platform is Fedora Linux.  With a proper build environment, the build instructions apply to all other platforms/distributions, including Windows and macOS.
 
 All of the gradle build files are provided to create an APK file ready to be installed on an Android device.  A proper Android build system including the Android NDK is required and beyond the scope of this document.
 
-# No builds are available on Github
-No builds for any platform are available on this Github site.  This is and always will be an open source project, to be used for educational and development purposes only. I am currently providing a Windows build which is *not* to be confused as any sort of official release of any kind.  No support will be provided for any build at any time.
-
-# DroidStar for iOS
-DroidStar used to be available for iOS via the TestFlight program.  I got fed up with Apple and its developer policies (not to mention the cost) so I cancelled my paid developer account.  DroidStar can now be installed to an iOS device by using a marvelous program called Sideloadly:
-
-https://sideloadly.io/
-
-The instructions here are pretty thorough.  It is important to read the FAQ section of the website to understand how sideloading works.  I suggest enabling Wifi development on the iOS device, as explained on the website. This allows you to load/re-load DroidStar without connecting to USB.
-
-There are static builds for all platforms out there on a few 3rd party sites such as this one:
-
-http://pizzanbeer.net/
-
-The ipa file is the iOS package.
+# DroidStar builds
+Android builds are available on the Google Play Store.  IOS builds are available on the Apple App Store.  Windows builds are available here on the github site.  Instructions are available here for building on Linux and MacOS.
 
 

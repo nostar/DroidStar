@@ -29,12 +29,12 @@
 #include "rand_gen.h"
 #include "tbls.h"
 #include "encode.h"
-#include "imbe_vocoder_impl.h"
+#include "imbe_vocoder.h"
 
 
 
 
-void imbe_vocoder_impl::uv_synt_init(void)
+void imbe_vocoder::uv_synt_init(void)
 {
 	fft_init();
 	v_zap(uv_mem, 105);
@@ -45,7 +45,7 @@ void imbe_vocoder_impl::uv_synt_init(void)
 
 
 
-void imbe_vocoder_impl::uv_synt(IMBE_PARAM *imbe_param, Word16 *snd)
+void imbe_vocoder::uv_synt(IMBE_PARAM *imbe_param, Word16 *snd)
 {
 	Cmplx16 Uw[FFTLENGTH];
 	Word16 i, index_a, index_b, index_aux, ha, hb, *v_uv_dsn_ptr, *sa_ptr, sa;

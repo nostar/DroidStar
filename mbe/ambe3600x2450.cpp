@@ -19,11 +19,11 @@
 #include <stdio.h>
 #include <math.h>
 
-#include "mbelib.h"
-#include "ambe3600x2400_const.h"
+#include "mbevocoder.h"
+#include "vocoder_tables.h"
 
 void
-mbe_dumpAmbe2400Data (char *ambe_d)
+mbe_dumpAmbe2450Data (char *ambe_d)
 {
 
   int i;
@@ -39,7 +39,7 @@ mbe_dumpAmbe2400Data (char *ambe_d)
 }
 
 void
-mbe_dumpAmbe3600x2400Frame (char ambe_fr[4][24])
+mbe_dumpAmbe3600x2450Frame (char ambe_fr[4][24])
 {
 
   int j;
@@ -75,7 +75,7 @@ mbe_dumpAmbe3600x2400Frame (char ambe_fr[4][24])
 }
 
 int
-mbe_eccAmbe3600x2400C0 (char ambe_fr[4][24])
+mbe_eccAmbe3600x2450C0 (char ambe_fr[4][24])
 {
 
   int j, errs;
@@ -97,7 +97,7 @@ mbe_eccAmbe3600x2400C0 (char ambe_fr[4][24])
 }
 
 int
-mbe_eccAmbe3600x2400Data (char ambe_fr[4][24], char *ambe_d)
+mbe_eccAmbe3600x2450Data (char ambe_fr[4][24], char *ambe_d)
 {
 
   int j, errs;
@@ -141,7 +141,7 @@ mbe_eccAmbe3600x2400Data (char ambe_fr[4][24], char *ambe_d)
 }
 
 int
-mbe_decodeAmbe2400Parms (char *ambe_d, mbe_parms * cur_mp, mbe_parms * prev_mp)
+mbe_decodeAmbe2450Parms (char *ambe_d, mbe_parms * cur_mp, mbe_parms * prev_mp)
 {
 
   int ji, i, j, k, l, L, m, am, ak;
@@ -162,88 +162,29 @@ mbe_decodeAmbe2400Parms (char *ambe_d, mbe_parms * cur_mp, mbe_parms * prev_mp)
 
   // copy repeat from prev_mp
   cur_mp->repeat = prev_mp->repeat;
-  
-  // check if frame is tone or other; this matches section 7.2 on the P25 Half rate vocoder annex doc
+
+  // decode fundamental frequency w0 from b0
   b0 = 0;
   b0 |= ambe_d[0]<<6;
   b0 |= ambe_d[1]<<5;
   b0 |= ambe_d[2]<<4;
   b0 |= ambe_d[3]<<3;
-  b0 |= ambe_d[4]<<2;
-  b0 |= ambe_d[5]<<1;
-  b0 |= ambe_d[48];
-
-  if ((b0&0x7E) == 0x7E) // frame is tone
-  {
-    // find tone index
-    // Cx# 0000000000001111111111112222222222233333333333333
-    //
-    // IDX 0000000000111111111122222222223333333333444444444
-    // idx 0123456789012345678901234567890123456789012345678
-    // exm 1111110101001110100000001000000000000000001100000 : t=0111100
-    // ex2 1111110110101110100000000000000000000000000000000 : t=1100010
-    // ex3 1111110010101110110000001000000000000000000110000 : t=0000110
-    // tt1 1111110010011110100000001000000000000000000101000 : t=0000101
-    // tt3 1111110010011110000000001000000000000000000101000
-    // ton HHHHHHDEF410======......P.................32==...
-    // vol             765430                          21
-    //DEF indexes the following tables for tone bits 5-7
-    int t7tab[8] = {1,0,0,0,0,1,1,1};
-    int t6tab[8] = {0,0,0,1,1,1,1,0};
-    int t5tab[8] = {0,0,1,0,1,1,0,1};
-    //              V V V V V G G G     V = verified, G = guessed (and unused by all normal tone indices)
-    b1 = 0; 
-    b1 |= t7tab[((ambe_d[6]<<2)|(ambe_d[7]<<1)|ambe_d[8])]<<7; //t7 128
-    b1 |= t6tab[((ambe_d[6]<<2)|(ambe_d[7]<<1)|ambe_d[8])]<<6; //t6 64
-    b1 |= t5tab[((ambe_d[6]<<2)|(ambe_d[7]<<1)|ambe_d[8])]<<5; //t5 32
-    b1 |= ambe_d[9]<<4;    //t4 16  e verified
-    b1 |= ambe_d[42]<<3;   //t3 8   d verified
-    b1 |= ambe_d[43]<<2;   //t2 4   c verified
-    b1 |= ambe_d[10]<<1;   //t1 2   b verified
-    b1 |= ambe_d[11];      //t0 1   a verified
-
-    b2 = 0;
-    b2 |= ambe_d[12]<<7;   //v7 128 h verified
-    b2 |= ambe_d[13]<<6;   //v6 64  g verified
-    b2 |= ambe_d[14]<<5;   //v5 32  f verified
-    b2 |= ambe_d[15]<<4;   //v4 16  e guess based on data
-    b2 |= ambe_d[16]<<3;   //v3 8   d guess based on data
-    b2 |= ambe_d[44]<<2;   //v2 4   c guess based on data
-    b2 |= ambe_d[45]<<1;   //v1 2   b guess based on data
-    b2 |= ambe_d[17];      //v0 1   a guess based on data
-    // the order of the last 3 bits may really be 17,44,45 not 44,45,17 as above
-
-    fprintf(stderr,"Tone volume: %d; ", b2);
-    if (b1 < 5)
+  b0 |= ambe_d[37]<<2;
+  b0 |= ambe_d[38]<<1;
+  b0 |= ambe_d[39];
+  if ((b0 >= 120) && (b0 <= 123)) // if w0 bits are 1111000, 1111001, 1111010 or 1111011, frame is erasure
     {
-      fprintf(stderr, "index: %d, was <5, invalid!\n", b1);
-      silence = 1;
+#ifdef AMBE_DEBUG
+      printf ("Erasure Frame\n");
+#endif
+      return (2);
     }
-    else if ((b1 >= 5) && (b1 <= 122))
-    {
-      fprintf(stderr, "index: %d, Single tone hz: %f\n", b1, (float)b1*31.25);
-    }
-    else if ((b1 > 122) && (b1 < 128))
-    {
-      fprintf(stderr, "index: %d, was >122 and <128, invalid!\n", b1);
-      silence = 1;
-    }
-    else if ((b1 >= 128) && (b1 <= 163))
-    {
-      fprintf(stderr, "index: %d, Dual tone\n", b1);
-	  // note: dual tone index is different on ambe(dstar) and ambe2+
-    }
-    else
-    {
-      fprintf(stderr, "index: %d, was >163, invalid!\n", b1);
-      silence = 1;
-    }
-
-    if(silence == 1)
+  else if ((b0 == 124) || (b0 == 125)) // if w0 bits are 1111100 or 1111101, frame is silence
     {
 #ifdef AMBE_DEBUG
       printf ("Silence Frame\n");
 #endif
+      silence = 1;
       cur_mp->w0 = ((float) 2 * M_PI) / (float) 32;
       f0 = (float) 1 / (float) 32;
       L = 14;
@@ -253,27 +194,22 @@ mbe_decodeAmbe2400Parms (char *ambe_d, mbe_parms * cur_mp, mbe_parms * prev_mp)
           cur_mp->Vl[l] = 0;
         }
     }
+  else if ((b0 == 126) || (b0 == 127)) // if w0 bits are 1111110 or 1111111, frame is tone
+    {
 #ifdef AMBE_DEBUG
-    printf ("Tone Frame\n");
+      printf ("Tone Frame\n");
 #endif
-    return (3);
-  }
-  //fprintf(stderr,"Voice Frame, Pitch = %f\n", powf(2, ((float)b0+195.626)/-46.368)*8000); // was 45.368
-  //fprintf(stderr,"Voice Frame, rawPitch = %02d, Pitch = %f\n", b0, powf(2, ((-1*(float)(17661/((int)1<<12))) - (2.1336e-2 * ((float)b0+0.5))))*8000);
-  //fprintf(stderr,"Voice Frame, Pitch = %f, ", powf(2, (-4.311767578125 - (2.1336e-2 * ((float)b0+0.5))))*8000);
- 
-  // decode fundamental frequency w0 from b0 is already done
- 
+      return (3);
+    }
+
   if (silence == 0)
     {
       // w0 from specification document
-      //f0 = AmbeW0table[b0];
-      //cur_mp->w0 = f0 * (float) 2 *M_PI;
-      // w0 from patent filings
-      //f0 = powf (2, ((float) b0 + (float) 195.626) / -(float) 46.368); // was 45.368
-      // w0 guess  
-      f0 = powf(2, (-4.311767578125 - (2.1336e-2 * ((float)b0+0.5))));
+      f0 = AmbeW0table[b0];
       cur_mp->w0 = f0 * (float) 2 *M_PI;
+      // w0 from patent filings
+      //f0 = powf (2, ((float) b0 + (float) 195.626) / -(float) 45.368);
+      //cur_mp->w0 = f0 * (float) 2 *M_PI;
     }
 
   unvc = (float) 0.2046 / sqrtf (cur_mp->w0);
@@ -281,12 +217,11 @@ mbe_decodeAmbe2400Parms (char *ambe_d, mbe_parms * cur_mp, mbe_parms * prev_mp)
   //unvc = (float) 0.2046 / sqrtf (f0);
 
   // decode L
-  L = 0;
   if (silence == 0)
     {
-      // L from specification document 
+      // L from specification document
       // lookup L in tabl3
-      L = AmbePlusLtable[b0];
+      L = AmbeLtable[b0];
       // L formula from patent filings
       //L=(int)((float)0.4627 / f0);
       cur_mp->L = L;
@@ -294,13 +229,13 @@ mbe_decodeAmbe2400Parms (char *ambe_d, mbe_parms * cur_mp, mbe_parms * prev_mp)
 
   // decode V/UV parameters
   // load b1 from ambe_d
-  //TODO: use correct table (i.e. 0x0000 0x0005 0x0050 0x0055 etc)
   b1 = 0;
-  b1 |= ambe_d[38]<<3;
-  b1 |= ambe_d[39]<<2;
-  b1 |= ambe_d[40]<<1;
-  b1 |= ambe_d[41];
-  //fprintf(stderr,"V/UV = %d, ", b1);
+  b1 |= ambe_d[4]<<4;
+  b1 |= ambe_d[5]<<3;
+  b1 |= ambe_d[6]<<2;
+  b1 |= ambe_d[7]<<1;
+  b1 |= ambe_d[35];
+
   for (l = 1; l <= L; l++)
     {
       // jl from specification document
@@ -310,7 +245,7 @@ mbe_decodeAmbe2400Parms (char *ambe_d, mbe_parms * cur_mp, mbe_parms * prev_mp)
 
       if (silence == 0)
         {
-          cur_mp->Vl[l] = AmbePlusVuv[b1][jl];
+          cur_mp->Vl[l] = AmbeVuv[b1][jl];
         }
 #ifdef AMBE_DEBUG
       printf ("jl[%i]:%i Vl[%i]:%i\n", l, jl, l, cur_mp->Vl[l]);
@@ -323,14 +258,13 @@ mbe_decodeAmbe2400Parms (char *ambe_d, mbe_parms * cur_mp, mbe_parms * prev_mp)
   // decode gain vector
   // load b2 from ambe_d
   b2 = 0;
-  b2 |= ambe_d[6]<<5;
-  b2 |= ambe_d[7]<<4;
-  b2 |= ambe_d[8]<<3;
-  b2 |= ambe_d[9]<<2;
-  b2 |= ambe_d[42]<<1;
-  b2 |= ambe_d[43];
-  //fprintf(stderr,"Gain = %d,\n", b2);
-  deltaGamma = AmbePlusDg[b2];
+  b2 |= ambe_d[8]<<4;
+  b2 |= ambe_d[9]<<3;
+  b2 |= ambe_d[10]<<2;
+  b2 |= ambe_d[11]<<1;
+  b2 |= ambe_d[36];
+
+  deltaGamma = AmbeDg[b2];
   cur_mp->gamma = deltaGamma + ((float) 0.5 * prev_mp->gamma);
 #ifdef AMBE_DEBUG
   printf ("b2: %i, deltaGamma: %f gamma: %f gamma-1: %f\n", b2, deltaGamma, cur_mp->gamma, prev_mp->gamma);
@@ -342,32 +276,32 @@ mbe_decodeAmbe2400Parms (char *ambe_d, mbe_parms * cur_mp, mbe_parms * prev_mp)
 
   // load b3 from ambe_d
   b3 = 0;
-  b3 |= ambe_d[10]<<8;
-  b3 |= ambe_d[11]<<7;
-  b3 |= ambe_d[12]<<6;
-  b3 |= ambe_d[13]<<5;
-  b3 |= ambe_d[14]<<4;
-  b3 |= ambe_d[15]<<3;
-  b3 |= ambe_d[16]<<2;
-  b3 |= ambe_d[44]<<1;
-  b3 |= ambe_d[45];
-  Gm[2] = AmbePlusPRBA24[b3][0];
-  Gm[3] = AmbePlusPRBA24[b3][1];
-  Gm[4] = AmbePlusPRBA24[b3][2];
+  b3 |= ambe_d[12]<<8;
+  b3 |= ambe_d[13]<<7;
+  b3 |= ambe_d[14]<<6;
+  b3 |= ambe_d[15]<<5;
+  b3 |= ambe_d[16]<<4;
+  b3 |= ambe_d[17]<<3;
+  b3 |= ambe_d[18]<<2;
+  b3 |= ambe_d[19]<<1;
+  b3 |= ambe_d[40];
+  Gm[2] = AmbePRBA24[b3][0];
+  Gm[3] = AmbePRBA24[b3][1];
+  Gm[4] = AmbePRBA24[b3][2];
 
   // load b4 from ambe_d
   b4 = 0;
-  b4 |= ambe_d[17]<<6;
-  b4 |= ambe_d[18]<<5;
-  b4 |= ambe_d[19]<<4;
-  b4 |= ambe_d[20]<<3;
-  b4 |= ambe_d[21]<<2;
-  b4 |= ambe_d[46]<<1;
-  b4 |= ambe_d[47];
-  Gm[5] = AmbePlusPRBA58[b4][0];
-  Gm[6] = AmbePlusPRBA58[b4][1];
-  Gm[7] = AmbePlusPRBA58[b4][2];
-  Gm[8] = AmbePlusPRBA58[b4][3];
+  b4 |= ambe_d[20]<<6;
+  b4 |= ambe_d[21]<<5;
+  b4 |= ambe_d[22]<<4;
+  b4 |= ambe_d[23]<<3;
+  b4 |= ambe_d[41]<<2;
+  b4 |= ambe_d[42]<<1;
+  b4 |= ambe_d[43];
+  Gm[5] = AmbePRBA58[b4][0];
+  Gm[6] = AmbePRBA58[b4][1];
+  Gm[7] = AmbePRBA58[b4][2];
+  Gm[8] = AmbePRBA58[b4][3];
 
 #ifdef AMBE_DEBUG
   printf ("b3: %i Gm[2]: %f Gm[3]: %f Gm[4]: %f b4: %i Gm[5]: %f Gm[6]: %f Gm[7]: %f Gm[8]: %f\n", b3, Gm[2], Gm[3], Gm[4], b4, Gm[5], Gm[6], Gm[7], Gm[8]);
@@ -413,37 +347,37 @@ mbe_decodeAmbe2400Parms (char *ambe_d, mbe_parms * cur_mp, mbe_parms * prev_mp)
 
   // load b5 from ambe_d
   b5 = 0;
-  b5 |= ambe_d[22]<<3;
-  b5 |= ambe_d[23]<<2;
-  b5 |= ambe_d[25]<<1;
-  b5 |= ambe_d[26];
+  b5 |= ambe_d[24]<<4;
+  b5 |= ambe_d[25]<<3;
+  b5 |= ambe_d[26]<<2;
+  b5 |= ambe_d[27]<<1;
+  b5 |= ambe_d[44];
 
   // load b6 from ambe_d
   b6 = 0;
-  b6 |= ambe_d[27]<<3;
-  b6 |= ambe_d[28]<<2;
-  b6 |= ambe_d[29]<<1;
-  b6 |= ambe_d[30];
+  b6 |= ambe_d[28]<<3;
+  b6 |= ambe_d[29]<<2;
+  b6 |= ambe_d[30]<<1;
+  b6 |= ambe_d[45];
 
   // load b7 from ambe_d
   b7 = 0;
   b7 |= ambe_d[31]<<3;
   b7 |= ambe_d[32]<<2;
   b7 |= ambe_d[33]<<1;
-  b7 |= ambe_d[34];
+  b7 |= ambe_d[46];
 
   // load b8 from ambe_d
   b8 = 0;
-  b8 |= ambe_d[35]<<3;
-  b8 |= ambe_d[36]<<2;
-  b8 |= ambe_d[37]<<1;
-  //b8 |= 0; // least significant bit of hoc3 unused here, and according to the patent is forced to 0 when not used
+  b8 |= ambe_d[34]<<2;
+  b8 |= ambe_d[47]<<1;
+  b8 |= ambe_d[48];
 
   // lookup Ji
-  Ji[1] = AmbePlusLmprbl[L][0];
-  Ji[2] = AmbePlusLmprbl[L][1];
-  Ji[3] = AmbePlusLmprbl[L][2];
-  Ji[4] = AmbePlusLmprbl[L][3];
+  Ji[1] = AmbeLmprbl[L][0];
+  Ji[2] = AmbeLmprbl[L][1];
+  Ji[3] = AmbeLmprbl[L][2];
+  Ji[4] = AmbeLmprbl[L][3];
 #ifdef AMBE_DEBUG
   printf ("Ji[1]: %i Ji[2]: %i Ji[3]: %i Ji[4]: %i\n", Ji[1], Ji[2], Ji[3], Ji[4]);
   printf ("b5: %i b6: %i b7: %i b8: %i\n", b5, b6, b7, b8);
@@ -460,7 +394,7 @@ mbe_decodeAmbe2400Parms (char *ambe_d, mbe_parms * cur_mp, mbe_parms * prev_mp)
         }
       else
         {
-          Cik[1][k] = AmbePlusHOCb5[b5][k - 3];
+          Cik[1][k] = AmbeHOCb5[b5][k - 3];
 #ifdef AMBE_DEBUG
           printf ("C1,%i: %f ", k, Cik[1][k]);
 #endif
@@ -474,7 +408,7 @@ mbe_decodeAmbe2400Parms (char *ambe_d, mbe_parms * cur_mp, mbe_parms * prev_mp)
         }
       else
         {
-          Cik[2][k] = AmbePlusHOCb6[b6][k - 3];
+          Cik[2][k] = AmbeHOCb6[b6][k - 3];
 #ifdef AMBE_DEBUG
           printf ("C2,%i: %f ", k, Cik[2][k]);
 #endif
@@ -488,7 +422,7 @@ mbe_decodeAmbe2400Parms (char *ambe_d, mbe_parms * cur_mp, mbe_parms * prev_mp)
         }
       else
         {
-          Cik[3][k] = AmbePlusHOCb7[b7][k - 3];
+          Cik[3][k] = AmbeHOCb7[b7][k - 3];
 #ifdef AMBE_DEBUG
           printf ("C3,%i: %f ", k, Cik[3][k]);
 #endif
@@ -502,7 +436,7 @@ mbe_decodeAmbe2400Parms (char *ambe_d, mbe_parms * cur_mp, mbe_parms * prev_mp)
         }
       else
         {
-          Cik[4][k] = AmbePlusHOCb8[b8][k - 3];
+          Cik[4][k] = AmbeHOCb8[b8][k - 3];
 #ifdef AMBE_DEBUG
           printf ("C4,%i: %f ", k, Cik[4][k]);
 #endif
@@ -619,7 +553,7 @@ mbe_decodeAmbe2400Parms (char *ambe_d, mbe_parms * cur_mp, mbe_parms * prev_mp)
 }
 
 void
-mbe_demodulateAmbe3600x2400Data (char ambe_fr[4][24])
+mbe_demodulateAmbe3600x2450Data (char ambe_fr[4][24])
 {
   int i, j, k;
   unsigned short pr[115];
@@ -651,7 +585,7 @@ mbe_demodulateAmbe3600x2400Data (char ambe_fr[4][24])
 }
 
 void
-mbe_processAmbe2400Dataf (float *aout_buf, int *errs2, char *err_str, char ambe_d[49], mbe_parms * cur_mp, mbe_parms * prev_mp, mbe_parms * prev_mp_enhanced, int uvquality)
+mbe_processAmbe2450Dataf (float *aout_buf, int *errs2, char *err_str, char ambe_d[49], mbe_parms * cur_mp, mbe_parms * prev_mp, mbe_parms * prev_mp_enhanced, int uvquality)
 {
 
   int i, bad;
@@ -662,7 +596,7 @@ mbe_processAmbe2400Dataf (float *aout_buf, int *errs2, char *err_str, char ambe_
       err_str++;
     }
 
-  bad = mbe_decodeAmbe2400Parms (ambe_d, cur_mp, prev_mp);
+  bad = mbe_decodeAmbe2450Parms (ambe_d, cur_mp, prev_mp);
   if (bad == 2)
     {
       // Erasure frame
@@ -715,33 +649,33 @@ mbe_processAmbe2400Dataf (float *aout_buf, int *errs2, char *err_str, char ambe_
 }
 
 void
-mbe_processAmbe2400Data (short *aout_buf, int *errs2, char *err_str, char ambe_d[49], mbe_parms * cur_mp, mbe_parms * prev_mp, mbe_parms * prev_mp_enhanced, int uvquality)
+mbe_processAmbe2450Data (short *aout_buf, int *errs2, char *err_str, char ambe_d[49], mbe_parms * cur_mp, mbe_parms * prev_mp, mbe_parms * prev_mp_enhanced, int uvquality)
 {
   float float_buf[160];
 
-  mbe_processAmbe2400Dataf (float_buf, errs2, err_str, ambe_d, cur_mp, prev_mp, prev_mp_enhanced, uvquality);
+  mbe_processAmbe2450Dataf (float_buf, errs2, err_str, ambe_d, cur_mp, prev_mp, prev_mp_enhanced, uvquality);
   mbe_floattoshort (float_buf, aout_buf);
 }
 
 void
-mbe_processAmbe3600x2400Framef (float *aout_buf, int *errs2, char *err_str, char ambe_fr[4][24], char ambe_d[49], mbe_parms * cur_mp, mbe_parms * prev_mp, mbe_parms * prev_mp_enhanced, int uvquality)
+mbe_processAmbe3600x2450Framef (float *aout_buf, int *errs2, char *err_str, char ambe_fr[4][24], char ambe_d[49], mbe_parms * cur_mp, mbe_parms * prev_mp, mbe_parms * prev_mp_enhanced, int uvquality)
 {
 
   int errs = 0;
   *errs2 = 0;
-  errs = mbe_eccAmbe3600x2400C0 (ambe_fr);
-  mbe_demodulateAmbe3600x2400Data (ambe_fr);
+  errs = mbe_eccAmbe3600x2450C0 (ambe_fr);
+  mbe_demodulateAmbe3600x2450Data (ambe_fr);
   *errs2 = errs;
-  *errs2 += mbe_eccAmbe3600x2400Data (ambe_fr, ambe_d);
+  *errs2 += mbe_eccAmbe3600x2450Data (ambe_fr, ambe_d);
 
-  mbe_processAmbe2400Dataf (aout_buf, errs2, err_str, ambe_d, cur_mp, prev_mp, prev_mp_enhanced, uvquality);
+  mbe_processAmbe2450Dataf (aout_buf, errs2, err_str, ambe_d, cur_mp, prev_mp, prev_mp_enhanced, uvquality);
 }
 
 void
-mbe_processAmbe3600x2400Frame (short *aout_buf, int *errs2, char *err_str, char ambe_fr[4][24], char ambe_d[49], mbe_parms * cur_mp, mbe_parms * prev_mp, mbe_parms * prev_mp_enhanced, int uvquality)
+mbe_processAmbe3600x2450Frame (short *aout_buf, int *errs2, char *err_str, char ambe_fr[4][24], char ambe_d[49], mbe_parms * cur_mp, mbe_parms * prev_mp, mbe_parms * prev_mp_enhanced, int uvquality)
 {
   float float_buf[160];
 
-  mbe_processAmbe3600x2400Framef (float_buf, errs2, err_str, ambe_fr, ambe_d, cur_mp, prev_mp, prev_mp_enhanced, uvquality);
+  mbe_processAmbe3600x2450Framef (float_buf, errs2, err_str, ambe_fr, ambe_d, cur_mp, prev_mp, prev_mp_enhanced, uvquality);
   mbe_floattoshort (float_buf, aout_buf);
 }

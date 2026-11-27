@@ -293,7 +293,7 @@ void YSF::hostname_lookup(QHostInfo i)
 		m_address = i.addresses().first();
 		m_udp = new QUdpSocket(this);
 		connect(m_udp, SIGNAL(readyRead()), this, SLOT(process_udp()));
-		m_udp->writeDatagram(out, m_address, m_modeinfo.port);
+        m_udp->writeDatagram(out, m_address, m_modeinfo.port);
 
         if(m_debug){
             QDebug debug = qDebug();

@@ -12,9 +12,6 @@ endif()
 qt_standard_project_setup(REQUIRES 6.5)
 
 set(app_icon_resource_windows "${CMAKE_CURRENT_SOURCE_DIR}/droidstar.rc")
-set(MACOSX_BUNDLE_ICON_FILE droidstar.icns)
-set(app_icon_macos "${CMAKE_CURRENT_SOURCE_DIR}/images/droidstar.icns")
-set_source_files_properties(${app_icon_macos} PROPERTIES MACOSX_PACKAGE_LOCATION "Resources")
 
 qt_add_executable(DroidStar WIN32 MACOSX_BUNDLE
     CRCenc.cpp CRCenc.h
@@ -29,6 +26,17 @@ qt_add_executable(DroidStar WIN32 MACOSX_BUNDLE
     audioengine.cpp audioengine.h
     cbptc19696.cpp cbptc19696.h
     cgolay2087.cpp cgolay2087.h
+    codec2/codebooks.cpp
+    codec2/codec2.cpp
+    codec2/codec2_api.h
+    codec2/codec2_internal.h
+    codec2/defines.h
+    codec2/kiss_fft.cpp codec2/kiss_fft.h
+    codec2/lpc.cpp codec2/lpc.h
+    codec2/nlp.cpp codec2/nlp.h
+    codec2/pack.cpp
+    codec2/qbase.cpp codec2/qbase.h
+    codec2/quantise.cpp codec2/quantise.h
     chamming.cpp chamming.h
     crs129.cpp crs129.h
     dcs.cpp dcs.h
@@ -49,8 +57,6 @@ qt_add_executable(DroidStar WIN32 MACOSX_BUNDLE
     imbe_vocoder/globals.h
     imbe_vocoder/imbe.h
     imbe_vocoder/imbe_vocoder.cc imbe_vocoder/imbe_vocoder.h
-    imbe_vocoder/imbe_vocoder_api.h
-    imbe_vocoder/imbe_vocoder_impl.cc imbe_vocoder/imbe_vocoder_impl.h
     imbe_vocoder/math_sub.cc imbe_vocoder/math_sub.h
     imbe_vocoder/pe_lpf.cc imbe_vocoder/pe_lpf.h
     imbe_vocoder/pitch_est.cc imbe_vocoder/pitch_est.h
@@ -66,29 +72,54 @@ qt_add_executable(DroidStar WIN32 MACOSX_BUNDLE
     imbe_vocoder/uv_synt.cc imbe_vocoder/uv_synt.h
     imbe_vocoder/v_synt.cc imbe_vocoder/v_synt.h
     imbe_vocoder/v_uv_det.cc imbe_vocoder/v_uv_det.h
-    mbe/ambe3600x2400.c
-    mbe/ambe3600x2400_const.h
-    mbe/ambe3600x2450.c
-    mbe/ambe3600x2450_const.h
-    mbe/ecc.c
-    mbe/ecc_const.h
-    mbe/mbelib.c mbe/mbelib.h
-    mbe/mbelib_const.h
-    mbe/mbelib_parms.h
-    mbe/mbevocoder.cpp mbe/mbevocoder.h
-    mbe/mbevocoder_api.h
-    mbe/vocoder_tables.h
     m17.cpp m17.h
     main.cpp
+    mbe/ambe.cpp
+    mbe/ambe2.cc mbe/ambe2.h
+    mbe/ambe3600x2400.cpp
+    mbe/ambe3600x2450.cpp
+    mbe/analysis.cc mbe/analysis.h
+    mbe/api.cc
+    mbe/codebook.cc mbe/codebook.h
+    mbe/codebook_set.cc
+    mbe/constants.h
+    mbe/cosine.cc
+    mbe/decoder.cc mbe/decoder.h
+    mbe/decoder_api.cc
+    mbe/decoder_options.cc mbe/decoder_options.h
+    mbe/decoder_synth.cc mbe/decoder_synth.h
+    mbe/decoder_tables.cc mbe/decoder_tables.h
+    mbe/dequant.cc mbe/dequant.h
+    mbe/enc_analysis.cc
+    mbe/encoder.cc mbe/encoder.h
+    mbe/encoder_api.cc
+    mbe/enc_pitch_net.cc
+    mbe/enc_tables.h
+    mbe/enhance.cc mbe/enhance.h
+    mbe/fastmath.cc mbe/fastmath.h
+    mbe/fec.cc mbe/fec.h
+    mbe/fft.cc mbe/fft.h
+    mbe/frame.cc mbe/frame.h
+    mbe/frame_layout.cc
+    mbe/golay.cc
+    mbe/halfrate.h
+    mbe/history.h
+    mbe/mbevocoder.cpp mbe/mbevocoder.h
+    mbe/numeric.h
+    mbe/options.cc
+    mbe/options.h
+    mbe/pitch.cc mbe/pitch.h
+    mbe/shape_quantizer.cc
+    mbe/shape_quantizer.h
+    mbe/tables.h
+    mbe/vocoder_tables.h
     mode.cpp mode.h
     nxdn.cpp nxdn.h
     p25.cpp p25.h
     ref.cpp ref.h
-
     xrf.cpp xrf.h
     ysf.cpp ysf.h
     ${app_icon_resource_windows}
-    ${app_icon_macos}
 )
 
 qt_add_qml_module(DroidStar
@@ -143,11 +174,31 @@ if(UNIX)
     )
 endif()
 
+if(IOS)
+   set(CMAKE_OSX_DEPLOYMENT_TARGET "18.0")
+   target_sources(DroidStar PUBLIC
+      iosaudiosession.mm
+  )
+endif()
 if(APPLE)
-    set_target_properties(DroidStar PROPERTIES MACOSX_BUNDLE_INFO_PLIST ${CMAKE_CURRENT_SOURCE_DIR}/Info.plist)
+    set(MY_BUNDLE_ID "com.dudetronics.90d5dd37.DroidStar")
+	set(APP_VERSION_STRING "1.0.1")
+	set(APP_ASSET_CATALOG "${CMAKE_CURRENT_SOURCE_DIR}/Images.xcassets")
+	target_sources(DroidStar PUBLIC ${APP_ASSET_CATALOG})
+	set_source_files_properties(${APP_ASSET_CATALOG} PROPERTIES MACOSX_PACKAGE_LOCATION Resources)
+    set_target_properties(DroidStar PROPERTIES
+        MACOSX_BUNDLE_GUI_IDENTIFIER "${MY_BUNDLE_ID}"
+        XCODE_ATTRIBUTE_PRODUCT_BUNDLE_IDENTIFIER "${MY_BUNDLE_ID}"
+        MACOSX_BUNDLE_INFO_PLIST ${CMAKE_CURRENT_SOURCE_DIR}/Info.plist
+        XCODE_ATTRIBUTE_INFOLIST_FILE ${CMAKE_CURRENT_SOURCE_DIR}/Info.plist
+        XCODE_ATTRIBUTE_ASSETCATALOG_COMPILER_APPICON_NAME "AppIcon"
+		MACOSX_BUNDLE_SHORT_VERSION_STRING "${APP_VERSION_STRING}"
+		MACOSX_BUNDLE_BUNDLE_VERSION "${APP_VERSION_STRING}"
+    )
     target_link_libraries(DroidStar PRIVATE
         "-framework AVFoundation"
     )
+    qt_add_ios_ffmpeg_libraries(DroidStar)
 endif()
 
 if(ANDROID)
@@ -160,7 +211,7 @@ if(ANDROID)
 
     set_target_properties(DroidStar PROPERTIES
        QT_ANDROID_PACKAGE_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/android
-       QT_ANDROID_VERSION_CODE 90
+       QT_ANDROID_VERSION_CODE 100
        #QT_ANDROID_MIN_SDK_VERSION 31
     )
 endif()
@@ -169,29 +220,6 @@ if(NOT IOS)
     target_sources(DroidStar PUBLIC
         serialambe.cpp serialambe.h
         serialmodem.cpp serialmodem.h
-    )
-endif()
-
-if(FALSE) #set TRUE to use external codec2
-    target_compile_definitions(DroidStar PRIVATE
-        USE_EXTERNAL_CODEC2
-    )
-    target_link_libraries(DroidStar PRIVATE
-        codec2
-    )
-else()
-    target_sources(DroidStar PUBLIC
-        codec2/codebooks.cpp
-        codec2/codec2.cpp
-        codec2/codec2_api.h
-        codec2/codec2_internal.h
-        codec2/defines.h
-        codec2/kiss_fft.cpp codec2/kiss_fft.h
-        codec2/lpc.cpp codec2/lpc.h
-        codec2/nlp.cpp codec2/nlp.h
-        codec2/pack.cpp
-        codec2/qbase.cpp codec2/qbase.h
-        codec2/quantise.cpp codec2/quantise.h
     )
 endif()
 
@@ -211,14 +239,12 @@ if(FALSE) # set TRUE for flite
     )
 endif()
 
-if(TRUE) # set TRUE for md380_vocoder
+if(FALSE) # set TRUE for md380_vocoder
     target_compile_definitions(DroidStar PRIVATE
         USE_MD380_VOCODER
     )
     target_link_libraries(DroidStar PRIVATE
         md380_vocoder
-        #/home/nostar/Android/Sdk/local/libmd380_vocoder.a
-        # -Xlinker --section-start=.firmware=0x0800C000 -Xlinker --section-start=.sram=0x20000000
     )
 endif()
 

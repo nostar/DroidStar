@@ -28,7 +28,7 @@ const uint8_t MMDVM_DSTAR_EOT    = 0x13U;
 REF::REF()
 {
     m_mode = "REF";
-	m_attenuation = 5;
+    m_attenuation = 1;
 }
 
 REF::~REF()

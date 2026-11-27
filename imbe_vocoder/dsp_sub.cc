@@ -26,7 +26,7 @@
 #include "dsp_sub.h"
 #include "math_sub.h"
 #include "encode.h"
-#include "imbe_vocoder_impl.h"
+#include "imbe_vocoder.h"
 
 //-----------------------------------------------------------------------------
 //	PURPOSE:
@@ -46,7 +46,7 @@
 //		        Saved in out result of conversion
 //
 //-----------------------------------------------------------------------------
-void imbe_vocoder_impl::idct(Word16 *in, Word16 m_lim, Word16 i_lim, Word16 *out)
+void imbe_vocoder::idct(Word16 *in, Word16 m_lim, Word16 i_lim, Word16 *out)
 {
 	UWord16 angl_step, angl_intl, angl_intl_2;
 	UWord16 angl_acc;
@@ -98,7 +98,7 @@ void imbe_vocoder_impl::idct(Word16 *in, Word16 m_lim, Word16 i_lim, Word16 *out
 //		        Saved in out result of conversion
 //
 //-----------------------------------------------------------------------------
-void imbe_vocoder_impl::dct(Word16 *in, Word16 m_lim, Word16 i_lim, Word16 *out)
+void imbe_vocoder::dct(Word16 *in, Word16 m_lim, Word16 i_lim, Word16 *out)
 {
 	UWord16 angl_step, angl_intl, angl_intl_2, angl_begin;
 	UWord16 angl_acc;
@@ -144,7 +144,7 @@ void imbe_vocoder_impl::dct(Word16 *in, Word16 m_lim, Word16 i_lim, Word16 *out)
 
 
 
-void imbe_vocoder_impl::fft_init(void)
+void imbe_vocoder::fft_init(void)
 {
 	Word16 i, fft_len2, shift, step, theta;
 
@@ -190,7 +190,7 @@ void imbe_vocoder_impl::fft_init(void)
 
 #define	SWAP(a,b) temp1 = (a);(a) = (b); (b) = temp1
 
-void imbe_vocoder_impl::fft(Word16 *datam1, Word16 nn, Word16 isign)
+void imbe_vocoder::fft(Word16 *datam1, Word16 nn, Word16 isign)
 {
 	Word16 n, mmax, m, j, istep, i;
 	Word16 wr, wi, temp1;

@@ -25,6 +25,12 @@
 #define MACHAK 0
 #endif
 
+#if defined(Q_OS_IOS)
+void setIOSAudioSessionCategory();
+extern "C" void renewBackgroundTask();
+extern "C" bool isAppInBackground();
+#endif
+
 AudioEngine::AudioEngine(QString in, QString out) :
 	m_outputdevice(out),
 	m_inputdevice(in),
@@ -67,7 +73,7 @@ QStringList AudioEngine::discover_audio_devices(uint8_t d)
 void AudioEngine::init()
 {
 	QAudioFormat format;
-	format.setSampleRate(8000);
+    format.setSampleRate(8000);
 	format.setChannelCount(1);
 	format.setSampleFormat(QAudioFormat::Int16);
 
@@ -96,17 +102,16 @@ void AudioEngine::init()
             qWarning() << "Current audio format not supported by playback device";
         }
 
-        qDebug() << "Playback device: " << device.description() << "SR: " << format.sampleRate();
-
         try{
             m_out = new QAudioSink(device, format, this);
+            m_out->setBufferSize(1280);
+            //connect(m_out, SIGNAL(stateChanged(QAudio::State)), this, SLOT(handleStateChanged(QAudio::State)));
         }
         catch (const std::exception& e) {
             qDebug() << "Exception in constructor:" << e.what();
         }
 
-		m_out->setBufferSize(1280);
-		connect(m_out, SIGNAL(stateChanged(QAudio::State)), this, SLOT(handleStateChanged(QAudio::State)));
+        qDebug() << "Playback device: " << device.description() << "SR: " << format.sampleRate();
 	}
 
 	devices = QMediaDevices::audioInputs();
@@ -133,83 +138,71 @@ void AudioEngine::init()
 
 		int sr = 8000;
 		if(MACHAK){
-			sr = device.preferredFormat().sampleRate();
+            sr = device.preferredFormat().sampleRate();
 			m_srm = (float)sr / 8000.0;
 		}
 		format.setSampleRate(sr);
         m_in = new QAudioSource(device, format, this);
         qDebug() << "Capture device: " <<  device.description() << " SR: " << sr << " resample factor: " << m_srm;
+
 	}
 }
 
 void AudioEngine::start_capture()
 {
-	m_audioinq.clear();
-	if(m_in != nullptr){
-		m_indev = m_in->start();
-		if(MACHAK) m_srm = (float)(m_in->format().sampleRate()) / 8000.0;
-		connect(m_indev, SIGNAL(readyRead()), SLOT(input_data_received()));
-	}
+#if defined(Q_OS_IOS)
+    setIOSAudioSessionCategory();
+#endif
+    //m_in = new QAudioSource(m_indevice, m_informat, this);
+    m_in->start([this](QSpan<const int16_t> buffer) {
+        if(MACHAK){
+            std::vector<int16_t> samples;
+            for (int16_t sample : buffer) {
+                samples.push_back(sample);
+            }
+            for(float i = 0; i < (float)samples.size(); i += m_srm){
+                m_audioinq.enqueue(samples[i]);
+            }
+        }
+        else{
+           for (int16_t sample : buffer) {
+                m_audioinq.enqueue(sample);
+           }
+        }
+    });
 }
 
 void AudioEngine::stop_capture()
 {
 	if(m_in != nullptr){
-		m_indev->disconnect();
-		m_in->stop();
+        m_in->reset();
 	}
 }
 
 void AudioEngine::start_playback()
 {
-	if (m_out) {
-		// Only start if stopped or suspended - IdleState and ActiveState mean already started
-		if (m_out->state() == QAudio::StoppedState || m_out->state() == QAudio::SuspendedState) {
-			m_outdev = m_out->start();
-		}
+    // Only start if stopped or suspended - IdleState and ActiveState mean already started
+    if (m_out->state() == QAudio::StoppedState || m_out->state() == QAudio::SuspendedState) {
+        m_outdev = m_out->start();
 	}
 }
 
 void AudioEngine::stop_playback()
 {
 	if (m_out) {
-		//m_outdev->reset();
 		m_out->reset();
-		m_out->stop();
 	}
 }
 
-void AudioEngine::input_data_received()
+bool AudioEngine::playback_drained()
 {
-	QByteArray data = m_indev->readAll();
-
-	if (data.size() > 0){
-/*
-		fprintf(stderr, "AUDIOIN: ");
-		for(int i = 0; i < len; ++i){
-			fprintf(stderr, "%02x ", (uint8_t)data.data()[i]);
-		}
-		fprintf(stderr, "\n");
-		fflush(stderr);
-*/
-		if(MACHAK){
-			std::vector<int16_t> samples;
-			for(int i = 0; i < data.size(); i += 2){
-				samples.push_back(((data.data()[i+1] << 8) & 0xff00) | (data.data()[i] & 0xff));
-			}
-			for(float i = 0; i < (float)data.size()/2; i += m_srm){
-				m_audioinq.enqueue(samples[i]);
-			}
-		}
-		else{
-			for(int i = 0; i < data.size(); i += (2 * m_srm)){
-				m_audioinq.enqueue(((data.data()[i+1] << 8) & 0xff00) | (data.data()[i] & 0xff));
-			}
-		}
+	if((m_out == nullptr) || (m_out->state() == QAudio::StoppedState)){
+		return true;
 	}
+	return m_out->bytesFree() >= m_out->bufferSize();
 }
 
-void AudioEngine::write(int16_t *pcm, size_t s)
+void AudioEngine::write(int16_t *pcm, size_t s, float fade_from, float fade_to)
 {
 	m_maxlevel = 0;
 /*
@@ -224,11 +217,20 @@ void AudioEngine::write(int16_t *pcm, size_t s)
 		process_audio(pcm, s);
 	}
 
-	size_t l = m_outdev->write((const char *) pcm, sizeof(int16_t) * s);
-
-	if (l*2 < s){
-		qDebug() << "AudioEngine::write() " << s << ":" << l << ":" << (int)m_out->bytesFree() << ":" << m_out->bufferSize() << ":" << m_out->error();
+	// Optional linear fade, applied after AGC so the AGC cannot undo it.
+	if((fade_from != 1.0f) || (fade_to != 1.0f)){
+		for(size_t i = 0; i < s; ++i){
+			const float g = fade_from + (fade_to - fade_from) * (float)(i + 1) / (float)s;
+			pcm[i] = static_cast<int16_t>(pcm[i] * g);
+		}
 	}
+
+    if(m_outdev != nullptr){
+        size_t l = m_outdev->write((const char *) pcm, sizeof(int16_t) * s);
+        if (l*2 < s){
+            qDebug() << "AudioEngine::write() " << s << ":" << l << ":" << (int)m_out->bytesFree() << ":" << m_out->bufferSize() << ":" << m_out->error();
+        }
+    }
 
 	for(uint32_t i = 0; i < s; ++i){
 		if(pcm[i] > m_maxlevel){
@@ -376,16 +378,21 @@ void AudioEngine::handleStateChanged(QAudio::State newState)
 {
 	switch (newState) {
 	case QAudio::ActiveState:
-        //qDebug() << "AudioOut state active";
+        qDebug() << "AudioOut state active";
 		break;
 	case QAudio::SuspendedState:
-        //qDebug() << "AudioOut state suspended";
+        qDebug() << "AudioOut state suspended";
 		break;
 	case QAudio::IdleState:
-        //qDebug() << "AudioOut state idle";
+        qDebug() << "AudioOut state idle";
+#ifdef Q_OS_IOS
+        if (isAppInBackground()) {
+            renewBackgroundTask();
+        }
+#endif
 		break;
 	case QAudio::StoppedState:
-        //qDebug() << "AudioOut state stopped";
+        qDebug() << "AudioOut state stopped";
 		break;
 	default:
 		break;

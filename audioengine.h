@@ -48,7 +48,8 @@ public:
 	void stop_capture();
 	void start_playback();
 	void stop_playback();
-	void write(int16_t *, size_t);
+	void write(int16_t *, size_t, float fade_from = 1.0f, float fade_to = 1.0f);
+	bool playback_drained();
 	void set_output_buffer_size(uint32_t b) { m_out->setBufferSize(b); }
 	void set_input_buffer_size(uint32_t b) { if(m_in != nullptr) m_in->setBufferSize(b); }
 	void set_output_volume(qreal v){ m_out->setVolume(v); }
@@ -71,7 +72,6 @@ private:
 	QAudioSource *m_in;
 #endif
 	QIODevice *m_outdev;
-	QIODevice *m_indev;
 	QQueue<int16_t> m_audioinq;
 	uint16_t m_maxlevel;
 	bool m_agc;
@@ -98,7 +98,6 @@ private:
 	float m_volume;
 
 private slots:
-	void input_data_received();
 	void process_audio(int16_t *pcm, size_t s);
 	void handleStateChanged(QAudio::State newState);
 };

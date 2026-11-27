@@ -32,7 +32,7 @@
 #include "dsp_sub.h"
 #include "math_sub.h"
 #include "encode.h"
-#include "imbe_vocoder_impl.h"
+#include "imbe_vocoder.h"
 
 
 
@@ -51,7 +51,7 @@
 //      None
 //
 //-----------------------------------------------------------------------------
-void imbe_vocoder_impl::sa_decode_init(void)
+void imbe_vocoder::sa_decode_init(void)
 {
 	num_harms_prev1 = 30;
 	v_zap((Word16 *)sa_prev1, 2 * (NUM_HARMS_MAX + 2));
@@ -74,7 +74,7 @@ void imbe_vocoder_impl::sa_decode_init(void)
 //      Decoded Spectral Amplitudes
 //
 //-----------------------------------------------------------------------------
-void imbe_vocoder_impl::sa_decode(IMBE_PARAM *imbe_param)
+void imbe_vocoder::sa_decode(IMBE_PARAM *imbe_param)
 {
 	Word16 gain_vec[6], gain_r[6];
 	UWord16 index, index_1, num_harms;

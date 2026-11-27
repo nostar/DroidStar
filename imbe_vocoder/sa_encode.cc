@@ -33,10 +33,10 @@
 #include <cstdio>
 #include <cmath>
 #include "encode.h"
-#include "imbe_vocoder_impl.h"
+#include "imbe_vocoder.h"
 
 
-void imbe_vocoder_impl::sa_encode_init(void)
+void imbe_vocoder::sa_encode_init(void)
 {
 	Word16 i;
 	num_harms_prev2 = 30;
@@ -44,7 +44,7 @@ void imbe_vocoder_impl::sa_encode_init(void)
 		sa_prev2[i] = 0;
 }
 
-void imbe_vocoder_impl::sa_encode(IMBE_PARAM *imbe_param)
+void imbe_vocoder::sa_encode(IMBE_PARAM *imbe_param)
 {
 	Word16 gain_vec[6], gain_r[6];
 	UWord16 index, i, j, num_harms;

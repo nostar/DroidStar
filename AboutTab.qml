@@ -37,9 +37,10 @@ Item {
 				width: helpText.width
 				wrapMode: Text.WordWrap
 				color: "white"
-				text: qsTr(	"\nDROID-Star git build " + droidstar.get_software_build() +
+				text: qsTr(	"\nDROID-Star\nGit build:\t" + droidstar.get_software_build() +
 						   "\nPlatform:\t" + droidstar.get_platform() +
-						   "\nArchitecture:\t" + droidstar.get_arch() +
+						   "\nQt version:\t" + droidstar.get_qt_version() +
+						   "\nArch:\t" + droidstar.get_arch() +
 						   "\nBuild ABI:\t" + droidstar.get_build_abi() +
 						   "\n\nProject page: https://github.com/nostar/DroidStar" +
 						   "\n\nCopyright (C) 2019-2026 Doug McLain AD8DP\n" +

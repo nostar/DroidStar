@@ -23,7 +23,7 @@
 DCS::DCS()
 {
     m_mode = "DCS";
-	m_attenuation = 5;
+    m_attenuation = 1;
 }
 
 DCS::~DCS()

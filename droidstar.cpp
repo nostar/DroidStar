@@ -32,6 +32,10 @@
 #include <cstring>
 #include <fcntl.h>
 
+#if defined(Q_OS_IOS)
+extern "C" void setupAVAudioSession();
+#endif
+
 DroidStar::DroidStar(QObject *parent) :
 	QObject(parent),
 	m_dmrid(0),
@@ -323,6 +327,9 @@ void DroidStar::process_connect()
 #endif
 	}
 	else{
+#ifdef Q_OS_IOS
+        setupAVAudioSession();
+#endif
 		if(m_protocol == "REF"){
 			m_refname = m_saved_refhost;
 		}
@@ -467,6 +474,12 @@ void DroidStar::process_connect()
 			if((m_refname.size() > 4) && (m_refname.left(4) == "TGIF")){
 				if(!m_tgif_password.isEmpty()){
 					dmrpass = m_tgif_password;
+				}
+			}
+
+			if(m_refname.startsWith("FD_ADN") || m_refname.startsWith("ADN")){
+				if(!m_adn_password.isEmpty()){
+					dmrpass = m_adn_password;
 				}
 			}
 			m_mode->set_dmr_params(m_essid, dmrpass, m_latitude, m_longitude, m_location, m_description, m_freq, m_url, m_swid, m_pkgid, m_dmropts);
@@ -660,6 +673,7 @@ void DroidStar::save_settings()
 	m_settings->setValue("ESSID", m_essid);
 	m_settings->setValue("BMPASSWORD", m_bm_password);
 	m_settings->setValue("TGIFPASSWORD", m_tgif_password);
+	m_settings->setValue("ADNPASSWORD", m_adn_password);
 	m_settings->setValue("ASLPASSWORD", m_asl_password);
 	m_settings->setValue("DMRTGID", m_dmr_destid);
 	m_settings->setValue("DMRLAT", m_latitude);
@@ -723,6 +737,7 @@ void DroidStar::process_settings()
 	m_essid = m_settings->value("ESSID").toString().simplified().toUInt();
 	m_bm_password = m_settings->value("BMPASSWORD").toString().simplified();
 	m_tgif_password = m_settings->value("TGIFPASSWORD").toString().simplified();
+	m_adn_password = m_settings->value("ADNPASSWORD").toString().simplified();
 	m_asl_password = m_settings->value("ASLPASSWORD").toString().simplified();
 	m_latitude = m_settings->value("DMRLAT", "0").toString().simplified();
 	m_longitude = m_settings->value("DMRLONG", "0").toString().simplified();
@@ -1102,9 +1117,10 @@ void DroidStar::process_iax_hosts()
     m_customhosts = m_localhosts.split('\n');
     for (const auto& i : std::as_const(m_customhosts)){
         QStringList line = i.simplified().split(' ');
-        if(line.at(0) == "IAX"){
+        if((line.at(0) == "IAX") && (line.size() >= 3) ){
             if(line.at(2).simplified() == "wt"){
-                m_hostmap[line.at(1).simplified()] = line.at(1).simplified() + ".nodes.allstarlink.org,4569,allstar-public,allstar";// + line.at(3).simplified() + "," + line.at(4).simplified() + "," + line.at(5).simplified();
+                QString port = (line.size() == 3) ? "4569" : line.at(3).simplified();
+                m_hostmap[line.at(1).simplified()] = line.at(1).simplified() + ".nodes.allstarlink.org," + port + ",allstar-public,allstar";// + line.at(3).simplified() + "," + line.at(4).simplified() + "," + line.at(5).simplified();
             }
             else{
                 m_hostmap[line.at(1).simplified()] = line.at(2).simplified() + "," + line.at(3).simplified() + "," + line.at(4).simplified() + "," + line.at(5).simplified();
